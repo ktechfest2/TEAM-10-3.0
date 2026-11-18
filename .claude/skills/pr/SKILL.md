@@ -1,14 +1,13 @@
 ---
 name: pr
-description: Takes completed work through the team's PR workflow. Ensures a feature branch exists, runs lint/typecheck/tests/build, makes Conventional Commits, pushes, and opens a GitHub PR linked to its issue. Use when a change is ready for review.
+description: Takes a finished slice of work through the quality gates (format, lint, typecheck, tests, build), commits it with Conventional Commits, and with the user's approval pushes and optionally opens a PR. Use when a change is ready.
 ---
 
-# Pull request
+# Commit / PR
 
-1. If on `main`, create a branch: `feat|fix|chore|docs/<issue>-short-name`.
-2. Review `git status` / `git diff`. Stop if there are secrets, `.env` files, debug leftovers, or unrelated changes.
-3. Run every quality gate the project defines (format, lint, typecheck, tests, build). Fix failures; never skip or disable tests to pass.
-4. Confirm tests cover the change (new behaviour has new tests) and that docs are updated if behaviour changed.
-5. Commit using Conventional Commits. Rebase on the latest `origin/main`, then re-run tests.
-6. Push and open a PR with `gh pr create`. Include a summary, linked issue (`Closes #N`), which acceptance criteria are met, how it was tested, and screenshots for UI changes.
-7. Report the PR URL and CI status. Suggest running `/code-review` on it.
+1. Review `git status` / `git diff`. Stop if there are secrets, `.env` files, debug leftovers or unrelated changes.
+2. Run every quality gate the project defines. Fix failures; never skip or disable tests. Record the real results.
+3. Check that new behaviour has tests and that docs (README, API docs, `docs/hackathon/*`) reflect the change. Update the feature row in `implementation-plan.md` (actual time, status).
+4. Commit on the current feature branch using Conventional Commits.
+5. **Ask the user before pushing.** Remember the repo is public. Once approved: `git pull --rebase`, re-run tests, push, and if requested open a PR with `gh pr create` (summary, acceptance criteria met, how it was tested).
+6. Report using the standard format: completed, files changed, what works, tests and results, remaining problems, next task.

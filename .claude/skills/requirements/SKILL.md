@@ -1,21 +1,16 @@
 ---
 name: requirements
-description: Requirements engineering phase. Turns the challenge brief (pasted text, file, or URL) into a full requirements specification at docs/requirements.md and GitHub Issues. Use when the challenge is announced or requirements change.
+description: Run when the challenge statement is released (pass the text, file or URL). Analyses the problem, researches the opportunity, proposes up to 3 scored solution directions, and after the user picks one writes the product requirements. Does not write code.
 ---
 
-# Requirements engineering
+# Challenge → problem brief → requirements
 
-Input: the challenge brief in the arguments. If it's missing, ask for it.
+Input: the official challenge statement. If it's missing, ask for it. **Write no code in this phase.**
 
-1. **Analyse the brief.** Extract the problem, target users/stakeholders, explicit requirements, evaluation criteria, constraints (tech, data, APIs, regulations), and submission requirements. Research the domain where needed (existing solutions, relevant standards, data sources).
-2. **Clarify.** List ambiguities and assumptions. Ask the user about anything that changes scope before writing the spec.
-3. **Write `docs/requirements.md`:**
-   - Problem statement and goals; out-of-scope items
-   - Stakeholders and personas
-   - Functional requirements (FR-1, FR-2, … each testable)
-   - Non-functional requirements (NFR-n): performance, security, privacy, scalability, availability, accessibility, maintainability
-   - User stories (`As a … I want … so that …`) each with acceptance criteria (Given/When/Then), traced to FRs
-   - Priority (MoSCoW) per story
-   - Constraints, assumptions, risks, open questions
-4. **Create GitHub Issues** (after confirming with the user) for each user story with acceptance criteria and labels (`feature`, priority). Use a milestone for the release.
-5. Open a `docs/requirements` PR containing the spec.
+1. Read `docs/hackathon/event-context.md`. Paste the statement verbatim into `docs/hackathon/problem-brief.md`, and extract each stated requirement, constraint, deliverable and judging criterion. Update `event-context.md` with anything newly confirmed.
+2. **Understand the problem:** what the actual problem is, who has it, how often, why existing solutions fall short, and the cost of leaving it unsolved.
+3. **Research the opportunity** with web search: existing solutions and competitors, technical limits, differentiation, and available APIs, datasets and models (with pricing and quotas). Account for the Nigerian context (network, data cost, devices, payments, local services). Cite sources.
+4. **Propose at most 3 serious directions.** Score each 1–5 on problem relevance, innovation, feasibility, competition fit, UX, scalability, demonstrability and time. Recommend the strongest, and challenge any that only sound futuristic.
+5. **Stop and get the user's decision.** Ask only the questions that matter.
+6. Write `docs/hackathon/product-requirements.md`: P0/P1/P2 features with Given/When/Then acceptance criteria, the main user journey, NFRs and out-of-scope items. Distinguish what is confirmed, assumed and unknown.
+7. Log the decision in `decision-log.md` and new risks in `risk-register.md`. Then hand off to `/design`.
