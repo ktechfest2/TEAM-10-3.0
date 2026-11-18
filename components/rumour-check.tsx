@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Button, Card, Eyebrow } from "@/components/ui";
 import { PlaceSearch } from "@/components/app/place-search";
+import { ListenButton } from "@/components/listen-button";
 import { t, type Lang } from "@/lib/core/i18n";
 
 type Verdict = { verdict: "confirmed" | "false" | "unverified"; headline: string; reasons: string[]; simulated?: boolean };
@@ -117,6 +118,7 @@ export function RumourCheck({ initialText = "", lang = "en" }: { initialText?: s
               <li key={r}>{r}</li>
             ))}
           </ul>
+          <div className="mt-3"><ListenButton lang={lang} text={[t(lang, TONE[result.verdict.verdict].label), result.verdict.headline, ...result.verdict.reasons].map((part) => part.replace(/\.+$/, "")).join(". ")} labels={{ listen: t(lang, "ui.listen"), stop: t(lang, "ui.stop"), noVoice: t(lang, "ui.novoice") }} /></div>
           {result.verdict.simulated && <p role="note" className="mt-3 rounded-xl border border-amber/40 bg-amber-wash px-3 py-2 text-xs text-amber">{t(lang, "sim.note")}</p>}
           {result.place && (
             <Link href={`/p/${result.place.code}`} className="mt-4 inline-block font-bold text-blue">{t(lang, "c.record", { place: result.place.name })} ›</Link>

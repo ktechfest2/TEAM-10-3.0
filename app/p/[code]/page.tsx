@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Journey } from "@/components/journey";
 import { LanguagePicker } from "@/components/language-picker";
+import { ListenButton } from "@/components/listen-button";
 import { MarginCard } from "@/components/margin-card";
 import { Seal, type SealState } from "@/components/seal";
 import { ShareButton } from "@/components/share-button";
@@ -25,6 +26,8 @@ import {
   getPlace,
   getTimeline,
   getUnitResults,
+  getVoterReports,
+  getWallPhotos,
   type CollationCheck,
   type Place,
   isSimulated,
@@ -86,6 +89,9 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
   const hero = place.level === "pu" ? headline(unit?.best, lang) : null;
   const [margin, uploads] = place.level === "pu" ? [null, null] : await Promise.all([getMargin(place, results), getUploadFailures(place)]);
   const simulated = place.level === "pu" ? isSimulated(unit?.best) : [...results.values()].some((r) => isSimulated(r.best));
+  const spoken = hero ? [hero.title, hero.text, ...(unit?.best ? Object.entries(unit.best.figures.votes).sort((a, b) => b[1] - a[1]).map(([party, v]) => `${party}: ${v}`) : [])].map((part) => part.replace(/\.+$/, "")).join(". ") : "";
+  const reports = place.level === "pu" ? await getVoterReports(place) : null;
+  const wall = place.level === "pu" ? await getWallPhotos(place, results) : null;
   const figLabels = { totalValid: t(lang, "fig.totalValid"), rejected: t(lang, "fig.rejected"), accredited: t(lang, "fig.accredited") };
   // Statistical flags compare this unit with the other reported units in its ward.
   const ward = breadcrumb.find((b) => b.level === "ward");
@@ -126,6 +132,7 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
                 <div className="min-w-0">
                   <h2 className={`font-display text-2xl leading-tight font-extrabold ${hero.tone}`}>{hero.title}</h2>
                   <p className="mt-1.5 text-sm text-muted">{hero.text}</p>
+                  <div className="mt-3"><ListenButton lang={lang} text={spoken} labels={{ listen: t(lang, "ui.listen"), stop: t(lang, "ui.stop"), noVoice: t(lang, "ui.novoice") }} /></div>
                 </div>
               </div>
               {unit?.best && (
@@ -155,6 +162,38 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
                 </div>
               )}
             </Card>
+
+            {reports && reports.total > 0 && (
+              <Card className={reports.counts.not_opened ? "border-amber/40" : ""}>
+                <Eyebrow>{t(lang, "q.card")}</Eyebrow>
+                <ul className="mt-2 space-y-1.5 text-sm">
+                  {(["not_opened", "long", "medium", "short", "none"] as const).filter((k) => reports.counts[k]).map((k) => (
+                    <li key={k} className="flex justify-between gap-3">
+                      <b className={k === "not_opened" ? "text-amber" : ""}>{t(lang, `q.${k}` as MessageKey)}</b>
+                      <span className="text-muted">{reports.counts[k] === 1 ? t(lang, "q.voter.one") : t(lang, "q.voter.many", { n: reports.counts[k]! })}</span>
+                    </li>
+                  ))}
+                </ul>
+                {reports.latestAt && <p className="mt-2 text-xs text-muted">{new Date(reports.latestAt).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" })}{reports.simulated ? ` · ${t(lang, "sim.label")}` : ""}</p>}
+              </Card>
+            )}
+
+            {wall && wall.total > 0 && (
+              <Card className={wall.differs ? "border-amber/40" : ""}>
+                <Eyebrow>{t(lang, "w.card")}</Eyebrow>
+                <p className="mt-2 text-sm">{t(lang, "w.cardLine", { n: wall.total, same: wall.same, diff: wall.differs })}</p>
+                <ul className="mt-2 flex flex-wrap gap-2 text-sm">
+                  {wall.photos.map((p) => (
+                    <li key={p.sha}>
+                      <a href={`/api/media/${p.sha}`} className={`inline-block rounded-full px-3 py-1.5 font-bold ${p.state === "match" ? "bg-sealed-wash text-sealed" : p.state === "differs" ? "bg-amber-wash text-amber" : "bg-raised text-muted"}`}>
+                        {new Date(p.at).toLocaleTimeString("en-NG", { timeStyle: "short" })}{p.state === "differs" ? ` · ${p.fields.join(", ")}` : ""} ›
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+                {wall.simulated && <p className="mt-2 text-xs text-muted">{t(lang, "sim.label")}</p>}
+              </Card>
+            )}
 
             <Card>
               <Eyebrow>{t(lang, "j.title")}</Eyebrow>
@@ -304,6 +343,9 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
               </ol>
             </details>
           </Card>
+        )}
+        {place.level === "pu" && (
+          <p className="text-center text-sm"><Link href={`/poster/${place.code}`} className="font-bold text-blue">Print the poster for the wall ›</Link></p>
         )}
         <p className="text-center text-xs text-muted">
           Every record is signed and locked in order. <Link href="/verify" className="underline">Check the records yourself</Link>
