@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { HomeSearch } from "@/components/home-search";
+import { Logo } from "@/components/logo";
 import { Seal } from "@/components/seal";
 import { TerritoryMap } from "@/components/territory-map";
 import { Card, Chip, Eyebrow } from "@/components/ui";
@@ -11,16 +12,16 @@ export const dynamic = "force-dynamic";
 const n = (v: number) => v.toLocaleString("en-US");
 
 const AUDIENCES = [
-  { who: "Party agents and observers", what: "Compare the figures with the sheet on the wall, sign with your own key, with or without a network. Your signed copy proves what you saw." },
-  { who: "Presiding officers", what: "Photograph the result sheet. Tally reads the handwriting, you confirm each figure beside the crop it came from, and the arithmetic is checked before you sign." },
-  { who: "Voters, journalists and courts", what: "Find any polling unit and see who signed its result, and whether the same numbers reached the ward, the area council and the state." },
+  { tone: "text-blue border-t-blue bg-blue-wash", who: "Party agents and observers", what:"Compare the figures with the sheet on the wall, sign with your own key, with or without a network. Your signed copy proves what you saw." },
+  { tone: "text-orange border-t-orange bg-orange-wash", who: "Presiding officers", what:"Photograph the result sheet. Tally reads the handwriting, you confirm each figure beside the crop it came from, and the arithmetic is checked before you sign." },
+  { tone: "text-pink border-t-pink bg-pink-wash", who: "Voters, journalists and courts", what:"Find any polling unit and see who signed its result, and whether the same numbers reached the ward, the area council and the state." },
 ];
 
 const STEPS = [
-  { t: "Signed at the unit", d: "The officer records the EC8A and signs it with a key held on their own phone." },
-  { t: "Sealed by rivals", d: "Agents of rival parties check the sheet and sign the same figures. Two parties seal it." },
-  { t: "Collation is checked", d: "Every figure read out at ward, area council and state level is compared with what was sealed." },
-  { t: "Open to everyone", d: "Every entry is hash-chained and anchored to Bitcoin. Anyone can re-check it." },
+  { c: "bg-blue-wash text-blue", t: "Signed at the unit", d:"The officer records the EC8A and signs it with a key held on their own phone." },
+  { c: "bg-thumb-wash text-thumb", t: "Sealed by rivals", d:"Agents of rival parties check the sheet and sign the same figures. Two parties seal it." },
+  { c: "bg-pink-wash text-pink", t: "Collation is checked", d:"Every figure read out at ward, area council and state level is compared with what was sealed." },
+  { c: "bg-orange-wash text-orange", t: "Open to everyone", d:"Every entry is hash-chained and anchored to Bitcoin. Anyone can re-check it." },
 ];
 
 export default async function Home() {
@@ -29,9 +30,12 @@ export default async function Home() {
   const live = Boolean(t && t.reported > 0);
 
   return (
-    <div className="mx-auto w-full max-w-6xl flex-1 px-4 sm:px-6">
+    <div className="relative flex-1">
+    <div className="rainbow-line" />
+    <div className="glow-hero pointer-events-none absolute inset-x-0 top-0 h-[760px]" aria-hidden="true" />
+    <div className="relative mx-auto w-full max-w-6xl px-4 sm:px-6">
       <header className="flex items-center justify-between py-5">
-        <span className="font-display text-2xl font-extrabold tracking-tight">Tally</span>
+        <Link href="/"><Logo size={30} /></Link>
         <nav className="flex items-center gap-5 text-sm font-bold">
           <Link href="/mission" className="hidden sm:inline">Mission control</Link>
           <Link href="/verify" className="hidden sm:inline">Verify</Link>
@@ -41,7 +45,7 @@ export default async function Home() {
 
       <section className="grid items-center gap-10 py-10 lg:grid-cols-[1.05fr_1fr] lg:py-16">
         <div>
-          <h1 className="font-display text-5xl leading-[0.98] font-extrabold tracking-tight sm:text-6xl">Election results you can check, not just trust.</h1>
+          <h1 className="font-display text-5xl leading-[0.98] font-extrabold tracking-tight sm:text-6xl">Election results you can <span className="text-rainbow">check, not just trust.</span></h1>
           <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted">
             Tally turns every polling-unit result into a record signed by the officer and by rival party agents at the unit. Every level of collation is then checked against it, so a changed number shows up with proof.
           </p>
@@ -67,8 +71,8 @@ export default async function Home() {
 
       <section className="grid gap-4 py-6 md:grid-cols-3" aria-label="Who Tally is for">
         {AUDIENCES.map((a) => (
-          <Card key={a.who}>
-            <h2 className="font-display text-xl font-extrabold tracking-tight">{a.who}</h2>
+          <Card key={a.who} className={`border-t-4 ${a.tone.split(" ").filter((c) => c.startsWith("border-")).join(" ")}`}>
+            <h2 className={`font-display text-xl font-extrabold tracking-tight ${a.tone.split(" ")[0]}`}>{a.who}</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted">{a.what}</p>
           </Card>
         ))}
@@ -85,7 +89,7 @@ export default async function Home() {
         <ol className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {STEPS.map((s, i) => (
             <li key={s.t} className="rounded-2xl border border-line p-4">
-              <span className="text-xs font-bold text-muted">{i + 1}</span>
+              <span className={`inline-grid h-7 w-7 place-items-center rounded-full text-sm font-extrabold ${s.c}`}>{i + 1}</span>
               <h3 className="mt-1 font-bold">{s.t}</h3>
               <p className="mt-1 text-sm leading-relaxed text-muted">{s.d}</p>
             </li>
@@ -118,6 +122,7 @@ export default async function Home() {
         <span><b className="font-display text-fg">Tally</b> · works alongside the electoral commission&apos;s process.</span>
         <span className="flex gap-5"><Link href="/mission">Mission control</Link><Link href="/verify">Verify the ledger</Link><Link href="/app">Sign in</Link></span>
       </footer>
+    </div>
     </div>
   );
 }
