@@ -69,3 +69,16 @@ describe("languages", () => {
     }
   });
 });
+
+describe("certified upload failures", () => {
+  const base: JourneyInput = { opened: null, result: { status: "sealed", parties: ["APC", "PDP"], at: "t", by: "x" }, collations: [], attempts: [] };
+  const upload = (cert: "claimed" | "witnessed" | "certified", witnesses: string[]) => buildJourney({ ...base, attempts: [{ outcome: "failed", at: "t", certification: cert, witnesses }] }).find((s) => s.key === "upload")!;
+  it("says who saw the failure", () => {
+    expect(upload("certified", ["APC", "PDP"]).detail).toBe("Upload failed. Certified by APC and PDP, who saw it.");
+    expect(upload("witnessed", ["APC"]).detail).toBe("Upload failed. Co-signed by APC, who saw it.");
+  });
+  it("keeps a claim a claim", () => {
+    expect(upload("claimed", []).detail).toBe("Upload failed. The officer signed a record of the attempt.");
+    expect(upload("certified", ["APC", "PDP"]).state).toBe("warn");
+  });
+});

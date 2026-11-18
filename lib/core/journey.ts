@@ -2,6 +2,7 @@
  * The story of one polling unit's result, from opening to the final collation, in plain steps.
  * Pure: it turns what the ledger knows into what a voter is told.
  */
+import type { CertificationLevel } from "./certification";
 import { t, type Lang } from "./i18n";
 
 export type StepState = "done" | "active" | "pending" | "bad" | "warn";
@@ -11,7 +12,7 @@ export type CollationLevel = "ward" | "lga" | "state";
 export type JourneyInput = {
   opened?: { at: string; by: string } | null;
   result?: { status: "sealed" | "witnessed" | "unwitnessed" | "disputed"; parties: string[]; at: string; by: string } | null;
-  attempts: { outcome: "success" | "failed"; at: string }[];
+  attempts: { outcome: "success" | "failed"; at: string; certification?: CertificationLevel; witnesses?: string[] }[];
   collations: { level: CollationLevel; name: string; status: "match" | "mismatch" | "unverified" | "none"; at?: string; detail?: string; diff?: { field: string; announced: number; sealed: number } }[];
 };
 
@@ -51,7 +52,7 @@ export function buildJourney(input: JourneyInput, lang: Lang = "en"): JourneySte
       ? { key: "upload", title: T("j.upload"), detail: r ? T("j.upload.none") : T("j.upload.waiting"), state: "pending" }
       : last.outcome === "success"
         ? { key: "upload", title: T("j.upload"), detail: failures ? (failures === 1 ? T("j.upload.after.one") : T("j.upload.after.many", { n: failures })) : T("j.upload.done"), state: "done", at: last.at }
-        : { key: "upload", title: T("j.upload"), detail: T("j.upload.failed"), state: "warn", at: last.at },
+        : { key: "upload", title: T("j.upload"), detail: last.certification === "certified" ? T("j.upload.failed.certified", { parties: joinList(last.witnesses ?? [], lang) }) : last.certification === "witnessed" ? T("j.upload.failed.witnessed", { parties: joinList(last.witnesses ?? [], lang) }) : T("j.upload.failed"), state: "warn", at: last.at },
   );
 
   for (const level of ["ward", "lga", "state"] as const) {
