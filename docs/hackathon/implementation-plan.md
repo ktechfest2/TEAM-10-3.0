@@ -44,3 +44,13 @@ Timeboxes:
 - [ ] Meta developer account → WhatsApp Cloud API test number (Tier 2)
 - [ ] Africa's Talking sandbox account (Tier 3)
 - [ ] The submission form URL saved in `event-context.md`
+
+## Slice 4: voter experience (Wed 18 Nov, evening)
+| Item | Status | Notes |
+|---|---|---|
+| Unit page: seal verdict + "Was my result counted?" journey | done | Read from the ledger; a collation that announced other figures than rival agents sealed shows both numbers. Units with no recorded opening omit that step. |
+| Share card (9:16 download, 1.91:1 link preview) + Share button | done | Rendered from the same facts as the page. Web Share needs a real phone to confirm. |
+| Citizen home: followed places with live status | done | Polls `/api/places/[code]` every 30 s. Not yet checked on a device. |
+| Collation: progress, mismatch count, sticky sign bar | done | Not yet checked on a device. |
+| WhatsApp rumour check, 5-language answers, voter alerts | todo | Next slice. |
+Gates run: 35 unit tests, typecheck, lint, `check:journey`, `check:sim` (local). Deployed to production.
