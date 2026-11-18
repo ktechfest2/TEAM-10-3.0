@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tally — UX design (Gate 3)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ["Geist", "system-ui", "sans-serif"], mono: ["Geist Mono", "monospace"] },
+        colors: {
+          ink: "#0c1220", paper: "#f5f3ee", card: "#ffffff", line: "#e3dfd6", muted: "#5f6676",
+          seal: "#008751", sealwash: "#e2f3ea", amber: "#c27803", amberwash: "#fbf0d9",
+          alarm: "#d42a2a", alarmwash: "#fde6e6", night: "#070b14", nightcard: "#101828", nightline: "#1e293b",
+        },
+      },
+    },
+  };
+</script>
+<style>
+  body { font-family: Geist, system-ui, sans-serif; }
+  .tab { font-variant-numeric: tabular-nums; }
+  .phone { width: 360px; height: 740px; border-radius: 44px; padding: 10px; background: #0c1220; box-shadow: 0 30px 60px -20px rgba(12,18,32,.45); }
+  .screen { border-radius: 36px; overflow: hidden; height: 100%; position: relative; }
+  .frame-label { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #5f6676; }
+</style>
+</head>
+<body class="bg-[#e9e6df] text-ink">
+<div class="mx-auto max-w-[1500px] px-8 py-10">
+  <header class="mb-10 flex items-end justify-between">
+    <div>
+      <p class="frame-label">Gate 3 · UX design for approval · not production code</p>
+      <h1 class="mt-2 text-4xl font-black tracking-tight">Tally: visual direction &amp; key screens</h1>
+      <p class="mt-2 max-w-3xl text-muted">Civic-grade and calm. Nigerian flag green means <b>sealed</b>, amber means <b>not yet sealed</b>, red is used only for <b>tampering</b>. The Seal is our signature element: a ring that fills as each rival party signs.</p>
+    </div>
+    <div class="flex items-center gap-3 rounded-2xl bg-card px-4 py-3 shadow-sm">
+      <svg width="40" height="40" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#0c1220"/><g stroke="#f5f3ee" stroke-width="34" stroke-linecap="round"><path d="M146 150v212M210 150v212M274 150v212M338 150v212"/></g><path d="M116 330 396 182" stroke="#00a862" stroke-width="40" stroke-linecap="round"/></svg>
+      <div><p class="text-xl font-black tracking-tight">Tally</p><p class="text-xs text-muted">Every vote, witnessed.</p></div>
+    </div>
+  </header>
+
+  <!-- ROW 1: phone screens -->
+  <div class="flex flex-wrap items-start gap-10">
+
+    <!-- A. Voter: was it counted -->
+    <div>
+      <p class="frame-label mb-3">A · Voter (J3): "Was my vote counted?"</p>
+      <div class="phone"><div class="screen bg-paper">
+        <div class="flex items-center justify-between px-5 pt-5 pb-3">
+          <span class="text-lg font-black tracking-tight">Tally</span>
+          <span class="rounded-full bg-card px-3 py-1 text-xs font-semibold">English ▾</span>
+        </div>
+        <div class="px-5">
+          <p class="text-xs text-muted">Abaji Central · Abaji · FCT</p>
+          <h2 class="mt-1 text-[22px] font-extrabold leading-tight">LEA Primary School, Ung. Manko</h2>
+          <!-- Seal -->
+          <div class="mt-4 flex items-center gap-4 rounded-3xl bg-card p-4 shadow-sm">
+            <svg width="86" height="86" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="42" fill="none" stroke="#e3dfd6" stroke-width="9"/>
+              <circle cx="50" cy="50" r="42" fill="none" stroke="#008751" stroke-width="9" stroke-dasharray="80 8.0" stroke-dashoffset="0" transform="rotate(-90 50 50)"/>
+              <circle cx="50" cy="50" r="42" fill="none" stroke="#008751" stroke-width="9" stroke-dasharray="80 184" stroke-dashoffset="-88" transform="rotate(-90 50 50)"/>
+              <circle cx="50" cy="50" r="42" fill="none" stroke="#008751" stroke-width="9" stroke-dasharray="80 184" stroke-dashoffset="-176" transform="rotate(-90 50 50)"/>
+              <path d="M36 51l9 9 19-20" fill="none" stroke="#008751" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <div>
+              <p class="text-xs font-bold uppercase tracking-widest text-seal">Sealed</p>
+              <p class="text-[15px] font-semibold leading-snug">Signed by agents of 3 rival parties</p>
+              <div class="mt-1.5 flex gap-1.5 text-[11px] font-bold"><span class="rounded-md bg-sealwash px-2 py-0.5 text-seal">APC ✓</span><span class="rounded-md bg-sealwash px-2 py-0.5 text-seal">PDP ✓</span><span class="rounded-md bg-sealwash px-2 py-0.5 text-seal">LP ✓</span></div>
+            </div>
+          </div>
+          <!-- Chain -->
+          <p class="mt-5 text-xs font-bold uppercase tracking-widest text-muted">From the wall to the final count</p>
+          <ol class="mt-3 space-y-0">
+            <li class="flex gap-3"><div class="flex flex-col items-center"><span class="grid h-7 w-7 place-items-center rounded-full bg-seal text-xs font-bold text-white">✓</span><span class="h-7 w-0.5 bg-seal"></span></div><div><p class="text-sm font-semibold">On the wall · 6:42 PM</p><p class="text-xs text-muted">APC 213 · PDP 180 · LP 95</p></div></li>
+            <li class="flex gap-3"><div class="flex flex-col items-center"><span class="grid h-7 w-7 place-items-center rounded-full bg-seal text-xs font-bold text-white">✓</span><span class="h-7 w-0.5 bg-seal"></span></div><div><p class="text-sm font-semibold">Ward collation · unchanged</p><p class="text-xs text-muted">Abaji Central · 9:10 PM</p></div></li>
+            <li class="flex gap-3"><div class="flex flex-col items-center"><span class="grid h-7 w-7 place-items-center rounded-full bg-seal text-xs font-bold text-white">✓</span><span class="h-7 w-0.5 bg-line"></span></div><div><p class="text-sm font-semibold">Area council · unchanged</p><p class="text-xs text-muted">Abaji · 1:24 AM</p></div></li>
+            <li class="flex gap-3"><div class="flex flex-col items-center"><span class="grid h-7 w-7 place-items-center rounded-full border-2 border-dashed border-line text-xs text-muted">…</span></div><div><p class="text-sm font-semibold text-muted">State collation</p><p class="text-xs text-muted">Not yet entered</p></div></li>
+          </ol>
+          <div class="mt-4 rounded-2xl bg-card p-3 text-center text-sm font-semibold">See the result sheet &amp; proof ›</div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- B. Officer: AI read -->
+    <div>
+      <p class="frame-label mb-3">B · Presiding officer (J1): confirm what AI read</p>
+      <div class="phone"><div class="screen bg-paper">
+        <div class="px-5 pt-5">
+          <div class="flex items-center justify-between text-xs"><span class="font-bold">Step 2 of 4 · Result</span><span class="rounded-full bg-amberwash px-2.5 py-1 font-semibold text-amber">● Offline · saved on phone</span></div>
+          <div class="mt-3 flex h-1.5 gap-1"><span class="flex-1 rounded bg-seal"></span><span class="flex-1 rounded bg-ink"></span><span class="flex-1 rounded bg-line"></span><span class="flex-1 rounded bg-line"></span></div>
+          <h2 class="mt-4 text-[22px] font-extrabold leading-tight">Check each figure against the sheet</h2>
+          <div class="mt-3 flex items-center gap-3 rounded-2xl bg-card p-2.5 shadow-sm">
+            <div class="h-14 w-11 rounded-md bg-[repeating-linear-gradient(0deg,#e3dfd6_0,#e3dfd6_2px,#fff_2px,#fff_7px)]"></div>
+            <div class="text-xs"><p class="font-semibold">AI read your EC8A photo</p><p class="text-muted">1 figure needs a closer look</p></div>
+          </div>
+          <div class="mt-3 divide-y divide-line rounded-2xl bg-card px-4 shadow-sm">
+            <div class="flex items-center justify-between py-3"><span class="font-semibold">APC</span><span class="tab rounded-lg bg-paper px-3 py-1.5 text-lg font-bold">213</span></div>
+            <div class="flex items-center justify-between py-3"><span class="font-semibold">PDP <span class="ml-1 rounded bg-amberwash px-1.5 py-0.5 text-[10px] font-bold text-amber">CHECK</span></span><span class="tab rounded-lg border-2 border-amber bg-amberwash px-3 py-1.5 text-lg font-bold">180</span></div>
+            <div class="flex items-center justify-between py-3"><span class="font-semibold">LP</span><span class="tab rounded-lg bg-paper px-3 py-1.5 text-lg font-bold">95</span></div>
+            <div class="flex items-center justify-between py-3"><span class="text-muted">Total valid (written)</span><span class="tab text-lg font-bold">488</span></div>
+            <div class="flex items-center justify-between py-3"><span class="text-muted">Accredited</span><span class="tab text-lg font-bold">500</span></div>
+          </div>
+          <div class="mt-3 flex items-center gap-2 rounded-xl bg-sealwash px-3 py-2 text-xs font-semibold text-seal">✓ Totals add up · no over-voting</div>
+          <button class="mt-4 h-14 w-full rounded-2xl bg-ink text-base font-bold text-paper">Sign this result</button>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- C. Seal collection -->
+    <div>
+      <p class="frame-label mb-3">C · Presiding officer (J1): collect the seal</p>
+      <div class="phone"><div class="screen bg-ink text-paper">
+        <div class="px-5 pt-5">
+          <p class="text-xs font-bold">Step 3 of 4 · Seal</p>
+          <h2 class="mt-2 text-[22px] font-extrabold leading-tight">Agents: scan, compare with the wall, sign</h2>
+          <div class="mx-auto mt-5 grid h-[228px] w-[228px] place-items-center rounded-3xl bg-white p-4">
+            <div class="h-full w-full bg-[conic-gradient(#0c1220_25%,#fff_0_50%,#0c1220_0_75%,#fff_0)] [background-size:18px_18px] rounded-lg"></div>
+          </div>
+          <p class="mt-2 text-center text-xs text-[#9aa3b5]">Works with no network</p>
+          <div class="mt-5 rounded-2xl bg-white/5 p-4">
+            <div class="flex items-center justify-between"><span class="text-sm font-semibold">Signatures</span><span class="rounded-full bg-seal px-2.5 py-1 text-xs font-bold">SEALED</span></div>
+            <div class="mt-3 grid grid-cols-3 gap-2 text-center text-xs font-bold">
+              <span class="rounded-xl bg-seal/20 py-2 text-[#5fe0a3]">APC ✓</span><span class="rounded-xl bg-seal/20 py-2 text-[#5fe0a3]">PDP ✓</span><span class="rounded-xl border border-dashed border-white/20 py-2 text-[#9aa3b5]">LP …</span>
+            </div>
+          </div>
+          <button class="mt-4 h-14 w-full rounded-2xl bg-paper text-base font-bold text-ink">Scan an agent's signature</button>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- D. Agent compare -->
+    <div>
+      <p class="frame-label mb-3">D · Party agent (J1): compare &amp; sign</p>
+      <div class="phone"><div class="screen bg-paper">
+        <div class="px-5 pt-5">
+          <p class="text-xs font-bold text-seal">✓ Officer's signature verified on this phone</p>
+          <h2 class="mt-2 text-[22px] font-extrabold leading-tight">Do these match the sheet on the wall?</h2>
+          <div class="mt-4 rounded-3xl bg-card p-4 shadow-sm">
+            <div class="grid grid-cols-3 gap-2 text-center">
+              <div class="rounded-2xl bg-paper py-3"><p class="text-xs font-bold text-muted">APC</p><p class="tab text-3xl font-black">213</p></div>
+              <div class="rounded-2xl bg-paper py-3"><p class="text-xs font-bold text-muted">PDP</p><p class="tab text-3xl font-black">180</p></div>
+              <div class="rounded-2xl bg-paper py-3"><p class="text-xs font-bold text-muted">LP</p><p class="tab text-3xl font-black">95</p></div>
+            </div>
+            <div class="mt-3 flex justify-between text-sm"><span class="text-muted">Accredited</span><span class="tab font-bold">500</span></div>
+            <div class="mt-1 flex justify-between text-sm"><span class="text-muted">Rejected</span><span class="tab font-bold">7</span></div>
+          </div>
+          <p class="mt-3 text-xs leading-relaxed text-muted">Your signature says: <i>"These are the figures on the EC8A I witnessed."</i> It can't be moved to other figures.</p>
+          <button class="mt-5 h-14 w-full rounded-2xl bg-seal text-base font-bold text-white">Yes — sign as PDP agent</button>
+          <button class="mt-2 h-14 w-full rounded-2xl border-2 border-alarm text-base font-bold text-alarm">They don't match</button>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- ROW 2: mission control + whatsapp -->
+  <div class="mt-14 flex flex-wrap items-start gap-10">
+    <div class="flex-1 min-w-[820px]">
+      <p class="frame-label mb-3">E · Mission control (J2, J5): live, big screen</p>
+      <div class="overflow-hidden rounded-3xl bg-night text-[#e6e9f0] shadow-2xl">
+        <div class="flex items-center justify-between border-b border-nightline px-6 py-4">
+          <div class="flex items-center gap-3"><span class="text-lg font-black tracking-tight">Tally</span><span class="text-sm text-[#8b95a8]">Mission control · FCT</span></div>
+          <div class="flex items-center gap-2 text-xs font-bold">
+            <span class="rounded-full bg-alarm px-3 py-1 text-white">● LIVE</span>
+            <span class="rounded-full border border-nightline px-3 py-1 text-[#8b95a8]">Replay 2023</span>
+            <span class="tab ml-2 text-[#8b95a8]">16 Jan 2027 · 21:14 WAT</span>
+          </div>
+        </div>
+        <div class="grid grid-cols-[1fr_330px]">
+          <div class="relative h-[470px] bg-[radial-gradient(circle_at_40%_45%,#132036,#070b14_70%)]">
+            <!-- dots -->
+            <svg class="absolute inset-0 h-full w-full">
+              <g fill="#00b36b" opacity=".9">
+                <circle cx="300" cy="180" r="4"/><circle cx="318" cy="196" r="4"/><circle cx="332" cy="170" r="4"/><circle cx="352" cy="210" r="4"/><circle cx="290" cy="215" r="4"/><circle cx="372" cy="186" r="4"/><circle cx="395" cy="230" r="4"/><circle cx="410" cy="200" r="4"/><circle cx="270" cy="250" r="4"/><circle cx="430" cy="260" r="4"/><circle cx="455" cy="230" r="4"/><circle cx="480" cy="270" r="4"/><circle cx="360" cy="270" r="4"/><circle cx="390" cy="300" r="4"/><circle cx="215" cy="330" r="4"/><circle cx="240" cy="350" r="4"/><circle cx="520" cy="190" r="4"/><circle cx="540" cy="215" r="4"/>
+              </g>
+              <g fill="#e0a21b"><circle cx="340" cy="240" r="4"/><circle cx="420" cy="315" r="4"/><circle cx="500" cy="300" r="4"/><circle cx="260" cy="300" r="4"/><circle cx="565" cy="250" r="4"/></g>
+              <g fill="#3a4559"><circle cx="190" cy="380" r="4"/><circle cx="160" cy="400" r="4"/><circle cx="600" cy="320" r="4"/><circle cx="620" cy="350" r="4"/><circle cx="140" cy="360" r="4"/></g>
+              <circle cx="372" cy="250" r="16" fill="none" stroke="#ff4d4d" stroke-width="2"><animate attributeName="r" values="8;22;8" dur="1.6s" repeatCount="indefinite"/></circle>
+              <circle cx="372" cy="250" r="6" fill="#ff4d4d"/>
+            </svg>
+            <div class="absolute left-6 top-6 grid grid-cols-4 gap-3">
+              <div class="rounded-2xl bg-nightcard/90 px-4 py-3"><p class="tab text-2xl font-black">2,822</p><p class="text-xs text-[#8b95a8]">Units</p></div>
+              <div class="rounded-2xl bg-nightcard/90 px-4 py-3"><p class="tab text-2xl font-black text-[#2fd28a]">1,948</p><p class="text-xs text-[#8b95a8]">Sealed</p></div>
+              <div class="rounded-2xl bg-nightcard/90 px-4 py-3"><p class="tab text-2xl font-black text-[#f2b33d]">412</p><p class="text-xs text-[#8b95a8]">Not sealed</p></div>
+              <div class="rounded-2xl bg-nightcard/90 px-4 py-3"><p class="tab text-2xl font-black text-[#ff6b6b]">3</p><p class="text-xs text-[#8b95a8]">Tamper alerts</p></div>
+            </div>
+            <div class="absolute bottom-5 left-6 flex gap-4 text-xs text-[#8b95a8]"><span><b class="text-[#2fd28a]">●</b> Sealed</span><span><b class="text-[#f2b33d]">●</b> Witnessed only</span><span><b class="text-[#5b6578]">●</b> No result yet</span><span><b class="text-[#ff6b6b]">●</b> Tampering / disputed</span></div>
+          </div>
+          <aside class="border-l border-nightline p-4">
+            <p class="text-xs font-bold uppercase tracking-widest text-[#8b95a8]">Alerts · newest first</p>
+            <div class="mt-3 space-y-2.5">
+              <div class="rounded-2xl border border-alarm/60 bg-alarm/10 p-3"><p class="text-xs font-bold text-[#ff6b6b]">TAMPERING SUSPECTED · 21:13</p><p class="mt-1 text-sm font-semibold">Abaji Central ward collation</p><p class="tab mt-1 text-xs text-[#c5cbd8]">Unit 007 · APC announced <b class="text-[#ff6b6b]">312</b> · sealed by 3 rival agents <b class="text-[#2fd28a]">213</b></p></div>
+              <div class="rounded-2xl bg-nightcard p-3"><p class="text-xs font-bold text-[#f2b33d]">RUMOUR · FALSE · 21:06</p><p class="mt-1 text-sm font-semibold">"Voting cancelled in Gwagwalada"</p><p class="mt-1 text-xs text-[#c5cbd8]">142 forwards = 1 chain · 37 units sealed there · replies sent in Hausa &amp; English</p></div>
+              <div class="rounded-2xl bg-nightcard p-3"><p class="text-xs font-bold text-[#f2b33d]">STATISTICAL FLAG · 20:51</p><p class="mt-1 text-sm font-semibold">Kuje · Unit 041</p><p class="mt-1 text-xs text-[#c5cbd8]">Turnout 97% vs. 31% median of 12 neighbours. For review.</p></div>
+              <div class="rounded-2xl bg-nightcard p-3"><p class="text-xs font-bold text-[#8b95a8]">ANCHORED ON BITCOIN · 21:00</p><p class="mt-1 font-mono text-[11px] text-[#c5cbd8]">root 9f3a51c0…e8b2 · entries 41,208–43,977</p></div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+
+    <!-- F. WhatsApp -->
+    <div>
+      <p class="frame-label mb-3">F · Voter on WhatsApp (J4): rumour check in Hausa</p>
+      <div class="phone"><div class="screen bg-[#efe7dd]">
+        <div class="flex items-center gap-3 bg-[#075e54] px-4 py-3 text-white"><div class="grid h-9 w-9 place-items-center rounded-full bg-white text-xs font-black text-ink">T</div><div><p class="text-sm font-semibold">Tally ✓</p><p class="text-[11px] opacity-80">Official account</p></div></div>
+        <div class="space-y-2 p-3 text-[13px]">
+          <div class="ml-auto max-w-[80%] rounded-xl bg-[#d9fdd3] p-2.5 shadow-sm"><p class="text-[10px] italic text-muted">↪ Forwarded many times</p><p>An soke zabe a Gwagwalada! Kowa ya koma gida 🚨</p><p class="text-right text-[10px] text-muted">21:05 ✓✓</p></div>
+          <div class="max-w-[88%] rounded-xl bg-white p-2.5 shadow-sm">
+            <p class="font-bold text-alarm">❌ KARYA NE (False)</p>
+            <p class="mt-1">Ba a soke zabe a Gwagwalada ba. Rumfunan zabe 37 sun riga sun rufe, kuma wakilan jam'iyyu masu hamayya sun sa hannu a kan sakamakon.</p>
+            <p class="mt-1.5 text-[11px] text-muted">Shaida: 37 sakamako da aka hatimce · ba a sami rahoton gani da ido ba</p>
+            <p class="mt-1.5 text-[12px] font-semibold text-[#027eb5]">tally.ng/p/37-03 ›</p>
+            <p class="text-right text-[10px] text-muted">21:05</p>
+          </div>
+          <div class="max-w-[88%] rounded-xl bg-white p-2.5 shadow-sm"><p>Rubuta <b>1</b> don Turanci · <b>2</b> Yoruba · <b>3</b> Igbo · <b>4</b> Pidgin</p></div>
+        </div>
+      </div></div>
+      <p class="mt-3 max-w-[360px] text-xs text-muted">Hausa wording is a draft and must be reviewed by a native speaker before release (PRD V4).</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>
