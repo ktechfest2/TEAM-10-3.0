@@ -71,3 +71,10 @@ Gates run: 62 unit tests, typecheck, lint, `check:journey`, `check:sim` (local).
 | Voter alerts: "changed since you last looked" | done | In-app only. Push needs VAPID keys (user). |
 | Voice (TTS), officer/agent flows in other languages | todo | |
 Gates run: 79 unit tests, typecheck, lint, `check:sim`, `check:journey` (local).
+
+## Slice 7: upload-failure certification, margin of lead (Wed 18 Nov, night)
+| Item | Status | Notes |
+|---|---|---|
+| Certification (claimed / witnessed / certified) on journey, area pages, mission | done | Officer and agent phone flows added; **not exercised on a real phone**. |
+| Margin of lead on area pages and mission control | done | Bound against registered voters in unsettled units. |
+Gates run: unit tests, typecheck, lint, `check:sim`, `check:journey` (local).

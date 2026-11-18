@@ -46,6 +46,8 @@ assert(mid.simulation.simulated === mid.totals.reported, "every result is labell
 assert(mid.councils.reduce((a: number, c: any) => a + c.sealed, 0) === mid.totals.sealed, "area-council counts add up to the total");
 
 assert(mid.totals.flagged > 0 && mid.alerts.some((a: any) => a.k === "STATISTICAL FLAGS"), `the anomaly agent flags ${mid.totals.flagged} live units for review`);
+assert(["open", "safe", "settled"].includes(mid.margin.state) && mid.margin.sealedUnits === mid.totals.sealed, `margin of lead is computed from sealed units only (${mid.margin.state})`);
+assert(mid.uploads.total === mid.uploads.certified + mid.uploads.witnessed + mid.uploads.claimed, "every failed upload is claimed, witnessed or certified");
 const replay = await (await fetch(`${BASE}/replay`)).text();
 assert(replay.includes("2,822") && replay.includes("Flagged for review"), "Replay 2023 analyses every 2023 unit");
 
