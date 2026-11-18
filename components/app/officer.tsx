@@ -114,7 +114,10 @@ export function PoHome({ identity, demo }: { identity: Identity; demo?: { photoU
       )}
 
       {result && (
-        <Link href={`/p/${place}`} className="block text-center text-sm font-bold text-thumb">See the public page ›</Link>
+        <div className="space-y-2 text-center text-sm font-bold">
+          <Link href={`/p/${place}`} className="block text-thumb">See the public page ›</Link>
+          <Link href={`/poster/${place}`} className="block text-blue">Print the poster for the wall ›</Link>
+        </div>
       )}
     </div>
   );
