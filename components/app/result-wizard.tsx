@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { prepareImage } from "@/lib/client/image";
 import { sha256Hex } from "@/lib/core/crypto";
 import type { Box } from "@/lib/core/crop";
 import type { ResultFigures } from "@/lib/core/events";
@@ -53,14 +54,27 @@ export function ResultWizard({
   }, [photo, read]);
 
   async function onPhoto(file: File) {
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    const sha = sha256Hex(bytes);
-    setPhoto({ url: URL.createObjectURL(file), sha });
     setPhase("reading");
     setNote("");
+    // A phone photo is far bigger than the server accepts; scale it down first. What is uploaded is what the signature commits to.
+    let prepared: Awaited<ReturnType<typeof prepareImage>>;
     try {
-      await fetch("/api/media", { method: "POST", headers: { "Content-Type": file.type }, body: bytes }).catch(() => undefined);
-      const res = await fetch("/api/ec8a/read", { method: "POST", headers: { "Content-Type": file.type }, body: bytes });
+      prepared = await prepareImage(file);
+    } catch {
+      setPhoto({ url: URL.createObjectURL(file) });
+      setRead(null);
+      setKeys([...DEFAULT_PARTIES, "rejected", "accredited", "totalValid"]);
+      setValues({});
+      setNote("This phone could not prepare the photo. Type each figure from the sheet.");
+      setIdx(0);
+      return setPhase("fields");
+    }
+    const bytes = prepared.bytes;
+    const sha = sha256Hex(bytes);
+    setPhoto({ url: prepared.url, sha });
+    try {
+      await fetch("/api/media", { method: "POST", headers: { "Content-Type": prepared.type }, body: bytes }).catch(() => undefined);
+      const res = await fetch("/api/ec8a/read", { method: "POST", headers: { "Content-Type": prepared.type }, body: bytes });
       const data = (await res.json()) as { figures?: ResultFigures; boxes?: Record<string, Box>; uncertain?: string[]; error?: string };
       if (!res.ok || !data.figures) throw new Error(data.error ?? "unreadable");
       const result: ReadResult = { figures: data.figures, boxes: data.boxes ?? {}, uncertain: data.uncertain ?? [] };

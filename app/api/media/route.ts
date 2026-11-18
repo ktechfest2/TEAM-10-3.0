@@ -1,12 +1,14 @@
 import { sha256Hex } from "@/lib/core/crypto";
 import { sqlClient as sql } from "@/lib/db/client";
 import { badRequest } from "@/lib/server/http";
+import { rateLimited } from "@/lib/server/ratelimit";
 
 const MAX_BYTES = 3 * 1024 * 1024;
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 /** Stores a result-sheet photo addressed by its SHA-256 (the hash the signed event commits to). */
 export async function POST(request: Request) {
+  if (rateLimited(request, "media", 12)) return badRequest("Too many photos in a minute. Wait a moment and try again.", 429);
   const type = request.headers.get("content-type")?.split(";")[0] ?? "";
   if (!ALLOWED.has(type)) return badRequest("Upload a JPEG, PNG or WebP image.");
   const bytes = new Uint8Array(await request.arrayBuffer());
