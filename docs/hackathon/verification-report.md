@@ -16,12 +16,12 @@ Run Wed 18 Nov 2026, night, against `main` at the time of writing and the produc
 ## 2. Amaka's day (problem brief) and the personas
 | Moment | Status | Evidence / gap |
 |---|---|---|
-| Morning: unit moved, advance alerts, directions | **Partial** | Search of all 2,822 FCT units works. No alerts, no "moved" data (needs INEC), no landmark directions. |
-| Arrival: queue, materials, escalation, help for elderly and disabled | **Not met** | The event types exist on the ledger and show in the timeline, but there is no screen to record or display queue, materials or escalation. |
-| Evening: agents co-sign offline; poster QR; citizen photos as witnesses | **Partial** | Co-signing built and tested at protocol level. **No printable poster QR. No citizen photo witness.** Never run offline on a phone. |
+| Morning: unit moved, advance alerts, directions | **Partial** | Search of all 2,822 FCT units works; poster QR on the wall lets neighbours check their unit. No alerts, no "moved" data (needs INEC), no landmark directions. |
+| Arrival: queue, materials, escalation, help for elderly and disabled | **Partial** | Voters sign queue and "officials have not arrived" reports; unit pages show them (one count per person); two voters at an unopened unit raise a mission alert. Browser-tested end to end. **No materials tracking, no automatic escalation, no priority-help flow.** |
+| Evening: agents co-sign offline; poster QR; citizen photos as witnesses | **Partial** | Co-signing built and tested at protocol level. **Printable poster with a QR that decodes to the unit page (built).** **Citizen wall photo: photo, AI read, comparison with the signed result, signed by the citizen (built, browser-tested with the real reader).** Never run offline or on a phone. |
 | Days later: "was my result counted?" | **Met** | Unit page journey (opened, signed, upload, ward, area council, state); tamper shows announced vs sealed. `check:journey`, `check:sim`. |
 | All day: rumours, forward to WhatsApp, verdict back | **Partial** | In-app paste and Android share target work, five languages, verdict with reasons. **No WhatsApp number.** No pushed corrections. |
-| Mama Ngozi (cannot read, voice-first) | **Not met** | No voice in or out. |
+| Mama Ngozi (cannot read, voice-first) | **Partial** | "Listen" reads the verdict and figures aloud with the phone's own voice (tested with a mocked speech engine). Depends on the phone having a voice for the language (Hausa, Yorùbá and Igbo are often missing; the page says so). No voice input. |
 | Lawyer / journalist (exportable evidence) | **Partial** | `/verify`, downloadable `.ots` proof, public unit pages. No evidence pack. |
 
 ## 3. Journeys
@@ -55,7 +55,7 @@ Run Wed 18 Nov 2026, night, against `main` at the time of writing and the produc
 | V4 languages | **Partial** | EN, PCM, HA, YO, IG for the voter sentences; **draft, not native-reviewed**; officer, agent, collation and mission screens are English only |
 | V5 voter alerts | **Partial** | in-app "changed since you last looked"; no push, SMS or WhatsApp; no opening or delay alerts |
 
-SHOULD list in the PRD: poster QR and citizen photo witness are **not built** (an earlier report wrongly called the SHOULD tier complete).
+SHOULD list in the PRD: poster QR and citizen photo witness are now built (an earlier report wrongly called the SHOULD tier complete before they were).
 
 ## 5. Simulated functionality
 Mission control and the home page carry a "Simulated data" chip. As of this run, unit and area pages, the share card and rumour verdicts also say so in all five languages whenever the signed results come from the labelled test actors (found missing during this verification, fixed, and covered by `check:sim`). Replay 2023 is real historical data and labelled as such. Production holds 434 simulated units (signed through the real path by `DEMO` actors), one altered ward collation and two honest ones.
@@ -77,9 +77,13 @@ Production runs the latest `main`; migrations and seed applied; `TALLY_INVITE_CO
 
 **Judge-visible gaps**
 3. No WhatsApp number (V3). Needs the user to create a Meta developer account.
-4. No poster QR, no citizen photo witness, no queue/materials/escalation screens, no voice, no push alerts.
+4. No materials tracking, escalation or priority-help flow; no push alerts; no voice input.
 5. Real handwriting untested; officer, agent and collation screens English only; translations unreviewed.
 
 **Minor**
 6. Rumour: no forwarded-copy chain or corroboration. Replay: no timeline. Map cells not clickable.
 7. `AGENTS.md` heading changed by Next's install step (harmless, uncommitted).
+
+## 9. Added after this report was first written
+Poster, listen, voter reports and citizen wall photos were built the next morning. Verified by: 99 unit tests; `check:journey` (voter reports, role rules, wall photos, alerts); `check:sim` (labels, rate limit, simulated voters); a QR decode of the poster; a mocked speech engine; and a **real-browser run against a production build** (sign up as a voter, report a queue, upload a photo through the real reader, sign and send, then see it on the ledger, unit page and mission control). That run also found and fixed: phone photos over the server's 3 MB limit were rejected in the officer's wizard (now downscaled), and `/api/media` had no rate limit.
+Still not run on a physical phone: camera capture, QR scanning between two phones, offline queue, install, share target.

@@ -78,3 +78,13 @@ Gates run: 79 unit tests, typecheck, lint, `check:sim`, `check:journey` (local).
 | Certification (claimed / witnessed / certified) on journey, area pages, mission | done | Officer and agent phone flows added; **not exercised on a real phone**. |
 | Margin of lead on area pages and mission control | done | Bound against registered voters in unsettled units. |
 Gates run: unit tests, typecheck, lint, `check:sim`, `check:journey` (local).
+
+## Slice 8: Amaka's missing moments (Thu 19 Nov, morning)
+| Item | Status | Notes |
+|---|---|---|
+| Printable poster + QR | done | decoded in a test |
+| Listen (voice replies) | done | needs a voice on the phone |
+| Voter queue / officials-not-arrived reports + alert | done | browser-tested |
+| Citizen wall photo, compared with the signed result | done | browser-tested with the real reader |
+| WhatsApp number | todo | needs the user's Meta account |
+| Materials tracking, escalation, priority help | todo | |
