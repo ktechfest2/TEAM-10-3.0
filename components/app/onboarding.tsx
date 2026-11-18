@@ -127,7 +127,7 @@ export function Onboarding({ onDone }: { onDone: (identity: Identity) => void })
           <label className="block">
             <Eyebrow>Invite code from your organisation</Eyebrow>
             <input value={invite} onChange={(e) => setInvite(e.target.value.toUpperCase())} className="mt-1 min-h-12 w-full rounded-xl border border-line bg-paper px-4 font-mono outline-none focus:border-ink" />
-            <span className="mt-1 block text-xs text-muted">Parties, observer groups and INEC issue codes to their own people. Demo code: TALLY-DEMO</span>
+            <span className="mt-1 block text-xs text-muted">Parties, observer groups and INEC issue codes to their own people.</span>
           </label>
         )}
         {error && <p className="text-sm text-disputed">{error}</p>}

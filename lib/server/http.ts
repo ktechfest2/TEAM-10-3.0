@@ -22,7 +22,7 @@ export async function parseJson<T extends z.ZodType>(request: Request, schema: T
 
 /** Official roles need an invite code issued by the deploying organisation (party, observer group, INEC). */
 export function inviteCodeValid(code: string | undefined): boolean {
-  // Each deploying organisation sets its own code. The public demo uses TALLY-DEMO so judges can try every role.
-  const expected = process.env.TALLY_INVITE_CODE || "TALLY-DEMO";
-  return code === expected;
+  // Each deploying organisation issues its own code. In production it must be configured; with none set, official roles are closed.
+  const expected = process.env.TALLY_INVITE_CODE ?? (process.env.NODE_ENV === "production" ? undefined : "TALLY-DEV");
+  return Boolean(expected) && code === expected;
 }

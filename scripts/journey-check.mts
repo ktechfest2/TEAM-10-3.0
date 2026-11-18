@@ -28,7 +28,7 @@ async function post(path: string, body: unknown) {
 
 async function register(role: string, displayName: string, party?: string, placeCode?: string): Promise<KeyPair> {
   const keys = generateKeyPair();
-  await post("/api/actors", { role, displayName, party: party ?? null, publicKey: keys.publicKeyHex, placeCode: placeCode ?? null, inviteCode: "TALLY-DEMO" });
+  await post("/api/actors", { role, displayName, party: party ?? null, publicKey: keys.publicKeyHex, placeCode: placeCode ?? null, inviteCode: process.env.TALLY_INVITE_CODE ?? "TALLY-DEV" });
   return keys;
 }
 
