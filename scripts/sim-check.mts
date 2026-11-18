@@ -18,6 +18,11 @@ async function post(path: string, body: unknown = {}) {
   return { status: res.status, json: (await res.json()) as Record<string, any> };
 }
 const get = async (path: string) => (await fetch(`${BASE}${path}`)).json() as Promise<Record<string, any>>;
+// Mission control memoises its snapshot for 1.5 s; wait it out so we read what the last write produced.
+const fresh = async () => {
+  await new Promise((r) => setTimeout(r, 1700));
+  return get("/api/mission");
+};
 
 assert((await post("/api/demo/reset")).status === 200, "reset clears the ledger");
 const empty = await get("/api/mission");
@@ -32,7 +37,7 @@ for (let i = 0; i < 3; i++) {
 }
 assert(remaining <= 2822 - 150, "remaining units shrink as the night goes on");
 
-const mid = await get("/api/mission");
+const mid = await fresh();
 assert(mid.totals.reported >= 150, `mission control counts ${mid.totals.reported} reported units from the database`);
 assert(mid.totals.sealed > 0 && mid.cells.includes(2), "sealed units appear on the map");
 assert(mid.simulation.simulated === mid.totals.reported, "every result is labelled as simulated by DEMO actors");
@@ -40,13 +45,12 @@ assert(mid.councils.reduce((a: number, c: any) => a + c.sealed, 0) === mid.total
 
 const honest = await post("/api/demo/collate", { mode: "honest" });
 assert(honest.status === 200, `an honest ward collation was entered (${honest.json.ward})`);
-let snap = await get("/api/mission");
+let snap = await fresh();
 assert(snap.totals.tamper === 0, "an honest collation raises no tampering alert");
 
 const bad = await post("/api/demo/collate", { mode: "tamper" });
 assert(bad.status === 200, `an altered ward collation was entered (${bad.json.ward})`);
-await new Promise((r) => setTimeout(r, 1700)); // the snapshot is memoised for 1.5 s
-snap = await get("/api/mission");
+snap = await fresh();
 assert(snap.totals.tamper === 1, "exactly one tampering alert is raised");
 assert(snap.cells.includes(3), "the altered unit turns red on the map");
 assert(snap.alerts.some((a: any) => a.kind === "red"), "the alert feed names the tampering");
