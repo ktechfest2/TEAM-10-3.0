@@ -20,6 +20,17 @@ async function sqlSimUnit() {
   }
 }
 
+async function sqlVoterUnit() {
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
+  try {
+    const [row] = await sql<{ place_code: string }[]>`select q.place_code from events q join actors a on a.id = q.author_id where q.type = 'pu.queue' and a.display_name like 'DEMO Voter%' limit 1`;
+    if (!row) throw new Error("the simulation produced no voter reports");
+    return row.place_code;
+  } finally {
+    await sql.end();
+  }
+}
+
 function assert(cond: unknown, msg: string): asserts cond {
   if (!cond) throw new Error(`FAIL · ${msg}`);
   console.log(`ok · ${msg}`);
@@ -92,6 +103,9 @@ assert(ha.json.verdict?.verdict === "confirmed" && ha.json.verdict.headline.star
 const simUnit = (await sqlSimUnit()) as string;
 const simPage = await (await fetch(`${BASE}/p/${simUnit}`)).text();
 assert(simPage.includes("Simulated data"), "a simulated unit's page says the data is simulated");
+const voterUnit = await sqlVoterUnit();
+const voterPage = await (await fetch(`${BASE}/p/${voterUnit}`)).text();
+assert(voterPage.includes("What voters report") && voterPage.includes("Simulated data"), "simulated voter reports show on the unit page, labelled");
 const simPoster = await fetch(`${BASE}/api/poster/${simUnit}`);
 assert(simPoster.status === 200, "the share card renders for a simulated unit");
 const simRumour = await post("/api/rumour", { text: "APC got 5 votes at " + simUnit });

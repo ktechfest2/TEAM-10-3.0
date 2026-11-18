@@ -7,7 +7,7 @@
  */
 import { randomUUID } from "node:crypto";
 import postgres from "postgres";
-import { generateKeyPair, type KeyPair } from "../lib/core/crypto";
+import { generateKeyPair, sha256Hex, type KeyPair } from "../lib/core/crypto";
 import { cosign, signEvent, type EventType, type SignedEvent } from "../lib/core/events";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3100";
@@ -102,6 +102,36 @@ assert(view.collation.rows.some((r: { status: string }) => r.status === "unverif
 
 const unitView = await (await fetch(`${BASE}/api/places/${units[0].pu_code}`)).json();
 assert(unitView.result.best.trust.status === "sealed", "a unit co-signed by APC, PDP and LP is Sealed");
+
+// Citizens: voters report what they see, and photograph the sheet on the wall. Each is a signed event from its own account.
+const c1 = await register("citizen", "Voter one (check)");
+const c2 = await register("citizen", "Voter two (check)");
+const c3 = await register("citizen", "Voter three (check)");
+const sync = async (ev: SignedEvent) => { const r = (await post("/api/sync", { items: [{ event: ev }] })).results[0]; if (process.env.DEBUG_SYNC) console.log("sync:", JSON.stringify(r)); return r; };
+const reportUnit = units[0].pu_code;
+assert((await sync(makeEvent(c1, "pu.queue", reportUnit, { level: "not_opened" }))).status === "accepted", "a voter's queue report is accepted");
+assert((await sync(makeEvent(c2, "pu.queue", reportUnit, { level: "not_opened" }))).status === "accepted", "a second voter's report is accepted");
+assert((await sync(makeEvent(c3, "pu.queue", reportUnit, { level: "long" }))).status === "accepted", "a third voter's report is accepted");
+// An alert needs two different voters saying officials have not arrived at a unit that is not recorded as open.
+const [{ code: quietUnit }] = await sql<{ code: string }[]>`select code from places where level = 'pu' and code like ${`${WARD}-%`} and code not in ${sql(units.map((u) => u.pu_code))} order by code desc limit 1`;
+assert((await sync(makeEvent(c1, "pu.queue", quietUnit, { level: "not_opened" }))).status === "accepted" && (await sync(makeEvent(c2, "pu.queue", quietUnit, { level: "not_opened" }))).status === "accepted", `two voters report no officials at ${quietUnit}, which is not recorded as open`);
+assert((await sync(makeEvent(c3, "pu.queue", reportUnit, { level: "huge" }))).status === "rejected", "an unknown queue level is refused");
+assert((await sync(makeEvent(c1, "result.declared", reportUnit, { figures: { votes: { APC: 1 }, accredited: 1, rejected: 0, totalValid: 1 }, readBy: "manual" }))).status === "rejected", "a voter cannot record a result");
+
+const sealedFigures = { votes: units[0].votes, accredited: units[0].accredited, rejected: 0, totalValid: Object.values(units[0].votes).reduce((a, b) => a + b, 0) };
+const wrongFigures = { ...sealedFigures, votes: { ...units[0].votes, APC: (units[0].votes.APC ?? 0) + 90 } };
+const photo = (n: number) => sha256Hex(new TextEncoder().encode(`wall photo ${n}`));
+assert((await sync(makeEvent(c1, "claim.reported", reportUnit, { text: "Photographed the result sheet on the wall", data: { kind: "wall_photo", photoSha256: photo(1), figures: sealedFigures } }))).status === "accepted", "a wall photo that matches is accepted");
+assert((await sync(makeEvent(c2, "claim.reported", reportUnit, { text: "Photographed the result sheet on the wall", data: { kind: "wall_photo", photoSha256: photo(2), figures: wrongFigures } }))).status === "accepted", "a wall photo that differs is accepted");
+assert((await sync(makeEvent(c3, "claim.reported", reportUnit, { text: "Photographed the result sheet on the wall", data: { kind: "wall_photo", photoSha256: photo(3) } }))).status === "accepted", "a wall photo that could not be read is accepted");
+
+const page = await (await fetch(`${BASE}/p/${reportUnit}`)).text();
+assert(page.includes("What voters report") && page.includes("Officials have not arrived") && page.includes("2 voters"), "the unit page shows what voters report, one count per person");
+assert(page.includes("3 photographed the sheet on the wall: 1 show the signed figures, 1 show different figures"), "the unit page compares each wall photo with the signed result");
+await new Promise((r) => setTimeout(r, 1700));
+const mission = await (await fetch(`${BASE}/api/mission`)).json();
+assert(mission.alerts.some((a: { k: string }) => a.k === "VOTERS REPORT NO OFFICIALS"), "two voters saying officials have not arrived raises an alert");
+assert(mission.alerts.some((a: { k: string }) => a.k === "WALL SHEET READS DIFFERENTLY"), "a wall photo that reads differently raises a neutral alert");
 
 const audit = await (await fetch(`${BASE}/api/verify`)).json();
 assert(audit.intact === true, `ledger intact (${audit.entries} entries)`);
