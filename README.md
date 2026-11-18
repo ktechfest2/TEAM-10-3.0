@@ -45,7 +45,7 @@ Official roles (officer, agent, observer, collation officer) sign up with an inv
 ## Credits
 - **Data:** 2023 presidential polling-unit figures and coordinates for the FCT (2,822 units), from [mundus01/irev-2023-results-map](https://github.com/mundus01/irev-2023-results-map) (sums of INEC IReV polling-unit sheets). Polling-unit structure follows INEC codes.
 - **Libraries:** Next.js, React, Tailwind CSS, Drizzle ORM, postgres.js, @noble/ed25519 and @noble/hashes, zod, idb, qrcode, jsQR, Vercel AI SDK, Vitest.
-- **Services:** OpenTimestamps calendars (Bitcoin anchoring), Vercel AI Gateway (Anthropic Claude for EC8A transcription).
+- **Services:** OpenTimestamps calendars (Bitcoin anchoring), Vercel AI Gateway (Google Gemini 2.5 Flash-Lite for EC8A transcription and for reading forwarded messages).
 - **Approach:** the trust-engine ideas (independent evidence chains, firsthand vs. hearsay weighting, source reliability) carry over from the team's own KTech screening project and were rewritten from scratch for this challenge.
 - **AI coding assistant (declared per rule 1.4):** Claude Code (Anthropic) was used throughout design and development.
 
