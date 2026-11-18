@@ -38,6 +38,7 @@ export default async function Home() {
         <Link href="/"><Logo size={30} /></Link>
         <nav className="flex items-center gap-5 text-sm font-bold">
           <Link href="/mission" className="hidden sm:inline">Mission control</Link>
+          <Link href="/check" className="hidden sm:inline">Check a message</Link>
           <Link href="/verify" className="hidden sm:inline">Verify</Link>
           <Link href="/app" className="rounded-full bg-fg px-4 py-2 text-bg">Sign in</Link>
         </nav>
@@ -52,7 +53,7 @@ export default async function Home() {
           <div className="mt-7 max-w-xl">
             <HomeSearch />
           </div>
-          <p className="mt-3 text-sm text-muted">Search any of the 2,822 polling units in the Federal Capital Territory.</p>
+          <p className="mt-3 text-sm text-muted">Search any of the 2,822 polling units in the Federal Capital Territory. Got a forwarded message? <Link href="/check" className="font-bold text-blue">Check if it is true ›</Link></p>
         </div>
 
         <Link href="/mission" className="group block rounded-3xl border border-line bg-surface p-3 transition-colors hover:border-muted">
@@ -120,7 +121,7 @@ export default async function Home() {
 
       <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-line py-6 text-sm text-muted">
         <span><b className="font-display text-fg">Tally</b> · works alongside the electoral commission&apos;s process.</span>
-        <span className="flex gap-5"><Link href="/mission">Mission control</Link><Link href="/verify">Verify the ledger</Link><Link href="/app">Sign in</Link></span>
+        <span className="flex gap-5"><Link href="/mission">Mission control</Link><Link href="/check">Check a message</Link><Link href="/verify">Verify the ledger</Link><Link href="/app">Sign in</Link></span>
       </footer>
     </div>
     </div>
