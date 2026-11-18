@@ -7,7 +7,7 @@ import { Card, Eyebrow, StatusBadge, timeAgo, type Status } from "@/components/u
 import { PlaceSearch } from "./place-search";
 
 type Followed = { code: string; name: string };
-type Live = { level: string; status: Status; line: string; at?: string } | "error";
+type Live = { level: string; status: Status; line: string; key: string; at?: string } | "error";
 
 /** What the place summary API says, reduced to the one line a voter wants. */
 function summarise(data: {
@@ -17,10 +17,10 @@ function summarise(data: {
 }): Live {
   if (data.place.level === "pu") {
     const best = data.result?.best;
-    return best ? { level: "pu", status: best.trust.status, line: "Result", at: best.occurredAt } : { level: "pu", status: null, line: "Waiting for the result" };
+    return best ? { level: "pu", status: best.trust.status, line: "Result", key: `${best.trust.status}`, at: best.occurredAt } : { level: "pu", status: null, line: "Waiting for the result", key: "none" };
   }
   const c = data.coverage;
-  return { level: data.place.level, status: c.disputed ? "disputed" : null, line: `${c.sealed.toLocaleString("en-US")} of ${c.units.toLocaleString("en-US")} units sealed${c.disputed ? ` · ${c.disputed} disputed` : ""}` };
+  return { level: data.place.level, status: c.disputed ? "disputed" : null, key: `${c.sealed}/${c.disputed}`, line: `${c.sealed.toLocaleString("en-US")} of ${c.units.toLocaleString("en-US")} units sealed${c.disputed ? ` · ${c.disputed} disputed` : ""}` };
 }
 
 export function CitizenHome({ identity }: { identity: Identity }) {
@@ -34,6 +34,23 @@ export function CitizenHome({ identity }: { identity: Identity }) {
     }
   });
   const [live, setLive] = useState<Record<string, Live>>({});
+  // What this device last saw for each place. A place whose status differs from it is shown as changed.
+  const [seen, setSeen] = useState<Record<string, string>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("tally:seen") ?? "{}") as Record<string, string>;
+    } catch {
+      return {};
+    }
+  });
+  const markSeen = (code: string, key: string) => setSeen((prev) => ({ ...prev, [code]: key }));
+  // Saved on every change, including the first baseline, so a change between two visits is never lost.
+  useEffect(() => {
+    try {
+      localStorage.setItem("tally:seen", JSON.stringify(seen));
+    } catch {
+      /* storage unavailable: changes will simply show again next time */
+    }
+  }, [seen]);
   const [tick, setTick] = useState(0);
 
   // Each followed place is read from the ledger; refreshed every 30 s while the screen is open.
@@ -42,7 +59,13 @@ export function CitizenHome({ identity }: { identity: Identity }) {
     for (const f of followed) {
       fetch(`/api/places/${f.code}`)
         .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-        .then((d) => alive && setLive((prev) => ({ ...prev, [f.code]: summarise(d) })))
+        .then((d) => {
+          if (!alive) return;
+          const l = summarise(d);
+          setLive((prev) => ({ ...prev, [f.code]: l }));
+          // The first time a place is followed, what it shows now is the baseline: nothing has "changed" yet.
+          if (l !== "error") setSeen((prev) => (prev[f.code] === undefined ? { ...prev, [f.code]: l.key } : prev));
+        })
         .catch(() => alive && setLive((prev) => ({ ...prev, [f.code]: "error" })));
     }
     const timer = setTimeout(() => setTick((t) => t + 1), 30_000);
@@ -83,15 +106,17 @@ export function CitizenHome({ identity }: { identity: Identity }) {
           <ul className="mt-2 divide-y divide-line">
             {followed.map((f) => {
               const l = live[f.code];
+              const changed = l && l !== "error" && seen[f.code] !== undefined && seen[f.code] !== l.key;
               return (
                 <li key={f.code} className="flex items-center gap-2">
-                  <Link href={`/p/${f.code}`} className="flex min-w-0 flex-1 items-center justify-between gap-3 py-3">
+                  <Link href={`/p/${f.code}`} onClick={() => l && l !== "error" && markSeen(f.code, l.key)} className="flex min-w-0 flex-1 items-center justify-between gap-3 py-3">
                     <span className="min-w-0">
                       <span className="block truncate font-bold">{f.name}</span>
                       <span className="block text-xs text-muted">
                         {!l ? "Checking…" : l === "error" ? "Could not load. Your last view is kept offline." : l.line}
                         {l && l !== "error" && l.at ? ` · ${timeAgo(l.at)}` : ""}
                       </span>
+                      {changed && <span className="mt-0.5 block text-xs font-bold text-amber">Changed since you last looked</span>}
                     </span>
                     {l && l !== "error" && l.level === "pu" ? <StatusBadge status={l.status} /> : l && l !== "error" && l.status === "disputed" ? <StatusBadge status="disputed" /> : <span className="text-muted">›</span>}
                   </Link>
