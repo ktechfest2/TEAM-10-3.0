@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Logo } from "@/components/logo";
-import { TerritoryMap } from "@/components/territory-map";
+import { ReplayMap } from "@/components/replay-map";
 import { Card, Chip, Eyebrow } from "@/components/ui";
 import { RULES, type FlagKind } from "@/lib/core/anomaly";
-import { publicGeometry } from "@/lib/server/mission";
 import { getReplay } from "@/lib/server/replay";
 
 export const metadata: Metadata = { title: "Replay 2023", description: "The 2023 FCT polling-unit figures, checked by the anomaly agent. Statistical flags for review, not accusations." };
@@ -40,7 +39,7 @@ export default async function ReplayPage(props: PageProps<"/replay">) {
 
       <section className="mt-6 grid gap-4 lg:grid-cols-[1.25fr_1fr]">
         <Card className="p-2 sm:p-3">
-          <TerritoryMap geometry={publicGeometry} cells={replay.cells} focus={null} label="Map of the Federal Capital Territory. Each cell is a polling site, red where a unit's figures contradict each other, amber where a unit is unusual for its ward." />
+          <ReplayMap cells={replay.cells} label="Map of the Federal Capital Territory. Each cell is a polling site, red where a unit's figures contradict each other, amber where a unit is unusual for its ward." />
           <p className="flex flex-wrap gap-x-4 gap-y-1 px-2 pt-2 pb-1 text-xs text-muted">
             <span><span className="mr-1.5 inline-block h-2.5 w-2.5 rounded-sm bg-alarm" />Figures contradict each other</span>
             <span><span className="mr-1.5 inline-block h-2.5 w-2.5 rounded-sm bg-amber" />Unusual for the ward</span>
