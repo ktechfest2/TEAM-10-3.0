@@ -31,6 +31,19 @@ Rules:
 - Mission control uses pure black behind the map; "no result yet" cells use `raised`.
 - Parties never get colours.
 
+### Spectrum (added 18 Nov at the user's request: black is the theme, not the whole palette)
+| Token | Value | Use |
+|---|---|---|
+| `blue` | `#6AA9FF` | Party agents, links, primary buttons (gradient with `thumb`) |
+| `cyan` | `#35D6D1` | Observers and logistics |
+| `pink` | `#FF63AE` | Voters |
+| `orange` | `#FF8F3F` | Presiding officers |
+| `thumb` | `#A394FF` | Collation officers and the signing gesture |
+
+- Green, amber and red stay **reserved for status**. Decoration and identity use the spectrum only.
+- Each role has its own colour (`lib/roles.ts`); each area council has its own colour on the map and in the council list.
+- The multicolour tally mark is the logo; the rainbow hairline and gradient headline are brand-only and never carry meaning.
+
 ## 2. Type
 - **Bricolage Grotesque** for headlines and figures.
 - **Noto Sans** for body text. It covers the Hausa, Yorùbá and Igbo letters.
