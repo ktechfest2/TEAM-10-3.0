@@ -12,16 +12,16 @@ export const dynamic = "force-dynamic";
 const n = (v: number) => v.toLocaleString("en-US");
 
 const AUDIENCES = [
-  { tone: "text-blue border-t-blue bg-blue-wash", who: "Party agents and observers", what:"Compare the figures with the sheet on the wall, sign with your own key, with or without a network. Your signed copy proves what you saw." },
+  { tone: "text-blue border-t-blue bg-blue-wash", who: "Party agents and observers", what:"Compare the figures with the sheet on the wall, sign on your own phone, with or without a network. Your signed copy proves what you saw." },
   { tone: "text-orange border-t-orange bg-orange-wash", who: "Presiding officers", what:"Photograph the result sheet. Tally reads the handwriting, you confirm each figure beside the crop it came from, and the arithmetic is checked before you sign." },
   { tone: "text-pink border-t-pink bg-pink-wash", who: "Voters, journalists and courts", what:"Find any polling unit and see who signed its result, and whether the same numbers reached the ward, the area council and the state." },
 ];
 
 const STEPS = [
-  { c: "bg-blue-wash text-blue", t: "Signed at the unit", d:"The officer records the EC8A and signs it with a key held on their own phone." },
+  { c: "bg-blue-wash text-blue", t: "Signed at the unit", d:"The officer records the EC8A and signs it on their own phone, with a signature only they can make." },
   { c: "bg-thumb-wash text-thumb", t: "Sealed by rivals", d:"Agents of rival parties check the sheet and sign the same figures. Two parties seal it." },
   { c: "bg-pink-wash text-pink", t: "Collation is checked", d:"Every figure read out at ward, area council and state level is compared with what was sealed." },
-  { c: "bg-orange-wash text-orange", t: "Open to everyone", d:"Every entry is hash-chained and anchored to Bitcoin. Anyone can re-check it." },
+  { c: "bg-orange-wash text-orange", t: "Open to everyone", d:"Every record is locked in order and stamped on Bitcoin. Anyone can check that nothing was changed." },
 ];
 
 export default async function Home() {
@@ -39,7 +39,7 @@ export default async function Home() {
         <nav className="flex items-center gap-5 text-sm font-bold">
           <Link href="/mission" className="hidden sm:inline">Mission control</Link>
           <Link href="/check" className="hidden sm:inline">Check a message</Link>
-          <Link href="/verify" className="hidden sm:inline">Verify</Link>
+          <Link href="/verify" className="hidden sm:inline">Check records</Link>
           <Link href="/app" className="rounded-full bg-fg px-4 py-2 text-bg">Sign in</Link>
         </nav>
       </header>
@@ -110,18 +110,18 @@ export default async function Home() {
         <Card className="flex flex-col justify-between gap-4">
           <div>
             <Eyebrow>Open to audit</Eyebrow>
-            <p className="mt-2 text-[15px] leading-relaxed text-muted">The whole ledger is re-verified on request: every signature, every hash link, and the Bitcoin anchors.</p>
+            <p className="mt-2 text-[15px] leading-relaxed text-muted">Every signature and every record is re-checked each time you ask, along with the Bitcoin stamps.</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            {ledger ? <Chip tone={ledger.intact ? "sealed" : "alarm"}>{ledger.intact ? "Ledger verified" : "Integrity problem"} · {n(ledger.entries)} entries</Chip> : <Chip>Ledger unavailable</Chip>}
-            <Link href="/verify" className="text-sm font-bold text-thumb">Verify it yourself ›</Link>
+            {ledger ? (ledger.entries === 0 ? <Chip>No results signed yet</Chip> : <Chip tone={ledger.intact ? "sealed" : "alarm"}>{ledger.intact ? "All records check out" : "A record was changed"} · {n(ledger.entries)} signed</Chip>) : <Chip>Check unavailable</Chip>}
+            <Link href="/verify" className="text-sm font-bold text-thumb">Check it yourself ›</Link>
           </div>
         </Card>
       </section>
 
       <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-line py-6 text-sm text-muted">
         <span><b className="font-display text-fg">Tally</b> · works alongside the electoral commission&apos;s process.</span>
-        <span className="flex gap-5"><Link href="/mission">Mission control</Link><Link href="/check">Check a message</Link><Link href="/verify">Verify the ledger</Link><Link href="/app">Sign in</Link></span>
+        <span className="flex gap-5"><Link href="/mission">Mission control</Link><Link href="/check">Check a message</Link><Link href="/verify">Check the records</Link><Link href="/app">Sign in</Link></span>
       </footer>
     </div>
     </div>
