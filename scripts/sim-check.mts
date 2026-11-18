@@ -57,6 +57,15 @@ assert(snap.totals.tamper === 1, "exactly one tampering alert is raised");
 assert(snap.cells.includes(3), "the altered unit turns red on the map");
 assert(snap.alerts.some((a: any) => a.kind === "red"), "the alert feed names the tampering");
 
+// A forwarded message is judged by the ledger, not by the reader: the altered ward is confirmed, the honest one is not.
+const claim = "They changed the figures at the ward collation";
+const rumourTamper = await post("/api/rumour", { text: claim, placeCode: bad.json.wardCode });
+assert(rumourTamper.json.verdict?.verdict === "confirmed", "a rumour about the altered ward is confirmed from the ledger");
+const rumourHonest = await post("/api/rumour", { text: claim, placeCode: honest.json.wardCode });
+assert(rumourHonest.json.verdict?.verdict === "false", "the same rumour about the honest ward is called false");
+const rumourNothing = await post("/api/rumour", { text: "Thugs are attacking voters at the school gate!!", placeCode: bad.json.wardCode });
+assert(rumourNothing.json.verdict?.verdict === "unverified", "a claim the ledger cannot settle stays unverified");
+
 const audit = await get("/api/verify");
 assert(audit.intact === true, `ledger intact after the simulation (${audit.entries} entries)`);
 
