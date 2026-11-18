@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens: palette B "True Black" (docs/hackathon/ux/gate-3-decisions.md).
+ * The whole product is dark. Elevation comes from lighter surfaces plus a 1px line, not shadows.
+ */
+:root {
+  color-scheme: dark;
+  --bg: #000000;
+  --surface: #0e0f11;
+  --raised: #17191c;
+  --line: #26292e;
+  --fg: #e9eaec;
+  --muted: #9a9ea6;
+  --sealed: #3ddc97;
+  --amber: #ffb93b;
+  --alarm: #ff6b6b;
+  --thumb: #a394ff;
+  --sealed-wash: rgb(61 220 151 / 0.14);
+  --amber-wash: rgb(255 185 59 / 0.14);
+  --alarm-wash: rgb(255 107 107 / 0.14);
+  --thumb-wash: rgb(163 148 255 / 0.16);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-line: var(--line);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-sealed: var(--sealed);
+  --color-amber: var(--amber);
+  --color-alarm: var(--alarm);
+  --color-thumb: var(--thumb);
+  --color-sealed-wash: var(--sealed-wash);
+  --color-amber-wash: var(--amber-wash);
+  --color-alarm-wash: var(--alarm-wash);
+  --color-thumb-wash: var(--thumb-wash);
+
+  /* Legacy names from the first UI. Removed as each screen is rebuilt. */
+  --color-paper: var(--bg);
+  --color-card: var(--surface);
+  --color-ink: var(--fg);
+  --color-witnessed: var(--amber);
+  --color-witnessed-wash: var(--amber-wash);
+  --color-disputed: var(--alarm);
+  --color-disputed-wash: var(--alarm-wash);
+  --color-pending: var(--muted);
+  --color-pending-wash: var(--raised);
+  --color-accent: var(--thumb);
+
+  --font-sans: var(--font-noto), system-ui, sans-serif;
+  --font-display: var(--font-bricolage), var(--font-noto), system-ui, sans-serif;
+  --font-mono: var(--font-plex), ui-monospace, monospace;
+}
+
+html {
+  background: var(--bg);
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Small text on pure black needs weight to stay crisp. */
+p, li, label, td, th, small { font-weight: 500; }
+
+.hash {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: -0.01em;
+  word-break: break-all;
+}
+
+@keyframes tally-ping {
+  0% { transform: scale(0.4); opacity: 0.9; }
+  100% { transform: scale(3.2); opacity: 0; }
+}
+.tally-ping {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: tally-ping 1.8s ease-out infinite;
+}
+
+:focus-visible {
+  outline: 2px solid var(--thumb);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
