@@ -38,7 +38,7 @@ export const cellCount = geometry.cells.length;
 /** 0 no result, 1 witnessed, 2 sealed, 3 tampering or dispute */
 export type CellStatus = 0 | 1 | 2 | 3;
 
-export type MissionAlert = { kind: "red" | "amber" | "green" | "grey"; k: string; title: string; body: string; at: string };
+export type MissionAlert = { kind: "red" | "amber" | "green" | "grey"; k: string; title: string; body: string; at: string; href?: string };
 
 export type Mission = {
   at: string;
@@ -95,9 +95,9 @@ export async function missionSnapshot(): Promise<Mission> {
       const bad = check.rows.find((r) => r.status === "mismatch");
       check.rows.filter((r) => r.status === "mismatch").forEach((r) => tamperCodes.add(r.code));
       const d = bad?.divergences[0];
-      alerts.push({ kind: "red", k: "TAMPERING SUSPECTED", title: `${place.name} ward collation`, body: bad && d ? `${bad.name}: ${d.field} announced ${d.announced.toLocaleString("en-US")}, sealed by rival agents ${d.computed.toLocaleString("en-US")}.` : "Announced totals do not match the sealed results.", at: check.occurredAt });
+      alerts.push({ kind: "red", k: "TAMPERING SUSPECTED", title: `${place.name} ward collation`, body: bad && d ? `${bad.name}: ${d.field} announced ${d.announced.toLocaleString("en-US")}, sealed by rival agents ${d.computed.toLocaleString("en-US")}.` : "Announced totals do not match the sealed results.", at: check.occurredAt, href: `/p/${place.code}` });
     } else {
-      alerts.push({ kind: "green", k: "COLLATION MATCHES", title: `${place.name} ward collation`, body: `${check.rows.length} units read out; every one equals its sealed result.`, at: check.occurredAt });
+      alerts.push({ kind: "green", k: "COLLATION MATCHES", title: `${place.name} ward collation`, body: `${check.rows.length} units read out; every one equals its sealed result.`, at: check.occurredAt, href: `/p/${place.code}` });
     }
   }
 
@@ -123,6 +123,7 @@ export async function missionSnapshot(): Promise<Mission> {
       title: `Unit ${place.name}`,
       body: s === "sealed" ? `${joinList(parties)} agents signed identical figures.` : s === "witnessed" ? `${parties[0] ?? "One"} agent signed. Waiting for a rival party.` : s === "disputed" ? "Witnesses signed different figures. Every version is kept." : "No agent has signed yet.",
       at: iso(r.occurred_at),
+      href: `/p/${place.code}`,
     });
   }
   const uploadFailures = await getUploadFailures(national, 1000);
@@ -132,7 +133,7 @@ export async function missionSnapshot(): Promise<Mission> {
     if (!place) continue;
     const u = uploadFailures.units.find((x) => x.code === f.place_code);
     const body = !u ? "The officer signed a record of the failed upload attempt." : u.level === "certified" ? `Certified: ${joinList(u.witnesses)} saw the upload fail.` : u.level === "witnessed" ? `Co-signed by ${joinList(u.witnesses)}. One more independent witness certifies it.` : "Reported by the officer only. No independent witness has signed it.";
-    alerts.push({ kind: "amber", k: u?.level === "certified" ? "UPLOAD FAILURE CERTIFIED" : "IREV UPLOAD FAILED", title: `Unit ${place.name}`, body, at: iso(f.occurred_at) });
+    alerts.push({ kind: "amber", k: u?.level === "certified" ? "UPLOAD FAILURE CERTIFIED" : "IREV UPLOAD FAILED", title: `Unit ${place.name}`, body, at: iso(f.occurred_at), href: `/p/${place.code}` });
   }
   // The anomaly agent: statistical flags on live results, for review. One summary alert, never a list of accusations.
   const flags = await flagsForResults(results);
@@ -141,7 +142,7 @@ export async function missionSnapshot(): Promise<Mission> {
     const top = flags[0]!;
     const topPlace = await getPlace(top.code);
     const latest = flaggedCodes.map((c) => results.get(c)?.best?.occurredAt ?? "").sort().at(-1) ?? new Date().toISOString();
-    alerts.push({ kind: "amber", k: "STATISTICAL FLAGS", title: `${flaggedCodes.length.toLocaleString("en-US")} unit${flaggedCodes.length === 1 ? "" : "s"} flagged for review`, body: `${topPlace?.name ?? top.code}: ${top.title.toLowerCase()}. ${top.detail} A flag is not an accusation.`, at: latest });
+    alerts.push({ kind: "amber", k: "STATISTICAL FLAGS", title: `${flaggedCodes.length.toLocaleString("en-US")} unit${flaggedCodes.length === 1 ? "" : "s"} flagged for review`, body: `${topPlace?.name ?? top.code}: ${top.title.toLowerCase()}. ${top.detail} A flag is not an accusation.`, at: latest, href: `/p/${top.code}` });
   }
   const [anchor] = await sql<{ merkle_root: string; from_seq: number; to_seq: number; status: string; created_at: Date }[]>`select merkle_root, from_seq, to_seq, status, created_at from anchors order by created_at desc limit 1`;
   if (anchor) alerts.push({ kind: "grey", k: anchor.status === "confirmed" ? "ANCHORED ON BITCOIN" : "SUBMITTED TO BITCOIN", title: `Entries ${anchor.from_seq.toLocaleString("en-US")} to ${anchor.to_seq.toLocaleString("en-US")}`, body: `root ${anchor.merkle_root.slice(0, 10)}…${anchor.merkle_root.slice(-6)}`, at: iso(anchor.created_at) });

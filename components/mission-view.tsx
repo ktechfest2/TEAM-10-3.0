@@ -95,13 +95,21 @@ export function MissionView() {
           <div className="space-y-2.5">
             <Eyebrow>Alerts · newest first</Eyebrow>
             {data && data.alerts.length === 0 && <Card><p className="text-sm text-muted">No alerts yet. They appear as results are signed and collated.</p></Card>}
-            {data?.alerts.map((a, i) => (
-              <div key={`${a.at}-${i}`} className={`rounded-2xl border px-4 py-3 ${KIND[a.kind]}`}>
-                <div className={`text-[11px] font-bold tracking-widest ${KIND_TEXT[a.kind]}`}>{a.k} · {new Date(a.at).toLocaleTimeString()}</div>
-                <div className="mt-1 font-bold">{a.title}</div>
-                <div className="mt-0.5 text-sm text-muted">{a.body}</div>
-              </div>
-            ))}
+            {data?.alerts.map((a, i) => {
+              const inner = (
+                <>
+                  <div className={`text-[11px] font-bold tracking-widest ${KIND_TEXT[a.kind]}`}>{a.k} · {new Date(a.at).toLocaleTimeString()}</div>
+                  <div className="mt-1 font-bold">{a.title}</div>
+                  <div className="mt-0.5 text-sm text-muted">{a.body}</div>
+                  {a.href && <div className="mt-1.5 text-xs font-bold text-blue">See the proof ›</div>}
+                </>
+              );
+              return a.href ? (
+                <Link key={`${a.at}-${i}`} href={a.href} className={`block rounded-2xl border px-4 py-3 hover:brightness-125 ${KIND[a.kind]}`}>{inner}</Link>
+              ) : (
+                <div key={`${a.at}-${i}`} className={`rounded-2xl border px-4 py-3 ${KIND[a.kind]}`}>{inner}</div>
+              );
+            })}
           </div>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { fieldKey, normaliseBox, type Box } from "@/lib/core/crop";
 import { checkResultArithmetic } from "@/lib/core/results";
 import { badRequest } from "@/lib/server/http";
+import { rateLimited } from "@/lib/server/ratelimit";
 
 export const maxDuration = 60;
 
@@ -30,6 +31,7 @@ const extraction = z.object({
  * until a human has checked every figure against the paper.
  */
 export async function POST(request: Request) {
+  if (rateLimited(request, "ec8a", 6)) return badRequest("Too many sheets in a minute. Wait a moment, or enter the figures by hand.", 429);
   const type = request.headers.get("content-type")?.split(";")[0] ?? "";
   if (!ALLOWED.has(type)) return badRequest("Upload a JPEG, PNG or WebP image.");
   const bytes = new Uint8Array(await request.arrayBuffer());
