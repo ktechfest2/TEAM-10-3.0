@@ -14,7 +14,7 @@ function assert(cond: unknown, msg: string): asserts cond {
 }
 
 async function post(path: string, body: unknown = {}) {
-  const res = await fetch(`${BASE}${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const res = await fetch(`${BASE}${path}`, { method: "POST", headers: { "Content-Type": "application/json", "x-ops-code": process.env.OPS_CODE ?? "ops-dev" }, body: JSON.stringify(body) });
   return { status: res.status, json: (await res.json()) as Record<string, any> };
 }
 const get = async (path: string) => (await fetch(`${BASE}${path}`)).json() as Promise<Record<string, any>>;
@@ -24,14 +24,16 @@ const fresh = async () => {
   return get("/api/mission");
 };
 
-assert((await post("/api/demo/reset")).status === 200, "reset clears the ledger");
+const denied = await fetch(`${BASE}/api/ops/reset`, { method: "POST" });
+assert(denied.status === 403, "operator tools refuse requests without the operator code");
+assert((await post("/api/ops/reset")).status === 200, "reset clears the ledger");
 const empty = await get("/api/mission");
 assert(empty.totals.reported === 0 && empty.totals.sealed === 0, "an empty ledger shows zero results, not placeholders");
 assert(empty.cells.every((c: number) => c === 0), "every map cell starts as 'no result'");
 
 let remaining = Infinity;
 for (let i = 0; i < 3; i++) {
-  const r = await post("/api/demo/step", { count: 60 });
+  const r = await post("/api/ops/step", { count: 60 });
   assert(r.status === 200 && r.json.processed > 0, `batch ${i + 1} signed ${r.json.processed} units through the real ledger`);
   remaining = r.json.remaining;
 }
@@ -43,12 +45,12 @@ assert(mid.totals.sealed > 0 && mid.cells.includes(2), "sealed units appear on t
 assert(mid.simulation.simulated === mid.totals.reported, "every result is labelled as simulated by DEMO actors");
 assert(mid.councils.reduce((a: number, c: any) => a + c.sealed, 0) === mid.totals.sealed, "area-council counts add up to the total");
 
-const honest = await post("/api/demo/collate", { mode: "honest" });
+const honest = await post("/api/ops/collate", { mode: "honest" });
 assert(honest.status === 200, `an honest ward collation was entered (${honest.json.ward})`);
 let snap = await fresh();
 assert(snap.totals.tamper === 0, "an honest collation raises no tampering alert");
 
-const bad = await post("/api/demo/collate", { mode: "tamper" });
+const bad = await post("/api/ops/collate", { mode: "tamper" });
 assert(bad.status === 200, `an altered ward collation was entered (${bad.json.ward})`);
 snap = await fresh();
 assert(snap.totals.tamper === 1, "exactly one tampering alert is raised");
@@ -58,5 +60,5 @@ assert(snap.alerts.some((a: any) => a.kind === "red"), "the alert feed names the
 const audit = await get("/api/verify");
 assert(audit.intact === true, `ledger intact after the simulation (${audit.entries} entries)`);
 
-assert((await post("/api/demo/reset")).status === 200, "reset returns the demo to a clean start");
+assert((await post("/api/ops/reset")).status === 200, "reset returns the ledger to a clean start");
 console.log("\nSimulation check passed.");

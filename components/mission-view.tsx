@@ -1,36 +1,26 @@
 "use client";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Mission } from "@/lib/server/mission";
-import { Button, Card, Chip, Eyebrow } from "@/components/ui";
+import { Card, Chip, Eyebrow } from "@/components/ui";
 import { TerritoryMap, type Geometry } from "@/components/territory-map";
 
-type Data = Mission & { demoEnabled: boolean };
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const n = (v: number) => v.toLocaleString("en-US");
 
-const KIND: Record<string, string> = {
-  red: "border-alarm bg-alarm-wash",
-  green: "border-line bg-surface",
-  amber: "border-line bg-surface",
-  grey: "border-line bg-surface",
-};
+const KIND: Record<string, string> = { red: "border-alarm bg-alarm-wash", green: "border-line bg-surface", amber: "border-line bg-surface", grey: "border-line bg-surface" };
 const KIND_TEXT: Record<string, string> = { red: "text-alarm", green: "text-sealed", amber: "text-amber", grey: "text-muted" };
 
+/** Live, read-only view of the election from the ledger. Everything here is computed from signed results. */
 export function MissionView() {
   const [geo, setGeo] = useState<Geometry | null>(null);
-  const [data, setData] = useState<Data | null>(null);
+  const [data, setData] = useState<Mission | null>(null);
   const [failed, setFailed] = useState(false);
-  const [running, setRunning] = useState(false);
-  const [message, setMessage] = useState("");
-  const [confirmReset, setConfirmReset] = useState(false);
-  const loop = useRef(0);
 
   const refresh = useCallback(async () => {
     try {
       const res = await fetch("/api/mission", { cache: "no-store" });
       if (!res.ok) throw new Error("bad status");
-      setData((await res.json()) as Data);
+      setData((await res.json()) as Mission);
       setFailed(false);
     } catch {
       setFailed(true);
@@ -41,69 +31,11 @@ export function MissionView() {
     void fetch("/api/map").then((r) => r.json()).then(setGeo).catch(() => setFailed(true));
     const first = setTimeout(() => void refresh(), 0);
     const t = setInterval(() => void refresh(), 5000);
-    const stop = loop;
     return () => {
       clearTimeout(first);
       clearInterval(t);
-      stop.current++;
     };
   }, [refresh]);
-
-  async function post(path: string, body?: unknown) {
-    const res = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body ?? {}) });
-    const json = (await res.json().catch(() => ({}))) as Record<string, unknown> & { error?: string };
-    if (!res.ok) throw new Error(json.error ?? "Request failed");
-    return json;
-  }
-
-  async function run() {
-    if (running) return;
-    const token = ++loop.current;
-    setRunning(true);
-    setMessage("");
-    try {
-      while (loop.current === token) {
-        const d = (await post("/api/demo/step", { count: 40 })) as { remaining: number };
-        await refresh();
-        if (d.remaining === 0) {
-          setMessage("Every polling unit has reported.");
-          break;
-        }
-        await sleep(500);
-      }
-    } catch (e) {
-      setMessage(e instanceof Error ? e.message : "The simulation stopped.");
-    }
-    setRunning(false);
-  }
-
-  function pause() {
-    loop.current++;
-    setRunning(false);
-  }
-
-  async function collate(mode: "honest" | "tamper") {
-    setMessage("");
-    try {
-      const r = (await post("/api/demo/collate", { mode })) as { ward: string; rows: number };
-      setMessage(mode === "tamper" ? `${r.ward} ward collation entered with one altered row.` : `${r.ward} ward collation entered, read out honestly.`);
-      await refresh();
-    } catch (e) {
-      setMessage(e instanceof Error ? e.message : "Collation failed.");
-    }
-  }
-
-  async function reset() {
-    pause();
-    setConfirmReset(false);
-    try {
-      await post("/api/demo/reset");
-      setMessage("The demo ledger was cleared.");
-      await refresh();
-    } catch (e) {
-      setMessage(e instanceof Error ? e.message : "Reset failed.");
-    }
-  }
 
   const t = data?.totals;
   const pct = (v: number) => (t && t.units ? (v / t.units) * 100 : 0);
@@ -118,7 +50,7 @@ export function MissionView() {
           <span className="text-sm font-semibold text-muted">Mission control · Federal Capital Territory</span>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {simulated && <Chip tone="amber">SIMULATION · demo actors signing real 2023 figures</Chip>}
+          {simulated && <Chip tone="amber">Simulated data · signed by labelled test actors</Chip>}
           <span className="inline-flex h-7 items-center gap-2 rounded-full bg-alarm-wash px-3 text-xs font-bold tracking-wider text-alarm"><i className={`h-2 w-2 rounded-full bg-alarm ${failed ? "" : "animate-pulse"}`} />{failed ? "OFFLINE" : "LIVE"}</span>
           <Link href="/verify" className="text-sm font-bold text-thumb">Verify the ledger ›</Link>
         </div>
@@ -156,26 +88,6 @@ export function MissionView() {
           </div>
           <p className="text-xs text-muted">{t ? `${n(t.reported)} of ${n(t.units)} polling units have a recorded result.` : "Loading…"}</p>
 
-          {data?.demoEnabled && (
-            <Card className="space-y-3">
-              <Eyebrow>Election-night simulation</Eyebrow>
-              <p className="text-sm text-muted">Labelled demo actors sign the real 2023 figures through the same ledger a phone uses. Every count above is live from the database.</p>
-              <div className="grid grid-cols-2 gap-2">
-                {running ? <Button variant="secondary" onClick={pause}>Pause</Button> : <Button onClick={() => void run()} disabled={data.simulation.remaining === 0}>{data.simulation.simulated > 0 ? "Continue the night" : "Start the night"}</Button>}
-                <Button variant="secondary" onClick={() => void collate("honest")}>Collate a ward</Button>
-                <Button variant="danger" onClick={() => void collate("tamper")} className="col-span-2">Collate a ward with an altered number</Button>
-              </div>
-              {data.simulation.simulated > 0 && (
-                confirmReset ? (
-                  <div className="flex items-center gap-2 text-sm"><span className="flex-1 text-muted">Clear every signed result?</span><Button variant="danger" onClick={() => void reset()} className="min-h-10">Yes, clear</Button><Button variant="secondary" onClick={() => setConfirmReset(false)} className="min-h-10">Cancel</Button></div>
-                ) : (
-                  <button type="button" onClick={() => setConfirmReset(true)} className="text-xs text-muted underline">Reset the demo</button>
-                )
-              )}
-              {message && <p className="text-sm text-fg" role="status">{message}</p>}
-            </Card>
-          )}
-
           <div className="space-y-2.5">
             <Eyebrow>Alerts · newest first</Eyebrow>
             {data && data.alerts.length === 0 && <Card><p className="text-sm text-muted">No alerts yet. They appear as results are signed and collated.</p></Card>}
@@ -187,7 +99,6 @@ export function MissionView() {
               </div>
             ))}
           </div>
-
         </div>
       </div>
       <p className="mt-8 max-w-prose text-xs text-muted">Map: real polling-site locations on the FCT boundary (GRID3 via geoBoundaries, CC BY 4.0). Results appear only when signed through the ledger. {failed && "The connection to the server was lost; the numbers shown may be out of date."}</p>
