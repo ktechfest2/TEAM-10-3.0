@@ -5,7 +5,7 @@ import type { Lang } from "@/lib/core/i18n";
 import { extractByRules, judgeClaim, KNOWN_PARTIES, type Claim, type Evidence, type Verdict } from "@/lib/core/rumour";
 import { getBreadcrumb, getCollationCheck, getPlace, getUnitResults, searchPlaces, type Place } from "./views";
 
-const MODEL = process.env.TALLY_MODEL ?? "anthropic/claude-sonnet-5.5";
+const MODEL = process.env.TALLY_MODEL ?? "google/gemini-2.5-flash-lite";
 const UNIT_CODE = /^\d{2}-\d{2}-\d{2}-\d{3}$/;
 
 const schema = z.object({
@@ -45,13 +45,17 @@ export type RumourResult =
   | { status: "needs_place"; claim: Claim; candidates: { code: string; name: string; level: string; path: string }[] }
   | { status: "checked"; claim: Claim; place: Pick<Place, "code" | "name" | "level"> | null; verdict: Verdict };
 
+/** "Pai ward" or "Kuje area council" should search for "Pai" / "Kuje": place names in our data do not carry the level word. */
+const stripLevelWords = (name: string) => name.replace(/\b(ward|lga|l\.g\.a|area council|local government( area)?|polling unit|council|collation|centre|center)\b/gi, " ").replace(/\s+/g, " ").trim();
+
 async function resolvePlace(claim: Claim, picked?: string) {
   const direct = picked ?? claim.unitCode;
   if (direct) return { place: await getPlace(direct) };
-  if (!claim.placeName || claim.placeName.trim().length < 3) return { place: null };
-  const hits = await searchPlaces(claim.placeName.trim(), 6);
+  const name = claim.placeName ? stripLevelWords(claim.placeName) : "";
+  if (name.length < 3) return { place: null };
+  const hits = await searchPlaces(name, 6);
   if (hits.length === 1) return { place: hits[0] };
-  const exact = hits.filter((h) => h.name.toLowerCase() === claim.placeName!.trim().toLowerCase());
+  const exact = hits.filter((h) => h.name.toLowerCase() === name.toLowerCase());
   if (exact.length === 1) return { place: exact[0] };
   return { place: null, candidates: hits };
 }

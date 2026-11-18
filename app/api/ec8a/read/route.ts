@@ -6,7 +6,9 @@ import { badRequest } from "@/lib/server/http";
 
 export const maxDuration = 60;
 
-const MODEL = process.env.TALLY_MODEL ?? "anthropic/claude-sonnet-5.5";
+// Default: a model the AI Gateway free tier allows. Measured on the sample sheet and tilted, blurred, dim and phone-compressed
+// copies of it: every figure right in every run, crops on the correct row, about 3 s. Override with TALLY_MODEL.
+const MODEL = process.env.TALLY_MODEL ?? "google/gemini-2.5-flash-lite";
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 const extraction = z.object({
@@ -44,6 +46,9 @@ Rules:
 - Never compute or "fix" totals. totalValid is the figure written on the sheet.
 - Include every party row that has a figure written (including 0).
 - For every figure you transcribe, also give its box in "boxes", tight around the handwritten number itself, so a person can compare it with your reading. Omit a box rather than guess.
+- Box coordinates are fractions of the WHOLE image: x and w of its width, y and h of its height, origin at the top-left corner (a point at the exact centre of the image is x=0.5, y=0.5).
+- Each box covers ONLY the handwritten digits of that figure, not the printed label and not the cell border. The row a figure is written in must match its label: do not shift boxes up or down.
+- Look at where the printed label of the row ends and the handwriting starts to place x; keep h close to the height of the digits.
 - If the image is not a result sheet, set isResultSheet to false and leave figures empty/null.`,
       messages: [{ role: "user", content: [{ type: "image", image: bytes, mediaType: type }, { type: "text", text: "Transcribe this result sheet." }] }],
     });
