@@ -1,0 +1,19 @@
+# Decision Log
+
+| # | When (WAT) | Decision | Rationale | Consequences |
+|---|---|---|---|---|
+| 1 | 18 Nov | No product code before the challenge start | Original-work rule | — |
+| 2 | 18 Nov | Stack chosen only after the problem was known | Evidence-based choice | — |
+| 3 | 18 Nov 12:15 | **Product: Tally**, an independent trust layer running alongside INEC (not a replacement) | Usable for the Jan 2027 election without INEC adoption; covers the whole chain; the user chose a simple name | Never touches identity or ballots; never declares a winner |
+| 4 | 18 Nov 12:15 | **Core model: Event + Witness + one Trust engine + Views** | Simplifies every module into one primitive; faster build; one-sentence pitch | All features are thin layers on the ledger |
+| 5 | 18 Nov 12:15 | Stack: Next.js 16, TS strict, Postgres/Drizzle, noble crypto, AI SDK + Gateway, Vercel | One deployable, the user's Stage 1 familiarity, the live link requirement | See architecture.md |
+| 6 | 18 Nov 12:15 | Anchoring via OpenTimestamps (Bitcoin), every 15 min, via GitHub Actions | Free, no wallet, public chain; Vercel Hobby cron is daily only | Bitcoin confirmation takes hours; show "pending → confirmed" honestly |
+| 7 | 18 Nov 12:15 | Trust engine reuses the **ideas** from the user's Stage 1 RoadCheck; code is rewritten from scratch | Rule 1.1 (new work only) | Credit the approach in the write-up |
+| 8 | 18 Nov 12:15 | Rumour intake = forwarding to an official WhatsApp number + in-app paste. **No reading of private chats.** | WhatsApp is end-to-end encrypted; the forwarded flag gives hearsay depth | Needs a Meta test number |
+| 9 | 18 Nov 12:15 | No electronic ballot casting; no linking of voter to vote | Secret ballot (law); linking would enable vote-buying verification | Future: research into end-to-end verifiable voting |
+| 10 | 18 Nov 12:15 | Team = the user + Claude; the user sleeps Thu 02:00–08:00 | Sustainable pace | Plan built around it |
+| 11 | 18 Nov 13:05 | **Process correction:** phase gates with explicit user approval (PRD → architecture → UX → setup → build). The UI built before UX approval is discarded; the core engine is kept pending Gate 2 | The user's process was skipped; the UI did not meet the bar | No UI work until Gate 3 is approved |
+| 12 | 18 Nov 13:20 | **Gate 1 approved:** PRD v2, MUST/SHOULD/COULD cut, success metrics. The user will create the WhatsApp test number and recruit 3–5 testers | — | Scope is fixed; SHOULD items only after MUST journeys pass |
+| 13 | 18 Nov 13:35 | **Gate 2 approved:** architecture A1–A11 as in architecture.md. The existing core, ledger API and anchoring are kept; anchoring runs after syncs (supersedes the GitHub Actions plan in decision 6) | — | Next: Gate 3 UX design |
+| 14 | 18 Nov | **Gate 3 (UX), user decisions:** palette A "Slate Night" (dark everywhere), later changed to B (see decision 15); demo data may be simulated as long as the app is real, generated through the real code path by DEMO actors and labelled "Simulation"; no hardcoded numbers in components. Voter day-timeline assumed. See ux/gate-3-decisions.md | The user rejected the light UI and a prototype-only approach | Real signing flow feeds all counts; build a labelled simulation endpoint |
+| 15 | 18 Nov | **Palette changed to B "True Black"** (user choice, replaces A). Cards need 1px borders; small text weight 500+; mission control on pure black. Trade-off accepted: possible haze on pure black, better OLED battery on mid-range Android | The user preferred the sharper, higher-contrast look | Design tokens in ux/gate-3-decisions.md use B |
