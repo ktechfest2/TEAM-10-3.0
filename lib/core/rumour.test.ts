@@ -68,3 +68,15 @@ describe("other claims", () => {
     expect(v.reasons[0]).toMatch(/observer/i);
   });
 });
+
+describe("languages", () => {
+  it("gives the same verdict in every language, only the words change", () => {
+    for (const lang of ["en", "pcm", "ha", "yo", "ig"] as const) {
+      const v = judgeClaim(figs(202), sealed(15), lang);
+      expect(v.verdict).toBe("false");
+      expect(v.reasons[0]).toContain("15");
+      expect(v.headline).toContain("202");
+    }
+    expect(judgeClaim(figs(15), sealed(15), "ha").headline).toBe("Gaskiya ne: APC 15");
+  });
+});

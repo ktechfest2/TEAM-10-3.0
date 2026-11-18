@@ -1,3 +1,4 @@
+import { t, type Lang, type MessageKey } from "./i18n";
 import { joinList } from "./journey";
 
 /**
@@ -41,38 +42,39 @@ export function extractByRules(text: string): Claim {
   return { kind: "other", unitCode, summary, by: "rules" };
 }
 
-const unverified = (headline: string, ...reasons: string[]): Verdict => ({ verdict: "unverified", headline, reasons });
 const n = (v: number) => v.toLocaleString("en-US");
 
-export function judgeClaim(claim: Claim, ev: Evidence): Verdict {
-  if (claim.kind === "other") {
-    return unverified("Tally cannot check this one", "It does not make a claim about a recorded result or a collation. Claims about violence or vote buying need someone at the scene: an observer can report it in the app.");
-  }
-  if (!ev.place) return unverified("Tell us which place this is about", "Search for the polling unit or ward the message mentions, then check again.");
+export function judgeClaim(claim: Claim, ev: Evidence, lang: Lang = "en"): Verdict {
+  const T = (key: MessageKey, vars?: Record<string, string | number>) => t(lang, key, vars);
+  const mk = (verdict: VerdictKind, h: MessageKey, r: MessageKey, vars: Record<string, string | number> = {}, hVars: Record<string, string | number> = vars): Verdict => ({ verdict, headline: T(h, hVars), reasons: [T(r, vars)] });
+
+  if (claim.kind === "other") return mk("unverified", "r.other.h", "r.other.r");
+  if (!ev.place) return mk("unverified", "r.noplace.h", "r.noplace.r");
+  const place = ev.place.name;
 
   if (claim.kind === "result_figures") {
-    if (ev.place.level !== "pu") return unverified("Pick the polling unit", `The message gives a figure, and figures are signed per polling unit. ${ev.place.name} is not one.`);
-    if (!claim.party || claim.votes === undefined) return unverified("Which figure?", "The message does not say which party's votes it claims.");
+    if (ev.place.level !== "pu") return mk("unverified", "r.notpu.h", "r.notpu.r", { place });
+    if (!claim.party || claim.votes === undefined) return mk("unverified", "r.nofig.h", "r.nofig.r");
     const u = ev.unit;
-    if (!u || u.status === null) return unverified("No signed result yet", `${ev.place.name} has no result on the ledger, so the figure can be neither confirmed nor denied.`);
+    if (!u || u.status === null) return mk("unverified", "r.noresult.h", "r.noresult.r", { place });
     const signed = u.votes?.[claim.party] ?? 0;
-    const who = u.parties?.length ? ` by ${joinList(u.parties)}` : "";
+    const who = u.parties?.length ? T("r.by", { signers: joinList(u.parties, lang) }) : T("r.officerOnly");
+    const vars = { place, party: claim.party, n: n(signed), who };
     if (u.status === "sealed") {
-      return signed === claim.votes
-        ? { verdict: "confirmed", headline: `Confirmed: ${claim.party} ${n(signed)}`, reasons: [`Rival parties signed ${claim.party} ${n(signed)} at ${ev.place.name}${who}.`] }
-        : { verdict: "false", headline: `Not what was sealed: the message says ${n(claim.votes)}`, reasons: [`The result sealed${who} at ${ev.place.name} gives ${claim.party} ${n(signed)}.`] };
+      return signed === claim.votes ? mk("confirmed", "r.fig.true.h", "r.fig.true.r", vars) : mk("false", "r.fig.false.h", "r.fig.false.r", vars, { claimed: n(claim.votes) });
     }
-    if (u.status === "disputed") return unverified("The result is disputed", `Witnesses signed different figures at ${ev.place.name}. No single figure is sealed, so Tally does not call this one.`);
-    return unverified("Not sealed yet", `${ev.place.name} shows ${claim.party} ${n(signed)}, signed${who || " by the officer only"}. A rival party's signature seals it.`);
+    if (u.status === "disputed") return mk("unverified", "r.disputed.h", "r.disputed.r", { place });
+    return mk("unverified", "r.unsealed.h", "r.unsealed.r", vars);
   }
 
   const c = ev.collation;
-  if (!c) return unverified("No collation recorded yet", `Nobody has entered a collation covering ${ev.place.name}, so there is nothing to compare with the sealed polling-unit results.`);
-  const where = `${c.level === "lga" ? "area council" : c.level} collation at ${c.name}`;
-  if (c.unitRow === "mismatch") return { verdict: "confirmed", headline: "Confirmed: the figures were changed", reasons: [`The ${where} announced different figures for ${ev.place.name} than the rival agents sealed. Open the unit to see both.`] };
-  if (c.unitRow === "match") return { verdict: "false", headline: "No: the sealed figures were carried unchanged", reasons: [`The ${where} matches what rival agents sealed at ${ev.place.name}.`] };
-  if (c.unitRow === "unverified") return unverified("Cannot check this unit", `${ev.place.name} has no sealed result, so the ${where} cannot be compared with it.`);
-  if (c.tamperSuspected) return { verdict: "confirmed", headline: "Confirmed: the collation does not match", reasons: [`${n(c.mismatchedUnits)} row${c.mismatchedUnits === 1 ? "" : "s"} in the ${where} were announced with figures that differ from what rival agents sealed.`] };
-  if (c.unverifiedUnits === 0) return { verdict: "false", headline: "No: the collation matches every sealed result", reasons: [`All ${n(c.matchedUnits)} rows in the ${where} equal what rival agents sealed.`] };
-  return unverified("No difference found, but not everything can be checked", `${n(c.matchedUnits)} rows match. ${n(c.unverifiedUnits)} have no sealed result yet, so they cannot be compared.`);
+  if (!c) return mk("unverified", "r.nocol.h", "r.nocol.r", { place });
+  const where = T("r.where", { level: T(c.level === "lga" ? "l.lga" : c.level === "ward" ? "l.ward" : "l.state"), name: c.name });
+  const vars = { place, where };
+  if (c.unitRow === "mismatch") return mk("confirmed", "r.col.changed.h", "r.col.changed.r", vars);
+  if (c.unitRow === "match") return mk("false", "r.col.carried.h", "r.col.carried.r", vars);
+  if (c.unitRow === "unverified") return mk("unverified", "r.col.unitunver.h", "r.col.unitunver.r", vars);
+  if (c.tamperSuspected) return mk("confirmed", "r.col.tamper.h", c.mismatchedUnits === 1 ? "r.col.tamper.one" : "r.col.tamper.many", { n: n(c.mismatchedUnits), where });
+  if (c.unverifiedUnits === 0) return mk("false", "r.col.allmatch.h", "r.col.allmatch.r", { n: n(c.matchedUnits), where });
+  return mk("unverified", "r.col.partial.h", "r.col.partial.r", { n: n(c.matchedUnits), m: n(c.unverifiedUnits) });
 }

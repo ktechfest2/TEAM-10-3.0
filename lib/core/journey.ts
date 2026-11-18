@@ -2,6 +2,8 @@
  * The story of one polling unit's result, from opening to the final collation, in plain steps.
  * Pure: it turns what the ledger knows into what a voter is told.
  */
+import { t, type Lang } from "./i18n";
+
 export type StepState = "done" | "active" | "pending" | "bad" | "warn";
 export type JourneyStep = { key: string; title: string; detail: string; state: StepState; at?: string };
 
@@ -10,32 +12,35 @@ export type JourneyInput = {
   opened?: { at: string; by: string } | null;
   result?: { status: "sealed" | "witnessed" | "unwitnessed" | "disputed"; parties: string[]; at: string; by: string } | null;
   attempts: { outcome: "success" | "failed"; at: string }[];
-  collations: { level: CollationLevel; name: string; status: "match" | "mismatch" | "unverified" | "none"; at?: string; detail?: string }[];
+  collations: { level: CollationLevel; name: string; status: "match" | "mismatch" | "unverified" | "none"; at?: string; detail?: string; diff?: { field: string; announced: number; sealed: number } }[];
 };
 
-export const joinList = (items: string[]) => (items.length < 2 ? (items[0] ?? "") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`);
+export const joinList = (items: string[], lang: Lang = "en") => (items.length < 2 ? (items[0] ?? "") : `${items.slice(0, -1).join(", ")} ${t(lang, "and")} ${items[items.length - 1]}`);
 
-const LEVEL_TITLE: Record<CollationLevel, string> = { ward: "Ward collation", lga: "Area council collation", state: "State collation" };
+const LEVEL_KEY = { ward: "j.ward", lga: "j.lga", state: "j.state" } as const;
+const num = (v: number) => v.toLocaleString("en-US");
 
-export function buildJourney(input: JourneyInput): JourneyStep[] {
+export function buildJourney(input: JourneyInput, lang: Lang = "en"): JourneyStep[] {
   const steps: JourneyStep[] = [];
+  const T = (key: Parameters<typeof t>[1], vars?: Record<string, string | number>) => t(lang, key, vars);
 
   // A unit whose result is already signed but whose opening was never recorded would show a hollow first step
   // above a finished one. The opening is only listed when it was recorded, or while nothing else has happened.
-  if (input.opened) steps.push({ key: "opened", title: "Polling unit opened", detail: `Signed by ${input.opened.by}`, state: "done", at: input.opened.at });
-  else if (!input.result) steps.push({ key: "opened", title: "Polling unit opened", detail: "Not recorded yet", state: "pending" });
+  if (input.opened) steps.push({ key: "opened", title: T("j.opened"), detail: T("j.opened.by", { by: input.opened.by }), state: "done", at: input.opened.at });
+  else if (!input.result) steps.push({ key: "opened", title: T("j.opened"), detail: T("j.opened.none"), state: "pending" });
 
   const r = input.result;
+  const parties = r ? joinList(r.parties, lang) : "";
   steps.push(
     !r
-      ? { key: "result", title: "Result signed at the unit", detail: "Waiting for the count", state: "pending" }
+      ? { key: "result", title: T("j.result"), detail: T("j.result.none"), state: "pending" }
       : r.status === "sealed"
-        ? { key: "result", title: "Result signed at the unit", detail: `Sealed by ${joinList(r.parties)}`, state: "done", at: r.at }
+        ? { key: "result", title: T("j.result"), detail: T("j.result.sealed", { parties }), state: "done", at: r.at }
         : r.status === "witnessed"
-          ? { key: "result", title: "Result signed at the unit", detail: `Signed by ${joinList(r.parties)}. Waiting for a rival party.`, state: "active", at: r.at }
+          ? { key: "result", title: T("j.result"), detail: T("j.result.witnessed", { parties }), state: "active", at: r.at }
           : r.status === "disputed"
-            ? { key: "result", title: "Result signed at the unit", detail: "Witnesses signed different figures. Every version is kept.", state: "bad", at: r.at }
-            : { key: "result", title: "Result signed at the unit", detail: "Recorded by the officer. No agent has signed yet.", state: "active", at: r.at },
+            ? { key: "result", title: T("j.result"), detail: T("j.result.disputed"), state: "bad", at: r.at }
+            : { key: "result", title: T("j.result"), detail: T("j.result.recorded"), state: "active", at: r.at },
   );
 
   const attempts = [...input.attempts].sort((a, b) => a.at.localeCompare(b.at));
@@ -43,23 +48,25 @@ export function buildJourney(input: JourneyInput): JourneyStep[] {
   const failures = attempts.filter((a) => a.outcome === "failed").length;
   steps.push(
     !last
-      ? { key: "upload", title: "Upload to the IReV portal", detail: r ? "No upload attempt recorded" : "Waiting", state: "pending" }
+      ? { key: "upload", title: T("j.upload"), detail: r ? T("j.upload.none") : T("j.upload.waiting"), state: "pending" }
       : last.outcome === "success"
-        ? { key: "upload", title: "Upload to the IReV portal", detail: failures ? `Uploaded after ${failures} failed attempt${failures === 1 ? "" : "s"}` : "Uploaded", state: "done", at: last.at }
-        : { key: "upload", title: "Upload to the IReV portal", detail: "Upload failed. The officer signed a record of the attempt.", state: "warn", at: last.at },
+        ? { key: "upload", title: T("j.upload"), detail: failures ? (failures === 1 ? T("j.upload.after.one") : T("j.upload.after.many", { n: failures })) : T("j.upload.done"), state: "done", at: last.at }
+        : { key: "upload", title: T("j.upload"), detail: T("j.upload.failed"), state: "warn", at: last.at },
   );
 
   for (const level of ["ward", "lga", "state"] as const) {
     const c = input.collations.find((x) => x.level === level);
-    const title = c?.name && level !== "state" ? `${LEVEL_TITLE[level]} · ${c.name}` : LEVEL_TITLE[level];
+    const base = T(LEVEL_KEY[level]);
+    const title = c?.name && level !== "state" ? `${base} · ${c.name}` : base;
+    const mismatch = c?.detail ?? (c?.diff ? T("j.col.diff", { field: c.diff.field, announced: num(c.diff.announced), sealed: num(c.diff.sealed) }) : T("j.col.mismatch"));
     steps.push(
       !c || c.status === "none"
-        ? { key: level, title, detail: "Waiting for collation", state: "pending" }
+        ? { key: level, title, detail: T("j.col.waiting"), state: "pending" }
         : c.status === "match"
-          ? { key: level, title, detail: "Same numbers as signed at the unit", state: "done", at: c.at }
+          ? { key: level, title, detail: T("j.col.match"), state: "done", at: c.at }
           : c.status === "mismatch"
-            ? { key: level, title, detail: c.detail ?? "The announced numbers differ from what was signed at the unit.", state: "bad", at: c.at }
-            : { key: level, title, detail: "Cannot be checked: the unit has no sealed result", state: "pending", at: c.at },
+            ? { key: level, title, detail: mismatch, state: "bad", at: c.at }
+            : { key: level, title, detail: T("j.col.unverifiable"), state: "pending", at: c.at },
     );
   }
   return steps;

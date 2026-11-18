@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildJourney, joinList } from "./journey";
+import { buildJourney, joinList, type JourneyInput } from "./journey";
 
 const base = { attempts: [], collations: [] };
 
@@ -51,5 +51,21 @@ describe("unit journey", () => {
     expect(joinList(["APC"])).toBe("APC");
     expect(joinList(["APC", "PDP"])).toBe("APC and PDP");
     expect(joinList(["APC", "PDP", "LP"])).toBe("APC, PDP and LP");
+  });
+});
+
+describe("languages", () => {
+  const sealed: JourneyInput = { opened: null, result: { status: "sealed", parties: ["APC", "PDP", "LP"], at: "t", by: "x" }, attempts: [], collations: [{ level: "ward", name: "Pai", status: "mismatch", at: "t", diff: { field: "APC", announced: 202, sealed: 102 } }] };
+  it("tells the same story in another language, names unchanged", () => {
+    const ha = buildJourney(sealed, "ha");
+    expect(ha.find((s) => s.key === "result")?.detail).toBe("APC, PDP da LP sun tabbatar da shi");
+    expect(ha.find((s) => s.key === "ward")).toMatchObject({ state: "bad", title: "Tattara sakamakon mazaba · Pai" });
+  });
+  it("builds the mismatch sentence from the figures in every language", () => {
+    for (const lang of ["en", "pcm", "ha", "yo", "ig"] as const) {
+      const d = buildJourney(sealed, lang).find((s) => s.key === "ward")!.detail;
+      expect(d).toContain("202");
+      expect(d).toContain("102");
+    }
   });
 });
