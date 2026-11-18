@@ -31,3 +31,16 @@ describe("simulation planning", () => {
     expect(f.rejected).toBe(0);
   });
 });
+
+describe("simulated upload failures", () => {
+  it("are seen by agents of different parties, in all three degrees", () => {
+    const levels = new Set<number>();
+    for (let i = 0; i < 4000; i++) {
+      const p = planOutcome(`37-01-01-${i}`);
+      if (!p.failedUpload) continue;
+      expect(new Set(p.failureWitnesses).size).toBe(p.failureWitnesses.length);
+      levels.add(p.failureWitnesses.length);
+    }
+    expect([...levels].sort()).toEqual([0, 1, 2]);
+  });
+});

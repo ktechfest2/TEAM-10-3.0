@@ -15,12 +15,14 @@ export function unitRandom(unitCode: string, purpose: string): number {
 export type SimOutcome = "sealed" | "witnessed" | "unwitnessed";
 
 /** About 70% of units end the night sealed, 15% witnessed by one party, 15% not witnessed. */
-export function planOutcome(unitCode: string): { outcome: SimOutcome; signers: string[]; failedUpload: boolean } {
+export function planOutcome(unitCode: string): { outcome: SimOutcome; signers: string[]; failedUpload: boolean; failureWitnesses: string[] } {
   const r = unitRandom(unitCode, "outcome");
   const order = [...SIM_PARTIES].sort((a, b) => unitRandom(unitCode, a) - unitRandom(unitCode, b));
   const outcome: SimOutcome = r < 0.7 ? "sealed" : r < 0.85 ? "witnessed" : "unwitnessed";
   const signers = outcome === "sealed" ? order.slice(0, unitRandom(unitCode, "extra") < 0.3 ? 3 : 2) : outcome === "witnessed" ? order.slice(0, 1) : [];
-  return { outcome, signers, failedUpload: unitRandom(unitCode, "upload") < 0.04 };
+  // Of the failed uploads, about half are seen and signed by agents of two parties, a quarter by one, a quarter only the officer reports.
+  const seen = unitRandom(unitCode, "certify");
+  return { outcome, signers, failedUpload: unitRandom(unitCode, "upload") < 0.04, failureWitnesses: seen < 0.5 ? order.slice(0, 2) : seen < 0.75 ? order.slice(0, 1) : [] };
 }
 
 /**

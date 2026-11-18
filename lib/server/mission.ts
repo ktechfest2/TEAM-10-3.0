@@ -1,7 +1,10 @@
 import "server-only";
 import raw from "@/lib/data/fct-map.json";
 import { sqlClient as sql } from "@/lib/db/client";
+import type { Margin } from "@/lib/core/margin";
 import { flagsForResults } from "./anomaly-live";
+import { getMargin } from "./margin";
+import { getUploadFailures } from "./uploads";
 import { simulationState } from "./simulate";
 import { iso } from "./time";
 import { getCollationCheck, getPlace } from "./views";
@@ -43,6 +46,8 @@ export type Mission = {
   cells: CellStatus[];
   councils: { name: string; units: number; sealed: number }[];
   alerts: MissionAlert[];
+  margin: Margin;
+  uploads: { total: number; certified: number; witnessed: number; claimed: number };
   focus: { cell: number; label: string; status: CellStatus } | null;
   simulation: { simulated: number; remaining: number };
 };
@@ -120,10 +125,14 @@ export async function missionSnapshot(): Promise<Mission> {
       at: iso(r.occurred_at),
     });
   }
-  const failed = await sql<{ place_code: string; occurred_at: Date }[]>`select place_code, occurred_at from events where type = 'transmission.attempted' and payload->>'outcome' = 'failed' order by seq desc limit 2`;
-  for (const f of failed) {
+  const uploadFailures = await getUploadFailures(national, 1000);
+  const failedRecent = await sql<{ place_code: string; occurred_at: Date }[]>`select place_code, occurred_at from events where type = 'transmission.attempted' and payload->>'outcome' = 'failed' order by seq desc limit 2`;
+  for (const f of failedRecent) {
     const place = await getPlace(f.place_code);
-    if (place) alerts.push({ kind: "amber", k: "IREV UPLOAD FAILED", title: `Unit ${place.name}`, body: "The officer signed a record of the failed upload attempt.", at: iso(f.occurred_at) });
+    if (!place) continue;
+    const u = uploadFailures.units.find((x) => x.code === f.place_code);
+    const body = !u ? "The officer signed a record of the failed upload attempt." : u.level === "certified" ? `Certified: ${joinList(u.witnesses)} saw the upload fail.` : u.level === "witnessed" ? `Co-signed by ${joinList(u.witnesses)}. One more independent witness certifies it.` : "Reported by the officer only. No independent witness has signed it.";
+    alerts.push({ kind: "amber", k: u?.level === "certified" ? "UPLOAD FAILURE CERTIFIED" : "IREV UPLOAD FAILED", title: `Unit ${place.name}`, body, at: iso(f.occurred_at) });
   }
   // The anomaly agent: statistical flags on live results, for review. One summary alert, never a list of accusations.
   const flags = await flagsForResults(results);
@@ -148,6 +157,8 @@ export async function missionSnapshot(): Promise<Mission> {
     cells,
     councils: geometry.lgas.map((l, i) => ({ name: l.n, units: lgaUnits.find((x) => Number(x.l) === i + 1)?.n ?? 0, sealed: councilSealed[i] })),
     alerts: alerts.slice(0, 10),
+    margin: await getMargin(national, results),
+    uploads: { total: uploadFailures.total, certified: uploadFailures.certified, witnessed: uploadFailures.witnessed, claimed: uploadFailures.claimed },
     focus: focusCell !== undefined && focusPlace ? { cell: focusCell, label: focusPlace.name, status: cells[focusCell] } : null,
     simulation: await simulationState(),
   };

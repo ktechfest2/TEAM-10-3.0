@@ -67,7 +67,8 @@ export async function stepSimulation(count: number) {
     }
     if (plan.failedUpload) {
       const t = signEvent({ id: randomUUID(), type: "transmission.attempted", placeCode: row.pu_code, payload: { outcome: "failed", detail: "BVAS upload failed (simulated)" }, occurredAt: now, authorKey: a.officer.keys.publicKeyHex }, a.officer.keys.secretKeyHex);
-      await ingest({ event: t }, "simulation");
+      const seen = plan.failureWitnesses.map((p) => cosign(t.contentHash, a.agents[p].keys.secretKeyHex, a.agents[p].keys.publicKeyHex, now));
+      await ingest({ event: t, cosignatures: seen }, "simulation");
     }
   }
   return { processed: rows.length - rejected, rejected, ...(await simulationState()) };
