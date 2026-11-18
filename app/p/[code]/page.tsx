@@ -27,6 +27,7 @@ import {
   getUnitResults,
   type CollationCheck,
   type Place,
+  isSimulated,
   type ResultVersion,
 } from "@/lib/server/views";
 
@@ -84,6 +85,7 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
   const journey = place.level === "pu" ? await getUnitJourney(place, breadcrumb, unit, lang) : [];
   const hero = place.level === "pu" ? headline(unit?.best, lang) : null;
   const [margin, uploads] = place.level === "pu" ? [null, null] : await Promise.all([getMargin(place, results), getUploadFailures(place)]);
+  const simulated = place.level === "pu" ? isSimulated(unit?.best) : [...results.values()].some((r) => isSimulated(r.best));
   const figLabels = { totalValid: t(lang, "fig.totalValid"), rejected: t(lang, "fig.rejected"), accredited: t(lang, "fig.accredited") };
   // Statistical flags compare this unit with the other reported units in its ward.
   const ward = breadcrumb.find((b) => b.level === "ward");
@@ -110,6 +112,10 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
       </p>
 
       {place.level === "pu" && <div className="mt-4"><LanguagePicker lang={lang} label={t(lang, "language")} draft={t(lang, "draft")} /></div>}
+
+      {simulated && (
+        <p role="note" className="mt-4 rounded-xl border border-amber/40 bg-amber-wash px-4 py-3 text-sm text-amber">{t(lang, "sim.note")}</p>
+      )}
 
       <div className="mt-6 space-y-4">
         {place.level === "pu" && hero ? (

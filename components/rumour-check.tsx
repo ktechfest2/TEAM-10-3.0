@@ -5,7 +5,7 @@ import { Button, Card, Eyebrow } from "@/components/ui";
 import { PlaceSearch } from "@/components/app/place-search";
 import { t, type Lang } from "@/lib/core/i18n";
 
-type Verdict = { verdict: "confirmed" | "false" | "unverified"; headline: string; reasons: string[] };
+type Verdict = { verdict: "confirmed" | "false" | "unverified"; headline: string; reasons: string[]; simulated?: boolean };
 type Claim = { summary: string; by: "ai" | "rules" };
 type Candidate = { code: string; name: string; level: string; path: string };
 type Result =
@@ -117,6 +117,7 @@ export function RumourCheck({ initialText = "", lang = "en" }: { initialText?: s
               <li key={r}>{r}</li>
             ))}
           </ul>
+          {result.verdict.simulated && <p role="note" className="mt-3 rounded-xl border border-amber/40 bg-amber-wash px-3 py-2 text-xs text-amber">{t(lang, "sim.note")}</p>}
           {result.place && (
             <Link href={`/p/${result.place.code}`} className="mt-4 inline-block font-bold text-blue">{t(lang, "c.record", { place: result.place.name })} ›</Link>
           )}

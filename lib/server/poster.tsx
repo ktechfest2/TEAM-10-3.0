@@ -2,13 +2,13 @@ import "server-only";
 import { ImageResponse } from "next/og";
 import { t, type Lang } from "@/lib/core/i18n";
 import { joinList } from "@/lib/core/journey";
-import { getBreadcrumb, getCoverage, getPlace, getUnitResults } from "./views";
+import { getBreadcrumb, getCoverage, getPlace, getUnitResults, isSimulated } from "./views";
 
 const C = { bg: "#000000", fg: "#E9EAEC", muted: "#9A9EA6", line: "#26292E", sealed: "#3DDC97", amber: "#FFB93B", alarm: "#FF6B6B", blue: "#6AA9FF", pink: "#FF63AE", orange: "#FF8F3F", thumb: "#A394FF" };
 type Format = "story" | "og";
 type State = "none" | "witnessed" | "sealed" | "disputed";
 
-type Facts = { title: string; place: string; where: string; state: State; strokes: number; headline: string; sub: string; figures: [string, number][]; accent: string };
+type Facts = { title: string; place: string; where: string; state: State; strokes: number; headline: string; sub: string; figures: [string, number][]; accent: string; simulated?: boolean };
 
 async function loadFacts(code: string, lang: Lang): Promise<Facts | null> {
   const place = await getPlace(code);
@@ -38,6 +38,7 @@ async function loadFacts(code: string, lang: Lang): Promise<Facts | null> {
     headline: t(lang, state === "sealed" ? "p.sealed" : state === "disputed" ? "p.disputed" : state === "witnessed" ? "p.witnessed" : "p.recorded"),
     sub: state === "sealed" ? t(lang, "hero.sealed.text", { parties }) : state === "disputed" ? t(lang, "hero.disputed.text") : state === "witnessed" ? t(lang, "hero.witnessed.text", { parties }) : t(lang, "hero.recorded.text"),
     accent: state === "sealed" ? C.sealed : state === "disputed" ? C.alarm : state === "witnessed" ? C.amber : C.muted,
+    simulated: isSimulated(best),
   };
 }
 
@@ -104,6 +105,7 @@ export async function renderPoster(code: string, format: Format, host?: string, 
           <Seal width={420} state={f.state} strokes={f.strokes} />
           <div style={{ display: "flex", marginTop: 50, fontSize: 112, fontWeight: 800, lineHeight: 1.02, color: f.accent === C.muted ? C.fg : f.accent }}>{f.headline}</div>
           <div style={{ display: "flex", marginTop: 34, fontSize: 40, lineHeight: 1.35, color: C.muted }}>{f.sub}</div>
+          {f.simulated && <div style={{ display: "flex", marginTop: 30, fontSize: 34, fontWeight: 800, color: C.amber, letterSpacing: 3 }}>{t(lang, "sim.label").toUpperCase()}</div>}
         </div>
         <div style={{ display: "flex", flexDirection: "column" }}>
           {figures}
@@ -123,6 +125,7 @@ export async function renderPoster(code: string, format: Format, host?: string, 
           </div>
           <div style={{ display: "flex", marginTop: 34, fontSize: 64, fontWeight: 800, lineHeight: 1.05, color: f.accent === C.muted ? C.fg : f.accent }}>{f.headline}</div>
           <div style={{ display: "flex", marginTop: 20, fontSize: 28, lineHeight: 1.35, color: C.muted }}>{f.sub}</div>
+          {f.simulated && <div style={{ display: "flex", marginTop: 14, fontSize: 22, fontWeight: 800, color: C.amber, letterSpacing: 3 }}>{t(lang, "sim.label").toUpperCase()}</div>}
           <div style={{ display: "flex", marginTop: 30, fontSize: 30, fontWeight: 700 }}>{f.place}</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 340 }}>

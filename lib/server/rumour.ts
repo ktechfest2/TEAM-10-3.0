@@ -3,7 +3,7 @@ import { generateText, Output } from "ai";
 import { z } from "zod";
 import type { Lang } from "@/lib/core/i18n";
 import { extractByRules, judgeClaim, KNOWN_PARTIES, type Claim, type Evidence, type Verdict } from "@/lib/core/rumour";
-import { getBreadcrumb, getCollationCheck, getPlace, getUnitResults, searchPlaces, type Place } from "./views";
+import { getBreadcrumb, getCollationCheck, getPlace, getUnitResults, isSimulated, searchPlaces, type Place } from "./views";
 
 const MODEL = process.env.TALLY_MODEL ?? "google/gemini-2.5-flash-lite";
 const UNIT_CODE = /^\d{2}-\d{2}-\d{2}-\d{3}$/;
@@ -64,6 +64,7 @@ async function gatherEvidence(claim: Claim, place: Place): Promise<Evidence> {
   const ev: Evidence = { place: { code: place.code, name: place.name, level: place.level } };
   if (claim.kind === "result_figures" && place.level === "pu") {
     const best = (await getUnitResults(place)).get(place.code)?.best;
+    ev.simulated = isSimulated(best);
     ev.unit = best
       ? { status: best.trust.status, votes: best.figures.votes, parties: [...new Set(best.witnesses.filter((w) => w.party).map((w) => w.party as string))] }
       : { status: null };
@@ -76,6 +77,7 @@ async function gatherEvidence(claim: Claim, place: Place): Promise<Evidence> {
       if (!check) continue;
       const count = (s: string) => check.rows.filter((r) => r.status === s).length;
       const row = place.level === "pu" ? check.rows.find((r) => place.code === r.code || place.code.startsWith(`${r.code}-`)) : undefined;
+      ev.simulated = check.officer.startsWith("DEMO ");
       ev.collation = { name: p.name, level: p.level, tamperSuspected: check.tamperSuspected, mismatchedUnits: count("mismatch"), matchedUnits: count("match"), unverifiedUnits: count("unverified"), unitRow: row?.status };
       break;
     }

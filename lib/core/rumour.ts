@@ -18,13 +18,15 @@ export type Claim = {
 };
 
 export type Evidence = {
+  /** The signed results behind the verdict come from the labelled simulation. */
+  simulated?: boolean;
   place?: { code: string; name: string; level: "national" | "state" | "lga" | "ward" | "pu" };
   unit?: { status: "sealed" | "witnessed" | "unwitnessed" | "disputed" | null; votes?: Record<string, number>; parties?: string[] };
   collation?: { name: string; level: string; tamperSuspected: boolean; mismatchedUnits: number; matchedUnits: number; unverifiedUnits: number; unitRow?: "match" | "mismatch" | "unverified" };
 };
 
 export type VerdictKind = "confirmed" | "false" | "unverified";
-export type Verdict = { verdict: VerdictKind; headline: string; reasons: string[] };
+export type Verdict = { verdict: VerdictKind; headline: string; reasons: string[]; simulated?: boolean };
 
 export const KNOWN_PARTIES = ["APC", "PDP", "LP", "NNPP", "APGA", "ADC", "SDP", "YPP", "ZLP", "AA", "AAC", "ADP", "APM", "APP", "BP", "NRM", "PRP"];
 const UNIT_CODE = /\b\d{2}-\d{2}-\d{2}-\d{3}\b/;
@@ -45,6 +47,11 @@ export function extractByRules(text: string): Claim {
 const n = (v: number) => v.toLocaleString("en-US");
 
 export function judgeClaim(claim: Claim, ev: Evidence, lang: Lang = "en"): Verdict {
+  const v = judge(claim, ev, lang);
+  return ev.simulated ? { ...v, simulated: true } : v;
+}
+
+function judge(claim: Claim, ev: Evidence, lang: Lang): Verdict {
   const T = (key: MessageKey, vars?: Record<string, string | number>) => t(lang, key, vars);
   const mk = (verdict: VerdictKind, h: MessageKey, r: MessageKey, vars: Record<string, string | number> = {}, hVars: Record<string, string | number> = vars): Verdict => ({ verdict, headline: T(h, hVars), reasons: [T(r, vars)] });
 

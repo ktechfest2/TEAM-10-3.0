@@ -68,6 +68,9 @@ export type ResultVersion = {
   trust: ResultTrust;
 };
 
+/** Results signed by the labelled test actors (the simulation). Every public screen that shows one must say so. */
+export const isSimulated = (v: ResultVersion | null | undefined) => Boolean(v?.witnesses.some((w) => w.displayName.startsWith("DEMO ")));
+
 export type UnitResult = { puCode: string; best: ResultVersion | null; versions: ResultVersion[] };
 
 type ResultRow = { seq: number; id: string; place_code: string; content_hash: string; payload: { figures: ResultFigures; readBy: "model" | "manual"; photoSha256?: string }; occurred_at: Date; author_id: string };

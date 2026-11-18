@@ -80,3 +80,10 @@ describe("languages", () => {
     expect(judgeClaim(figs(15), sealed(15), "ha").headline).toBe("Gaskiya ne: APC 15");
   });
 });
+
+describe("simulated evidence", () => {
+  it("is marked on the verdict, so the screen can say so", () => {
+    expect(judgeClaim(figs(15), { ...sealed(15), simulated: true }).simulated).toBe(true);
+    expect(judgeClaim(figs(15), sealed(15)).simulated).toBeUndefined();
+  });
+});
