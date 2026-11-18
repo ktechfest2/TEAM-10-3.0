@@ -24,7 +24,7 @@ type Row = {
   source: string;
 };
 
-const url = process.env.DATABASE_URL;
+const url = process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL;
 if (!url) throw new Error("DATABASE_URL is not set");
 const sql = postgres(url, { max: 1, prepare: !url.includes("-pooler") });
 const rows = JSON.parse(readFileSync("data/fct-2023-pu-results.json", "utf8")) as Row[];
