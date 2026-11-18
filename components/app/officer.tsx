@@ -25,6 +25,7 @@ export function PoHome({ identity, demo }: { identity: Identity; demo?: { photoU
   const opened = byType("pu.opened")[0] ?? (demo ? ({} as HeldEvent) : undefined);
   const result = byType("result.declared")[0];
   const attempts = byType("transmission.attempted");
+  const [certifying, setCertifying] = useState<string | null>(null);
 
   async function record(type: EventType, payload: unknown) {
     const event = signEvent({ id: crypto.randomUUID(), type, placeCode: place, payload, occurredAt: new Date().toISOString(), authorKey: identity.publicKeyHex }, identity.secretKeyHex);
@@ -83,12 +84,30 @@ export function PoHome({ identity, demo }: { identity: Identity; demo?: { photoU
           </div>
           {attempts.length > 0 && (
             <ul className="divide-y divide-line text-sm">
-              {attempts.map((a) => (
-                <li key={a.contentHash} className="flex justify-between py-2">
-                  <span className={(a.event.payload as { outcome: string }).outcome === "success" ? "text-sealed" : "text-alarm"}>{(a.event.payload as { outcome: string }).outcome === "success" ? "Uploaded" : "Failed"}</span>
-                  <span className="text-muted">{new Date(a.event.occurredAt).toLocaleTimeString()}</span>
-                </li>
-              ))}
+              {attempts.map((a) => {
+                const failed = (a.event.payload as { outcome: string }).outcome !== "success";
+                return (
+                  <li key={a.contentHash} className="py-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={failed ? "text-alarm" : "text-sealed"}>{failed ? "Failed" : "Uploaded"}</span>
+                      <span className="flex items-center gap-3 text-muted">
+                        {new Date(a.event.occurredAt).toLocaleTimeString()}
+                        {failed && (
+                          <button type="button" onClick={() => setCertifying((c) => (c === a.contentHash ? null : a.contentHash))} className="font-bold text-blue">
+                            {certifying === a.contentHash ? "Hide code" : "Have agents certify"}
+                          </button>
+                        )}
+                      </span>
+                    </div>
+                    {failed && certifying === a.contentHash && (
+                      <div className="mt-3 flex flex-col items-center gap-2">
+                        <QrCodeView value={encodeEventQr(a.event)} label="Agents scan this if they saw the upload fail, and sign" />
+                        <p className="text-center text-xs text-muted">A failure only you report is a claim. When agents of two rival parties sign it, it is certified on the public page.</p>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </Card>

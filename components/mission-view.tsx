@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import type { Mission } from "@/lib/server/mission";
 import { Card, Chip, Eyebrow } from "@/components/ui";
+import { MarginCard } from "@/components/margin-card";
 import { COUNCIL_COLORS, TerritoryMap, type Geometry } from "@/components/territory-map";
 import { Logo } from "@/components/logo";
 
@@ -88,6 +89,8 @@ export function MissionView() {
             <div className="bg-amber transition-[width] duration-700" style={{ width: `${pct(t?.witnessed ?? 0)}%` }} />
           </div>
           <p className="text-xs text-muted">{t ? `${n(t.reported)} of ${n(t.units)} polling units have a recorded result.` : "Loading…"}</p>
+
+          {data && <MarginCard margin={data.margin} uploads={data.uploads} />}
 
           <div className="space-y-2.5">
             <Eyebrow>Alerts · newest first</Eyebrow>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Journey } from "@/components/journey";
 import { LanguagePicker } from "@/components/language-picker";
+import { MarginCard } from "@/components/margin-card";
 import { Seal, type SealState } from "@/components/seal";
 import { ShareButton } from "@/components/share-button";
 import { Card, Eyebrow, FiguresTable, StatusBadge, TrustMeter, shortHash, type Status } from "@/components/ui";
@@ -13,6 +14,8 @@ import { joinList } from "@/lib/core/journey";
 import { getLang } from "@/lib/server/lang";
 import { flagsForResults } from "@/lib/server/anomaly-live";
 import { getUnitJourney } from "@/lib/server/journey";
+import { getMargin } from "@/lib/server/margin";
+import { getUploadFailures } from "@/lib/server/uploads";
 import {
   childSummaries,
   getBreadcrumb,
@@ -80,6 +83,7 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
   const unit = place.level === "pu" ? results.get(code) : undefined;
   const journey = place.level === "pu" ? await getUnitJourney(place, breadcrumb, unit, lang) : [];
   const hero = place.level === "pu" ? headline(unit?.best, lang) : null;
+  const [margin, uploads] = place.level === "pu" ? [null, null] : await Promise.all([getMargin(place, results), getUploadFailures(place)]);
   const figLabels = { totalValid: t(lang, "fig.totalValid"), rejected: t(lang, "fig.rejected"), accredited: t(lang, "fig.accredited") };
   // Statistical flags compare this unit with the other reported units in its ward.
   const ward = breadcrumb.find((b) => b.level === "ward");
@@ -223,6 +227,27 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
                 <Stat label="Disputed" value={coverage.disputed} tone="disputed" />
               </div>
             </Card>
+            {margin && uploads && <MarginCard margin={margin} uploads={uploads} />}
+            {uploads && uploads.units.length > 0 && (
+              <Card>
+                <Eyebrow>Upload failures · most certified first</Eyebrow>
+                <ul className="mt-2 divide-y divide-line">
+                  {uploads.units.map((u) => (
+                    <li key={u.code}>
+                      <Link href={`/p/${u.code}`} className="flex items-center justify-between gap-3 py-3 text-sm">
+                        <span className="min-w-0">
+                          <span className="block truncate font-medium">{u.name}</span>
+                          <span className="block text-xs text-muted">{u.level === "claimed" ? "Reported by the officer only" : `Seen by ${u.witnesses.join(", ")}`}</span>
+                        </span>
+                        <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${u.level === "certified" ? "bg-sealed-wash text-sealed" : u.level === "witnessed" ? "bg-amber-wash text-amber" : "bg-raised text-muted"}`}>
+                          {u.level === "certified" ? "Certified" : u.level === "witnessed" ? "1 witness" : "Claimed"}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            )}
             {collation && <CollationPanel check={collation} />}
             <Card>
               <Eyebrow>{children[0] ? `${LEVEL[children[0].level]}s` : "Inside"}</Eyebrow>

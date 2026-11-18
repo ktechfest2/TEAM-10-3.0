@@ -27,7 +27,7 @@ export function AgentHome({ identity, startWith }: { identity: Identity; startWi
   const onScan = useCallback((text: string) => {
     const msg = decodeQr(text);
     if (!msg || msg.k !== "ev") {
-      setError("That code is not a Tally result.");
+      setError("That code is not a Tally record.");
       return setView("home");
     }
     const check = verifySignedEvent(msg.e);
@@ -58,6 +58,26 @@ export function AgentHome({ identity, startWith }: { identity: Identity; startWi
         <QrScanner onResult={onScan} />
         <Button variant="secondary" onClick={() => setView("home")} className="w-full">Cancel</Button>
       </Card>
+    );
+  }
+
+  if (view === "review" && pending && pending.type === "transmission.attempted") {
+    const attempt = pending.payload as { outcome: string; detail?: string };
+    return (
+      <div className="space-y-3">
+        <Chip tone="sealed">✓ Officer&apos;s signature checked on this phone</Chip>
+        <div>
+          <p className="text-sm text-muted">Unit {pending.placeCode}</p>
+          <h2 className="font-display mt-1 text-3xl leading-tight font-extrabold tracking-tight">Did you see the upload fail?</h2>
+        </div>
+        <p className="rounded-2xl border border-line bg-surface p-4 text-sm">
+          The officer reports that the upload to IReV {attempt.outcome === "failed" ? "failed" : "worked"} at {new Date(pending.occurredAt).toLocaleTimeString()}.
+          {attempt.detail ? ` “${attempt.detail}”` : ""}
+        </p>
+        <p className="text-sm text-muted">Your signature says: <i>&quot;I was there and saw this attempt {attempt.outcome === "failed" ? "fail" : "work"}.&quot;</i> Sign only if that is true.</p>
+        <HoldToSign ariaLabel={`Press and hold to sign as ${role}`} onComplete={() => void sign()} />
+        <Button variant="danger" onClick={() => { setPending(null); setView("home"); }} className="w-full">I did not see this. Do not sign.</Button>
+      </div>
     );
   }
 
