@@ -3,7 +3,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import type { Mission } from "@/lib/server/mission";
 import { Card, Chip, Eyebrow } from "@/components/ui";
-import { TerritoryMap, type Geometry } from "@/components/territory-map";
+import { COUNCIL_COLORS, TerritoryMap, type Geometry } from "@/components/territory-map";
+import { Logo } from "@/components/logo";
 
 const n = (v: number) => v.toLocaleString("en-US");
 
@@ -45,7 +46,7 @@ export function MissionView() {
     <div className="mx-auto w-full max-w-[1440px] flex-1 px-4 pb-16 sm:px-6">
       <header className="flex flex-wrap items-center justify-between gap-3 py-4">
         <div className="flex items-center gap-3">
-          <Link href="/" className="font-display text-xl font-extrabold tracking-tight">Tally</Link>
+          <Link href="/"><Logo size={24} /></Link>
           <span className="hidden h-5 w-px bg-line sm:block" />
           <span className="text-sm font-semibold text-muted">Mission control · Federal Capital Territory</span>
         </div>
@@ -67,10 +68,10 @@ export function MissionView() {
           </div>
           <Card className="space-y-3">
             <Eyebrow>Area councils · sealed</Eyebrow>
-            {data?.councils.map((c) => (
+            {data?.councils.map((c, i) => (
               <div key={c.name}>
-                <div className="flex justify-between text-sm"><span className="font-semibold">{c.name}</span><span className="text-muted tabular-nums">{n(c.sealed)} of {n(c.units)}</span></div>
-                <div className="mt-1 h-2 rounded-full bg-raised"><div className="h-2 rounded-full bg-sealed transition-[width] duration-700" style={{ width: `${c.units ? (c.sealed / c.units) * 100 : 0}%` }} /></div>
+                <div className="flex justify-between text-sm"><span className="flex items-center gap-2 font-semibold"><i className={`h-2.5 w-2.5 rounded-full ${COUNCIL_COLORS[i]?.bar}`} />{c.name}</span><span className="text-muted tabular-nums">{n(c.sealed)} of {n(c.units)}</span></div>
+                <div className="mt-1 h-2 rounded-full bg-raised"><div className={`h-2 rounded-full transition-[width] duration-700 ${COUNCIL_COLORS[i]?.bar}`} style={{ width: `${c.units ? (c.sealed / c.units) * 100 : 0}%` }} /></div>
               </div>
             ))}
           </Card>
@@ -108,7 +109,7 @@ export function MissionView() {
 
 function Kpi({ value, label, tone, alarm }: { value: string; label: string; tone: string; alarm?: boolean }) {
   return (
-    <div className={`rounded-2xl border px-4 py-3 transition-colors ${alarm ? "border-alarm bg-alarm-wash" : "border-line bg-surface"}`}>
+    <div className={`rounded-2xl border px-4 py-3 transition-colors ${alarm ? "border-alarm bg-alarm-wash" : tone === "text-sealed" ? "border-sealed/40 bg-sealed-wash" : tone === "text-amber" ? "border-amber/40 bg-amber-wash" : "border-line bg-surface"}`}>
       <div className={`font-display text-4xl leading-none font-extrabold tracking-tight tabular-nums ${tone}`}>{value}</div>
       <div className="mt-1.5 text-xs text-muted">{label}</div>
     </div>

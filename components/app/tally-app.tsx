@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { clearIdentity, listOutbox, loadIdentity, type Identity, type OutboxItem } from "@/lib/client/store";
 import { flushOutbox, startAutoSync } from "@/lib/client/sync";
 import { AgentHome } from "./agent-flow";
+import { Logo } from "@/components/logo";
+import { ROLE_COLOR } from "@/lib/roles";
 import { CitizenHome } from "./citizen";
 import { CollationHome } from "./collation";
 import { Onboarding } from "./onboarding";
@@ -54,7 +56,7 @@ export function TallyApp() {
   return (
     <div className="mx-auto w-full max-w-xl flex-1 px-4 pb-16">
       <header className="sticky top-0 z-10 -mx-4 mb-4 flex items-center justify-between border-b border-line bg-paper/95 px-4 py-3 backdrop-blur">
-        <Link href="/" className="text-lg font-black tracking-tight">Tally</Link>
+        <Link href="/"><Logo size={22} /></Link>
         <div className="flex items-center gap-2 text-xs">
           <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-semibold ${online ? "bg-sealed-wash text-sealed" : "bg-witnessed-wash text-witnessed"}`}>
             <span className={`h-1.5 w-1.5 rounded-full ${online ? "bg-sealed" : "bg-witnessed"}`} />
@@ -77,7 +79,7 @@ export function TallyApp() {
           <div className="mb-4 flex items-center justify-between text-sm">
             <span>
               <span className="font-semibold">{identity.displayName}</span>
-              <span className="text-muted"> · {ROLE_LABEL[identity.role]}{identity.party ? ` · ${identity.party}` : ""}</span>
+              <span className={ROLE_COLOR[identity.role].text}> · {ROLE_LABEL[identity.role]}{identity.party ? ` · ${identity.party}` : ""}</span>
             </span>
             <button
               onClick={async () => {

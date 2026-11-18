@@ -17,13 +17,17 @@ export function StatusBadge({ status, className = "" }: { status: Status; classN
   return <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${s.cls} ${className}`}>{s.label}</span>;
 }
 
-export function Chip({ children, tone = "neutral", className = "" }: { children: ReactNode; tone?: "neutral" | "sealed" | "amber" | "alarm" | "thumb"; className?: string }) {
+export function Chip({ children, tone = "neutral", className = "" }: { children: ReactNode; tone?: "neutral" | "sealed" | "amber" | "alarm" | "thumb" | "blue" | "cyan" | "pink" | "orange"; className?: string }) {
   const tones = {
     neutral: "bg-raised text-fg",
     sealed: "bg-sealed-wash text-sealed",
     amber: "bg-amber-wash text-amber",
     alarm: "bg-alarm-wash text-alarm",
     thumb: "bg-thumb-wash text-thumb",
+    blue: "bg-blue-wash text-blue",
+    cyan: "bg-cyan-wash text-cyan",
+    pink: "bg-pink-wash text-pink",
+    orange: "bg-orange-wash text-orange",
   }[tone];
   return <span className={`inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-bold whitespace-nowrap ${tones} ${className}`}>{children}</span>;
 }
@@ -69,7 +73,7 @@ export function Button({
   className?: string;
 }) {
   const styles = {
-    primary: "bg-fg text-bg hover:bg-fg/90",
+    primary: "bg-linear-to-r from-blue to-thumb text-black hover:brightness-110",
     secondary: "border border-line bg-raised text-fg hover:bg-line",
     danger: "bg-transparent text-alarm shadow-[inset_0_0_0_2px_var(--alarm)] hover:bg-alarm-wash",
   }[variant];

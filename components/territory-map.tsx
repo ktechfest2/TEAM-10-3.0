@@ -8,6 +8,16 @@ export type Geometry = {
   cells: { d: string; lga: number; cx: number; cy: number }[];
 };
 
+/** One colour per area council, in the order of the map geometry: Abaji, Bwari, Gwagwalada, Kuje, Kwali, AMAC. */
+export const COUNCIL_COLORS = [
+  { label: "fill-orange", line: "stroke-orange", bar: "bg-orange", dot: "text-orange" },
+  { label: "fill-blue", line: "stroke-blue", bar: "bg-blue", dot: "text-blue" },
+  { label: "fill-pink", line: "stroke-pink", bar: "bg-pink", dot: "text-pink" },
+  { label: "fill-cyan", line: "stroke-cyan", bar: "bg-cyan", dot: "text-cyan" },
+  { label: "fill-thumb", line: "stroke-thumb", bar: "bg-thumb", dot: "text-thumb" },
+  { label: "fill-amber", line: "stroke-amber", bar: "bg-amber", dot: "text-amber" },
+] as const;
+
 const FILL: Record<CellStatus, string> = { 0: "fill-raised", 1: "fill-amber", 2: "fill-sealed", 3: "fill-alarm" };
 const STATUS_LABEL: Record<CellStatus, string> = { 0: "No result yet", 1: "Witnessed by one party", 2: "Sealed by rival parties", 3: "Tampering suspected" };
 const STATUS_TEXT: Record<CellStatus, string> = { 0: "text-muted", 1: "text-amber", 2: "text-sealed", 3: "text-alarm" };
@@ -27,11 +37,11 @@ export function TerritoryMap({ geometry, cells, focus }: { geometry: Geometry; c
           ))}
         </g>
         <path d={geometry.outline} fill="none" className="stroke-fg" strokeOpacity={0.7} strokeWidth={2.4} strokeLinejoin="round" />
-        {geometry.lgas.map((l) => (
-          <path key={l.n} d={l.d} fill="none" className="stroke-fg" strokeOpacity={0.35} strokeWidth={1.4} />
+        {geometry.lgas.map((l, i) => (
+          <path key={l.n} d={l.d} fill="none" className={COUNCIL_COLORS[i]?.line} strokeOpacity={0.75} strokeWidth={2} />
         ))}
-        {geometry.lgas.map((l) => (
-          <text key={l.n} x={l.cx} y={l.cy} textAnchor="middle" className="fill-fg" fillOpacity={0.85} stroke="#000" strokeWidth={4} paintOrder="stroke" style={{ font: "700 17px var(--font-sans)", letterSpacing: "0.16em", textTransform: "uppercase" }}>
+        {geometry.lgas.map((l, i) => (
+          <text key={l.n} x={l.cx} y={l.cy} textAnchor="middle" className={COUNCIL_COLORS[i]?.label ?? "fill-fg"} stroke="#000" strokeWidth={4} paintOrder="stroke" style={{ font: "800 17px var(--font-sans)", letterSpacing: "0.16em", textTransform: "uppercase" }}>
             {l.n}
           </text>
         ))}

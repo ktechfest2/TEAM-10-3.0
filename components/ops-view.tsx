@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button, Card, Eyebrow } from "@/components/ui";
+import { Logo } from "@/components/logo";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 type Progress = { simulated: number; remaining: number };
@@ -95,7 +96,7 @@ export function OpsView() {
 
   return (
     <main className="mx-auto w-full max-w-md flex-1 space-y-4 px-4 py-10">
-      <Link href="/" className="font-display text-xl font-extrabold tracking-tight">Tally</Link>
+      <Link href="/"><Logo size={24} /></Link>
       <h1 className="font-display text-3xl font-extrabold tracking-tight">Operations</h1>
       {!unlocked ? (
         <Card className="space-y-3">

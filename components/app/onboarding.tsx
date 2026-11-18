@@ -4,6 +4,7 @@ import { generateKeyPair } from "@/lib/core/crypto";
 import { saveIdentity, type Identity } from "@/lib/client/store";
 import { Button, Card, Eyebrow } from "@/components/ui";
 import { PlaceSearch, type PlaceHit } from "./place-search";
+import { ROLE_COLOR } from "@/lib/roles";
 
 const ROLES: { role: Identity["role"]; title: string; detail: string; place: PlaceHit["level"][] | null }[] = [
   { role: "citizen", title: "Voter", detail: "Check your polling unit, its result and whether a rumour is true.", place: null },
@@ -75,8 +76,8 @@ export function Onboarding({ onDone }: { onDone: (identity: Identity) => void })
           <p className="mt-1 text-sm text-muted">Tally creates a signing key that never leaves this phone.</p>
         </div>
         {ROLES.map((r) => (
-          <button key={r.role} onClick={() => setRole(r)} className="block w-full rounded-2xl border border-line bg-card p-4 text-left hover:border-ink">
-            <span className="block font-semibold">{r.title}</span>
+          <button key={r.role} onClick={() => setRole(r)} className={`block w-full rounded-2xl border border-line border-l-4 bg-card p-4 text-left hover:brightness-125 ${ROLE_COLOR[r.role].border}`}>
+            <span className={`block font-bold ${ROLE_COLOR[r.role].text}`}>{r.title}</span>
             <span className="mt-0.5 block text-sm text-muted">{r.detail}</span>
           </button>
         ))}

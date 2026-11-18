@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { DesignDemo } from "./demo";
+import { DesignDemo, OnboardingPreview } from "./demo";
 import { Button, Card, Chip, Eyebrow, FigureTile, StatusBadge } from "@/components/ui";
 import { Seal, type SealState } from "@/components/seal";
 
@@ -82,6 +82,13 @@ export default function DesignKit() {
             <Chip>Igbo</Chip>
           </div>
         </Card>
+      </section>
+
+      <section>
+        <Eyebrow>Sign-in · role colours</Eyebrow>
+        <div className="mt-3 max-w-sm">
+          <OnboardingPreview />
+        </div>
       </section>
 
       <section>

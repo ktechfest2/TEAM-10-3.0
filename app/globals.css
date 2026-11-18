@@ -20,6 +20,15 @@
   --amber-wash: rgb(255 185 59 / 0.14);
   --alarm-wash: rgb(255 107 107 / 0.14);
   --thumb-wash: rgb(163 148 255 / 0.16);
+  /* The spectrum. Green, amber and red are reserved for status; these carry identity and decoration. */
+  --blue: #6aa9ff;
+  --cyan: #35d6d1;
+  --pink: #ff63ae;
+  --orange: #ff8f3f;
+  --blue-wash: rgb(106 169 255 / 0.15);
+  --cyan-wash: rgb(53 214 209 / 0.14);
+  --pink-wash: rgb(255 99 174 / 0.15);
+  --orange-wash: rgb(255 143 63 / 0.15);
 }
 
 @theme inline {
@@ -37,6 +46,14 @@
   --color-amber-wash: var(--amber-wash);
   --color-alarm-wash: var(--alarm-wash);
   --color-thumb-wash: var(--thumb-wash);
+  --color-blue: var(--blue);
+  --color-cyan: var(--cyan);
+  --color-pink: var(--pink);
+  --color-orange: var(--orange);
+  --color-blue-wash: var(--blue-wash);
+  --color-cyan-wash: var(--cyan-wash);
+  --color-pink-wash: var(--pink-wash);
+  --color-orange-wash: var(--orange-wash);
 
   /* Legacy names from the first UI. Removed as each screen is rebuilt. */
   --color-paper: var(--bg);
@@ -74,6 +91,24 @@ p, li, label, td, th, small { font-weight: 500; }
   font-size: 0.75rem;
   letter-spacing: -0.01em;
   word-break: break-all;
+}
+
+/* Brand spectrum: used on headlines, hairlines and glows. Never for status. */
+.text-rainbow {
+  background-image: linear-gradient(90deg, var(--blue), var(--thumb) 38%, var(--pink) 68%, var(--orange));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.rainbow-line {
+  height: 3px;
+  background: linear-gradient(90deg, var(--blue), var(--cyan), var(--sealed), var(--amber), var(--orange), var(--pink), var(--thumb));
+}
+.glow-hero {
+  background:
+    radial-gradient(60% 50% at 12% 8%, rgb(106 169 255 / 0.20), transparent 70%),
+    radial-gradient(50% 45% at 88% 22%, rgb(255 99 174 / 0.16), transparent 70%),
+    radial-gradient(45% 40% at 55% 0%, rgb(163 148 255 / 0.16), transparent 70%);
 }
 
 @keyframes tally-ping {

@@ -1,3 +1,4 @@
+import { Logo } from "@/components/logo";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -52,7 +53,7 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
   return (
     <div className="mx-auto w-full max-w-3xl flex-1 px-4 pb-16">
       <header className="flex items-center justify-between py-4">
-        <Link href="/" className="text-lg font-black tracking-tight">Tally</Link>
+        <Link href="/"><Logo size={22} /></Link>
         <Link href="/app" className="text-sm font-semibold text-accent">Open app ›</Link>
       </header>
 

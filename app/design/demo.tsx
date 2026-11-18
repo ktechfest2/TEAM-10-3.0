@@ -2,6 +2,11 @@
 import { useState } from "react";
 import { HoldToSign } from "@/components/hold-to-sign";
 import { Seal } from "@/components/seal";
+import { Onboarding } from "@/components/app/onboarding";
+
+export function OnboardingPreview() {
+  return <Onboarding onDone={() => undefined} />;
+}
 
 export function DesignDemo() {
   const [signed, setSigned] = useState<string[]>([]);

@@ -1,3 +1,4 @@
+import { Logo } from "@/components/logo";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Card, Eyebrow, StatusBadge } from "@/components/ui";
@@ -16,7 +17,7 @@ export default async function VerifyPage() {
   return (
     <div className="mx-auto w-full max-w-3xl flex-1 px-4 pb-16">
       <header className="py-4">
-        <Link href="/" className="text-lg font-black tracking-tight">Tally</Link>
+        <Link href="/"><Logo size={22} /></Link>
       </header>
       <h1 className="text-3xl font-bold">Verify everything yourself</h1>
       <p className="mt-2 text-muted">You do not have to trust Tally. Every check below can be repeated independently.</p>
