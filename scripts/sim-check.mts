@@ -1,0 +1,58 @@
+/**
+ * End-to-end check of the labelled simulation and mission control, against a running server:
+ * reset → run batches → counts and map statuses come from the ledger → an honest collation matches →
+ * an altered collation is flagged → the ledger still verifies → reset.
+ *
+ * Usage: BASE_URL=http://localhost:3100 npx tsx scripts/sim-check.mts
+ */
+/* eslint-disable @typescript-eslint/no-explicit-any -- loose JSON from our own API in a check script */
+const BASE = process.env.BASE_URL ?? "http://localhost:3100";
+
+function assert(cond: unknown, msg: string): asserts cond {
+  if (!cond) throw new Error(`FAIL · ${msg}`);
+  console.log(`ok · ${msg}`);
+}
+
+async function post(path: string, body: unknown = {}) {
+  const res = await fetch(`${BASE}${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  return { status: res.status, json: (await res.json()) as Record<string, any> };
+}
+const get = async (path: string) => (await fetch(`${BASE}${path}`)).json() as Promise<Record<string, any>>;
+
+assert((await post("/api/demo/reset")).status === 200, "reset clears the ledger");
+const empty = await get("/api/mission");
+assert(empty.totals.reported === 0 && empty.totals.sealed === 0, "an empty ledger shows zero results, not placeholders");
+assert(empty.cells.every((c: number) => c === 0), "every map cell starts as 'no result'");
+
+let remaining = Infinity;
+for (let i = 0; i < 3; i++) {
+  const r = await post("/api/demo/step", { count: 60 });
+  assert(r.status === 200 && r.json.processed > 0, `batch ${i + 1} signed ${r.json.processed} units through the real ledger`);
+  remaining = r.json.remaining;
+}
+assert(remaining <= 2822 - 150, "remaining units shrink as the night goes on");
+
+const mid = await get("/api/mission");
+assert(mid.totals.reported >= 150, `mission control counts ${mid.totals.reported} reported units from the database`);
+assert(mid.totals.sealed > 0 && mid.cells.includes(2), "sealed units appear on the map");
+assert(mid.simulation.simulated === mid.totals.reported, "every result is labelled as simulated by DEMO actors");
+assert(mid.councils.reduce((a: number, c: any) => a + c.sealed, 0) === mid.totals.sealed, "area-council counts add up to the total");
+
+const honest = await post("/api/demo/collate", { mode: "honest" });
+assert(honest.status === 200, `an honest ward collation was entered (${honest.json.ward})`);
+let snap = await get("/api/mission");
+assert(snap.totals.tamper === 0, "an honest collation raises no tampering alert");
+
+const bad = await post("/api/demo/collate", { mode: "tamper" });
+assert(bad.status === 200, `an altered ward collation was entered (${bad.json.ward})`);
+await new Promise((r) => setTimeout(r, 1700)); // the snapshot is memoised for 1.5 s
+snap = await get("/api/mission");
+assert(snap.totals.tamper === 1, "exactly one tampering alert is raised");
+assert(snap.cells.includes(3), "the altered unit turns red on the map");
+assert(snap.alerts.some((a: any) => a.kind === "red"), "the alert feed names the tampering");
+
+const audit = await get("/api/verify");
+assert(audit.intact === true, `ledger intact after the simulation (${audit.entries} entries)`);
+
+assert((await post("/api/demo/reset")).status === 200, "reset returns the demo to a clean start");
+console.log("\nSimulation check passed.");
