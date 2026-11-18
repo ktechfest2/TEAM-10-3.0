@@ -1,29 +1,38 @@
-# TEAM-10 — KTechFest 3.0 Hackathon (3-day sprint)
+# TEAM-10 — KTechFest 3.0
 
-Goal: **win**. Judges see a demo, a pitch, and a repo — optimise for those, in that order.
+We are building a **real, production-grade product** that solves the challenge, not a demo or prototype.
+No mocks, fake data, or hardcoded shortcuts that stand in for real functionality. If something cannot be built properly, raise it; do not fake it.
 
-## Operating rules
-- **Demo-first.** Every decision serves the live demo. Build the happy path end-to-end before polishing anything.
-- **Always runnable.** `main` must run at all times. Never leave it broken at the end of a task.
-- **Ship in thin vertical slices.** UI → API → data for one feature, working, then the next. No big-bang integrations.
-- **Boring, proven tech.** Use what the team already knows. No new frameworks mid-sprint unless they save a day.
-- **Fake what isn't judged.** Seed data, mock auth, hardcoded config are fine if they don't show in the demo. Mark them `// HACK:` so we can find them.
-- **Commit small and often** with clear messages; push after every working slice so teammates stay in sync.
-- **No secrets in git.** Keys go in `.env` (gitignored); keep `.env.example` updated with names only.
-- **Deploy early.** Get a public URL on day 1 and redeploy continuously — never debug deployment on demo day.
-- **Ask before** large rewrites, swapping core libraries, or anything that could cost more than ~1 hour.
-- Keep `README.md` accurate: pitch, how to run, tech stack, team, live link.
+## Engineering process
+Follow these phases in order. Each phase produces an artifact in the repo before the next starts. Revisit earlier phases when requirements change.
 
-## Sprint shape
-- **Day 1:** understand challenge → pick idea → scaffold → deploy hello-world → first vertical slice.
-- **Day 2:** core features complete, real data, deployed. Feature freeze at end of day.
-- **Day 3:** polish UI, fix bugs, demo script, pitch deck, README, rehearse. No new features.
+1. **Requirements** (`/requirements`): analyse the challenge and produce `docs/requirements.md`: problem statement, stakeholders, functional requirements, non-functional requirements (performance, security, scalability, accessibility), user stories with acceptance criteria, constraints, and open questions. Create GitHub Issues from the user stories.
+2. **System design** (`/design`): `docs/architecture.md`: architecture and component diagram, data model/schema, API contracts, auth model, third-party services, deployment topology. Record significant decisions as ADRs in `docs/adr/NNNN-title.md`.
+3. **Project setup:** repo structure, package manager, formatter, linter, strict type checking, test framework, env config (`.env.example`), GitHub Actions CI (lint, typecheck, test, build on every PR), and branch protection on `main`.
+4. **Implementation:** one issue → one feature branch → one PR. Small, reviewable changes. Tests are written alongside code.
+5. **Testing:** unit tests for logic, integration tests for API/data layers, and end-to-end tests for critical user flows. CI must be green before merge.
+6. **Security:** validate all input, enforce authorization server-side, keep secrets out of git, and run a dependency audit. Run `/security-review` before releases.
+7. **Deployment:** automated CI/CD, separate preview and production environments, versioned database migrations, structured logging, and error monitoring.
+8. **Documentation:** README (overview, setup, architecture summary, environment variables), API docs, ADRs, and updated documentation in every PR that changes behaviour.
+
+## Code standards
+- Clean, readable, idiomatic code. Clear names, small functions, single responsibility, no dead code.
+- Handle errors explicitly; never swallow exceptions. Return meaningful errors to clients.
+- Strict typing everywhere (TypeScript `strict`, Python type hints + checker).
+- No secrets, credentials, or `.env` files in git.
+- Pin dependency versions; prefer well-maintained libraries.
+
+## Git workflow
+- `main` is protected and always releasable. No direct commits to `main` once setup is done.
+- Branches: `feat/<issue>-short-name`, `fix/...`, `chore/...`, `docs/...`.
+- Conventional Commits (`feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`).
+- PRs link their issue (`Closes #N`), describe the change and how it was tested, and pass CI. Review with `/code-review` before merge. Squash-merge.
 
 ## Project commands
-- `/kickoff` — when the challenge drops: analyse the brief, propose ideas, pick one, plan the sprint.
-- `/ship` — verify, commit, push.
-- `/demo-check` — make sure the demo path works and nothing embarrassing shows.
-- `/pitch` — generate pitch narrative, demo script, and README polish.
+- `/requirements`: challenge → requirements spec + GitHub Issues
+- `/design`: requirements → architecture, data model, API contracts, ADRs
+- `/pr`: verify, commit on a feature branch, push, open a PR
+- `/verify`: check the build against requirements and acceptance criteria before a release
 
 ## Stack
-_TBD after challenge is announced — record the chosen stack, run commands, and deploy URL here._
+_Decided in the design phase. Record the stack, run/test/build commands, and environment URLs here._

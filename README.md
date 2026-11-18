@@ -1,4 +1,4 @@
-# TEAM-10 — KTechFest 3.0 Hackathon
+# TEAM-10 — KTechFest 3.0
 
 ## Project
 _TBD — project name and one-line pitch._
