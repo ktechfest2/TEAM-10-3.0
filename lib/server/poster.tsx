@@ -1,5 +1,6 @@
 import "server-only";
 import { ImageResponse } from "next/og";
+import { t, type Lang } from "@/lib/core/i18n";
 import { joinList } from "@/lib/core/journey";
 import { getBreadcrumb, getCoverage, getPlace, getUnitResults } from "./views";
 
@@ -9,7 +10,7 @@ type State = "none" | "witnessed" | "sealed" | "disputed";
 
 type Facts = { title: string; place: string; where: string; state: State; strokes: number; headline: string; sub: string; figures: [string, number][]; accent: string };
 
-async function loadFacts(code: string): Promise<Facts | null> {
+async function loadFacts(code: string, lang: Lang): Promise<Facts | null> {
   const place = await getPlace(code);
   if (!place) return null;
   const breadcrumb = await getBreadcrumb(place);
@@ -22,8 +23,8 @@ async function loadFacts(code: string): Promise<Facts | null> {
   }
 
   const best = results.get(code)?.best;
-  if (!best) return { title: place.name, place: place.name, where, state: "none", strokes: 0, headline: "My unit's result is waiting to be signed.", sub: "When the officer and rival party agents sign it, anyone can check it here.", figures: [], accent: C.muted };
-  const parties = [...new Set(best.witnesses.filter((w) => w.party).map((w) => w.party as string))];
+  if (!best) return { title: place.name, place: place.name, where, state: "none", strokes: 0, headline: t(lang, "p.waiting"), sub: t(lang, "hero.none.text"), figures: [], accent: C.muted };
+  const parties = joinList([...new Set(best.witnesses.filter((w) => w.party).map((w) => w.party as string))], lang);
   const s = best.trust.status;
   const state: State = s === "sealed" ? "sealed" : s === "disputed" ? "disputed" : s === "witnessed" ? "witnessed" : "none";
   const figures = Object.entries(best.figures.votes).sort((a, b) => b[1] - a[1]).slice(0, 4) as [string, number][];
@@ -32,10 +33,10 @@ async function loadFacts(code: string): Promise<Facts | null> {
     place: place.name,
     where,
     state,
-    strokes: Math.min(3, parties.length),
+    strokes: Math.min(3, new Set(best.witnesses.filter((w) => w.party).map((w) => w.party)).size),
     figures,
-    headline: state === "sealed" ? "My unit's result is sealed." : state === "disputed" ? "My unit's result is disputed." : state === "witnessed" ? "One party has signed my unit's result." : "My unit's result has no agent signature yet.",
-    sub: state === "sealed" ? `Agents of rival parties (${joinList(parties)}) signed these exact figures. Anyone can check them.` : state === "disputed" ? "Witnesses signed different figures. Every version is kept as evidence." : state === "witnessed" ? "It needs a second, rival party to seal it." : "It was recorded by the officer and is waiting for agents.",
+    headline: t(lang, state === "sealed" ? "p.sealed" : state === "disputed" ? "p.disputed" : state === "witnessed" ? "p.witnessed" : "p.recorded"),
+    sub: state === "sealed" ? t(lang, "hero.sealed.text", { parties }) : state === "disputed" ? t(lang, "hero.disputed.text") : state === "witnessed" ? t(lang, "hero.witnessed.text", { parties }) : t(lang, "hero.recorded.text"),
     accent: state === "sealed" ? C.sealed : state === "disputed" ? C.alarm : state === "witnessed" ? C.amber : C.muted,
   };
 }
@@ -68,8 +69,8 @@ function Mark({ size }: { size: number }) {
 }
 
 /** The share card: a 9:16 story for WhatsApp Status, or the 1.91:1 link preview. Built from the same facts as the page. */
-export async function renderPoster(code: string, format: Format, host?: string) {
-  const f = await loadFacts(code);
+export async function renderPoster(code: string, format: Format, host?: string, lang: Lang = "en") {
+  const f = await loadFacts(code, lang);
   const story = format === "story";
   const W = story ? 1080 : 1200;
   const H = story ? 1920 : 630;
@@ -109,7 +110,7 @@ export async function renderPoster(code: string, format: Format, host?: string) 
           <div style={{ display: "flex", flexDirection: "column", marginTop: 50 }}>
             <span style={{ display: "flex", fontSize: 46, fontWeight: 800 }}>{f.place}</span>
             <span style={{ display: "flex", fontSize: 32, color: C.muted, marginTop: 8 }}>{f.where}</span>
-            <span style={{ display: "flex", fontSize: 34, color: C.blue, marginTop: 30 }}>Check it yourself: {url}</span>
+            <span style={{ display: "flex", fontSize: 34, color: C.blue, marginTop: 30 }}>{t(lang, "p.check")}: {url}</span>
           </div>
         </div>
       </div>

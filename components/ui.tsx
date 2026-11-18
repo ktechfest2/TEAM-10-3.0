@@ -32,13 +32,13 @@ export function Chip({ children, tone = "neutral", className = "" }: { children:
   return <span className={`inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-bold whitespace-nowrap ${tones} ${className}`}>{children}</span>;
 }
 
-export function TrustMeter({ probability, status }: { probability: number; status: Status }) {
+export function TrustMeter({ probability, status, label = "Trust" }: { probability: number; status: Status; label?: string }) {
   const pct = Math.round(probability * 100);
   const color = status === "disputed" || status === "mismatch" ? "bg-alarm" : status === "sealed" ? "bg-sealed" : status === "witnessed" ? "bg-amber" : "bg-muted";
   return (
     <div aria-label={`Trust ${pct}%`}>
       <div className="flex items-baseline justify-between text-xs text-muted">
-        <span>Trust</span>
+        <span>{label}</span>
         <span className="text-base font-bold text-fg">{pct}%</span>
       </div>
       <div className="mt-1 h-2 overflow-hidden rounded-full bg-raised">
@@ -91,13 +91,13 @@ export function Button({
 
 export type Totals = { votes: Record<string, number>; accredited: number; rejected: number; totalValid: number };
 
-export function FiguresTable({ totals, compare }: { totals: Totals; compare?: Totals | null }) {
+export function FiguresTable({ totals, compare, labels = { totalValid: "Total valid", rejected: "Rejected", accredited: "Accredited" } }: { totals: Totals; compare?: Totals | null; labels?: { totalValid: string; rejected: string; accredited: string } }) {
   const parties = Object.keys({ ...totals.votes, ...(compare?.votes ?? {}) }).sort((a, b) => (totals.votes[b] ?? 0) - (totals.votes[a] ?? 0));
   const rows: [string, number, number | undefined][] = [
     ...parties.map((p): [string, number, number | undefined] => [p, totals.votes[p] ?? 0, compare?.votes[p]]),
-    ["Total valid", totals.totalValid, compare?.totalValid],
-    ["Rejected", totals.rejected, compare?.rejected],
-    ["Accredited", totals.accredited, compare?.accredited],
+    [labels.totalValid, totals.totalValid, compare?.totalValid],
+    [labels.rejected, totals.rejected, compare?.rejected],
+    [labels.accredited, totals.accredited, compare?.accredited],
   ];
   return (
     <table className="w-full text-sm">

@@ -1,6 +1,7 @@
 import "server-only";
 import { generateText, Output } from "ai";
 import { z } from "zod";
+import type { Lang } from "@/lib/core/i18n";
 import { extractByRules, judgeClaim, KNOWN_PARTIES, type Claim, type Evidence, type Verdict } from "@/lib/core/rumour";
 import { getBreadcrumb, getCollationCheck, getPlace, getUnitResults, searchPlaces, type Place } from "./views";
 
@@ -79,12 +80,12 @@ async function gatherEvidence(claim: Claim, place: Place): Promise<Evidence> {
 }
 
 /** Reads a forwarded message and judges it against the ledger. Nothing about the message is stored. */
-export async function checkRumour(text: string, pickedPlace?: string): Promise<RumourResult> {
+export async function checkRumour(text: string, pickedPlace?: string, lang: Lang = "en"): Promise<RumourResult> {
   const claim = await readMessage(text);
   const { place, candidates } = await resolvePlace(claim, pickedPlace);
   if (!place && candidates && candidates.length > 0 && claim.kind !== "other") {
     return { status: "needs_place", claim, candidates: candidates.map((c) => ({ code: c.code, name: c.name, level: c.level, path: c.path })) };
   }
   const evidence = place && claim.kind !== "other" ? await gatherEvidence(claim, place) : {};
-  return { status: "checked", claim, place: place ? { code: place.code, name: place.name, level: place.level } : null, verdict: judgeClaim(claim, evidence) };
+  return { status: "checked", claim, place: place ? { code: place.code, name: place.name, level: place.level } : null, verdict: judgeClaim(claim, evidence, lang) };
 }

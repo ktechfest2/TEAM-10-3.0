@@ -3,11 +3,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Journey } from "@/components/journey";
+import { LanguagePicker } from "@/components/language-picker";
 import { Seal, type SealState } from "@/components/seal";
 import { ShareButton } from "@/components/share-button";
 import { Card, Eyebrow, FiguresTable, StatusBadge, TrustMeter, shortHash, type Status } from "@/components/ui";
 import { ROLE_COLOR, type RoleKey } from "@/lib/roles";
+import { t, type Lang, type MessageKey } from "@/lib/core/i18n";
 import { joinList } from "@/lib/core/journey";
+import { getLang } from "@/lib/server/lang";
 import { flagsForResults } from "@/lib/server/anomaly-live";
 import { getUnitJourney } from "@/lib/server/journey";
 import {
@@ -42,6 +45,8 @@ const EVENT: Record<string, string> = {
   "cancellation.recorded": "Cancellation recorded",
 };
 
+const ROLE_KEYS: Record<string, MessageKey | undefined> = { presiding_officer: "role.presiding_officer", party_agent: "role.party_agent", observer: "role.observer", citizen: "role.citizen", community_leader: "role.community_leader" };
+
 export async function generateMetadata(props: PageProps<"/p/[code]">): Promise<Metadata> {
   const { code } = await props.params;
   const place = await getPlace(code);
@@ -49,31 +54,33 @@ export async function generateMetadata(props: PageProps<"/p/[code]">): Promise<M
   return { title: place.name, description: `${place.name}: signed election results anyone can check on Tally.`, openGraph: { title: `${place.name} on Tally`, type: "website" }, twitter: { card: "summary_large_image" } };
 }
 
-function headline(best: ResultVersion | null | undefined) {
-  if (!best) return { state: "none" as SealState, title: "No signed result yet", text: "When the presiding officer records the EC8A and agents of rival parties co-sign it, it appears here.", tone: "text-fg" };
-  const parties = [...new Set(best.witnesses.filter((w) => w.party).map((w) => w.party as string))];
+function headline(best: ResultVersion | null | undefined, lang: Lang) {
+  const parties = best ? joinList([...new Set(best.witnesses.filter((w) => w.party).map((w) => w.party as string))], lang) : "";
+  if (!best) return { state: "none" as SealState, title: t(lang, "hero.none.title"), text: t(lang, "hero.none.text"), tone: "text-fg" };
   switch (best.trust.status) {
     case "sealed":
-      return { state: "sealed" as SealState, title: "This result is sealed", text: `Agents of rival parties (${joinList(parties)}) signed these exact figures.`, tone: "text-sealed" };
+      return { state: "sealed" as SealState, title: t(lang, "hero.sealed.title"), text: t(lang, "hero.sealed.text", { parties }), tone: "text-sealed" };
     case "disputed":
-      return { state: "disputed" as SealState, title: "This result is disputed", text: "Witnesses signed different figures. Every version is kept as evidence; nothing is overwritten.", tone: "text-alarm" };
+      return { state: "disputed" as SealState, title: t(lang, "hero.disputed.title"), text: t(lang, "hero.disputed.text"), tone: "text-alarm" };
     case "witnessed":
-      return { state: "witnessed" as SealState, title: "Signed by one party", text: `${joinList(parties)} signed it. A rival party's signature seals it.`, tone: "text-amber" };
+      return { state: "witnessed" as SealState, title: t(lang, "hero.witnessed.title"), text: t(lang, "hero.witnessed.text", { parties }), tone: "text-amber" };
     default:
-      return { state: "none" as SealState, title: "Recorded, not yet witnessed", text: "The officer recorded it. No party agent has signed yet.", tone: "text-fg" };
+      return { state: "none" as SealState, title: t(lang, "hero.recorded.title"), text: t(lang, "hero.recorded.text"), tone: "text-fg" };
   }
 }
 
 export default async function PlacePage(props: PageProps<"/p/[code]">) {
   const { code } = await props.params;
+  const lang = await getLang((await props.searchParams).lang);
   const place = await getPlace(code);
   if (!place) notFound();
 
   const [breadcrumb, children, results, timeline] = await Promise.all([getBreadcrumb(place), getChildren(code), getUnitResults(place), getTimeline(place)]);
   const [coverage, collation] = await Promise.all([getCoverage(place, results), getCollationCheck(place, results)]);
   const unit = place.level === "pu" ? results.get(code) : undefined;
-  const journey = place.level === "pu" ? await getUnitJourney(place, breadcrumb, unit) : [];
-  const hero = place.level === "pu" ? headline(unit?.best) : null;
+  const journey = place.level === "pu" ? await getUnitJourney(place, breadcrumb, unit, lang) : [];
+  const hero = place.level === "pu" ? headline(unit?.best, lang) : null;
+  const figLabels = { totalValid: t(lang, "fig.totalValid"), rejected: t(lang, "fig.rejected"), accredited: t(lang, "fig.accredited") };
   // Statistical flags compare this unit with the other reported units in its ward.
   const ward = breadcrumb.find((b) => b.level === "ward");
   const unitFlags = unit?.best && ward ? (await flagsForResults(await getUnitResults(ward))).filter((f) => f.code === code) : [];
@@ -98,6 +105,8 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
         {place.registered ? ` · ${place.registered.toLocaleString("en-US")} registered voters` : ""}
       </p>
 
+      {place.level === "pu" && <div className="mt-4"><LanguagePicker lang={lang} label={t(lang, "language")} draft={t(lang, "draft")} /></div>}
+
       <div className="mt-6 space-y-4">
         {place.level === "pu" && hero ? (
           <>
@@ -111,17 +120,17 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
               </div>
               {unit?.best && (
                 <div className="mt-5 grid gap-6 sm:grid-cols-2">
-                  <FiguresTable totals={unit.best.figures} />
+                  <FiguresTable totals={unit.best.figures} labels={figLabels} />
                   <div className="space-y-4">
-                    <TrustMeter probability={unit.best.trust.probability} status={unit.best.trust.status} />
+                    <TrustMeter probability={unit.best.trust.probability} status={unit.best.trust.status} label={t(lang, "ui.trust")} />
                     <div>
-                      <Eyebrow>Signed by</Eyebrow>
+                      <Eyebrow>{t(lang, "ui.signedBy")}</Eyebrow>
                       <ul className="mt-2 space-y-1.5 text-sm">
                         {unit.best.witnesses.map((w) => (
                           <li key={w.actorId} className={`flex justify-between gap-2 border-l-4 pl-2.5 ${ROLE_COLOR[w.role as RoleKey]?.border ?? "border-l-line"}`}>
                             <span>
                               {w.party ? <span className="font-bold">{w.party} </span> : null}
-                              <span className="text-muted">{ROLE[w.role] ?? w.role}</span>
+                              <span className="text-muted">{ROLE_KEYS[w.role] ? t(lang, ROLE_KEYS[w.role]!) : (ROLE[w.role] ?? w.role)}</span>
                             </span>
                             <span className="text-muted">{new Date(w.signedAt).toLocaleTimeString("en-NG", { timeStyle: "short" })}</span>
                           </li>
@@ -133,14 +142,14 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
               )}
               {unit?.best && (
                 <div className="mt-5 border-t border-line pt-4">
-                  <ShareButton code={place.code} title={`${place.name} on Tally`} text={`${hero.title}. See it for yourself:`} />
+                  <ShareButton code={place.code} lang={lang} title={`${place.name} on Tally`} text={`${hero.title}.`} shareLabel={t(lang, "ui.share")} cardLabel={t(lang, "ui.card")} copiedLabel={t(lang, "ui.copied")} />
                 </div>
               )}
             </Card>
 
             <Card>
-              <Eyebrow>Was my result counted?</Eyebrow>
-              <p className="mt-1 text-sm text-muted">From opening to the final collation, as the signed ledger records it.</p>
+              <Eyebrow>{t(lang, "j.title")}</Eyebrow>
+              <p className="mt-1 text-sm text-muted">{t(lang, "j.sub")}</p>
               <Journey steps={journey} />
             </Card>
 

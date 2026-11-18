@@ -1,11 +1,12 @@
 import "server-only";
+import type { Lang } from "@/lib/core/i18n";
 import { buildJourney, joinList, type JourneyInput, type JourneyStep } from "@/lib/core/journey";
 import { sqlClient as sql } from "@/lib/db/client";
 import { iso } from "./time";
 import { getCollationCheck, getUnitResults, type Place, type UnitResult } from "./views";
 
 /** What happened at one polling unit, from opening to the final collation, read from the signed ledger. */
-export async function getUnitJourney(unit: Place, ancestors: Place[], result: UnitResult | undefined): Promise<JourneyStep[]> {
+export async function getUnitJourney(unit: Place, ancestors: Place[], result: UnitResult | undefined, lang: Lang = "en"): Promise<JourneyStep[]> {
   const [opened] = await sql<{ occurred_at: Date; display_name: string }[]>`
     select e.occurred_at, a.display_name from events e join actors a on a.id = e.author_id
     where e.type = 'pu.opened' and e.place_code = ${unit.code} order by e.seq desc limit 1`;
@@ -32,7 +33,7 @@ export async function getUnitJourney(unit: Place, ancestors: Place[], result: Un
       name: ancestor.name,
       status: row.status,
       at: check.occurredAt,
-      detail: row.status === "mismatch" && d ? `${d.field} announced ${d.announced.toLocaleString("en-US")}, but rival agents sealed ${d.computed.toLocaleString("en-US")}.` : undefined,
+      diff: row.status === "mismatch" && d ? { field: d.field, announced: d.announced, sealed: d.computed } : undefined,
     });
   }
 
@@ -43,7 +44,7 @@ export async function getUnitJourney(unit: Place, ancestors: Place[], result: Un
       : null,
     attempts: attempts.map((a) => ({ outcome: a.outcome === "success" ? "success" : "failed", at: iso(a.occurred_at) })),
     collations,
-  });
+  }, lang);
 }
 
 export { joinList };

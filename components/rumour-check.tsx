@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Button, Card, Eyebrow } from "@/components/ui";
 import { PlaceSearch } from "@/components/app/place-search";
+import { t, type Lang } from "@/lib/core/i18n";
 
 type Verdict = { verdict: "confirmed" | "false" | "unverified"; headline: string; reasons: string[] };
 type Claim = { summary: string; by: "ai" | "rules" };
@@ -12,14 +13,14 @@ type Result =
   | { status: "checked"; claim: Claim; place: { code: string; name: string } | null; verdict: Verdict };
 
 const TONE = {
-  confirmed: { label: "Confirmed", text: "text-sealed", border: "border-sealed/50", dot: "bg-sealed" },
-  false: { label: "False", text: "text-alarm", border: "border-alarm/60", dot: "bg-alarm" },
-  unverified: { label: "Unverified", text: "text-amber", border: "border-amber/50", dot: "bg-amber" },
+  confirmed: { label: "r.confirmed", text: "text-sealed", border: "border-sealed/50", dot: "bg-sealed" },
+  false: { label: "r.false", text: "text-alarm", border: "border-alarm/60", dot: "bg-alarm" },
+  unverified: { label: "r.unverified", text: "text-amber", border: "border-amber/50", dot: "bg-amber" },
 } as const;
 const LEVEL: Record<string, string> = { lga: "Area council", ward: "Ward", pu: "Polling unit" };
 
 /** Paste or share a forwarded message; the signed ledger answers. */
-export function RumourCheck({ initialText = "" }: { initialText?: string }) {
+export function RumourCheck({ initialText = "", lang = "en" }: { initialText?: string; lang?: Lang }) {
   const [text, setText] = useState(initialText);
   const [place, setPlace] = useState<{ code: string; name: string } | null>(null);
   const [state, setState] = useState<"idle" | "loading" | "error">("idle");
@@ -30,7 +31,7 @@ export function RumourCheck({ initialText = "" }: { initialText?: string }) {
     setState("loading");
     setError("");
     try {
-      const res = await fetch("/api/rumour", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text, placeCode: placeCode ?? place?.code }) });
+      const res = await fetch("/api/rumour", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text, placeCode: placeCode ?? place?.code, lang }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "The check failed.");
       setResult(data as Result);
@@ -44,8 +45,8 @@ export function RumourCheck({ initialText = "" }: { initialText?: string }) {
   return (
     <div className="space-y-4">
       <Card>
-        <label htmlFor="msg" className="font-display text-xl font-extrabold">Message to check</label>
-        <p className="mt-1 text-sm text-muted">Paste a forwarded WhatsApp message about a result or a collation. Nothing you paste is stored.</p>
+        <label htmlFor="msg" className="font-display text-xl font-extrabold">{t(lang, "c.label")}</label>
+        <p className="mt-1 text-sm text-muted">{t(lang, "c.hint")}</p>
         <textarea
           id="msg"
           value={text}
@@ -59,7 +60,7 @@ export function RumourCheck({ initialText = "" }: { initialText?: string }) {
           className="mt-3 w-full rounded-xl border border-line bg-raised p-3 text-base outline-none focus:border-thumb"
         />
         <div className="mt-3">
-          <Eyebrow>Which place? (optional)</Eyebrow>
+          <Eyebrow>{t(lang, "c.place")}</Eyebrow>
           {place ? (
             <p className="mt-1 flex items-center justify-between rounded-xl bg-raised px-3 py-2 text-sm">
               <span className="font-bold">{place.name}</span>
@@ -72,7 +73,7 @@ export function RumourCheck({ initialText = "" }: { initialText?: string }) {
           )}
         </div>
         <Button onClick={() => void check()} disabled={text.trim().length < 8 || state === "loading"} className="mt-4 w-full">
-          {state === "loading" ? "Checking the ledger…" : "Check this message"}
+          {state === "loading" ? t(lang, "c.loading") : t(lang, "c.button")}
         </Button>
         {state === "error" && <p role="alert" className="mt-3 text-sm text-alarm">{error}</p>}
       </Card>
@@ -108,7 +109,7 @@ export function RumourCheck({ initialText = "" }: { initialText?: string }) {
         <Card className={TONE[result.verdict.verdict].border}>
           <p className={`flex items-center gap-2 text-xs font-bold tracking-[0.14em] uppercase ${TONE[result.verdict.verdict].text}`}>
             <span aria-hidden className={`h-2.5 w-2.5 rounded-full ${TONE[result.verdict.verdict].dot}`} />
-            {TONE[result.verdict.verdict].label}
+            {t(lang, TONE[result.verdict.verdict].label)}
           </p>
           <h2 className="font-display mt-2 text-2xl leading-tight font-extrabold">{result.verdict.headline}</h2>
           <ul className="mt-3 space-y-2 text-sm text-muted">
@@ -117,11 +118,11 @@ export function RumourCheck({ initialText = "" }: { initialText?: string }) {
             ))}
           </ul>
           {result.place && (
-            <Link href={`/p/${result.place.code}`} className="mt-4 inline-block font-bold text-blue">See the signed record for {result.place.name} ›</Link>
+            <Link href={`/p/${result.place.code}`} className="mt-4 inline-block font-bold text-blue">{t(lang, "c.record", { place: result.place.name })} ›</Link>
           )}
           <div className="mt-4 border-t border-line pt-3 text-xs text-muted">
-            <p>The message was read as: “{result.claim.summary}”</p>
-            <p className="mt-1">{result.claim.by === "ai" ? "Read by an AI model. The AI only reads the message; the verdict comes from signed results." : "Read by fixed rules, because the AI reader was unavailable. The verdict comes from signed results."}</p>
+            <p>{t(lang, "c.readAs")}: “{result.claim.summary}”</p>
+            <p className="mt-1">{result.claim.by === "ai" ? t(lang, "c.readAi") : t(lang, "c.readRules")}</p>
           </div>
         </Card>
       )}
