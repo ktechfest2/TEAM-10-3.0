@@ -38,7 +38,7 @@ pnpm dev                        # http://localhost:3000
 pnpm test                       # core unit tests
 pnpm check:journey              # end-to-end result journey against a running server
 ```
-The demo invite code for official roles is `TALLY-DEMO`. A real deployment sets its own `TALLY_INVITE_CODE`.
+Official roles (officer, agent, observer, collation officer) sign up with an invite code issued by the deploying organisation: set `TALLY_INVITE_CODE`. Operator tools (test data, ledger reset) live at `/ops` behind `OPS_CODE`; without it they are switched off in production.
 
 **Deploy:** link the repo to Vercel, add a Postgres database (Neon) from the Vercel Marketplace, and deploy. The build migrates and seeds automatically. AI runs through Vercel AI Gateway with no API key needed on Vercel.
 

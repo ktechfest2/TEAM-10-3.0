@@ -25,6 +25,8 @@ jobs:
       DATABASE_URL: postgres://tally:tally@localhost:5432/tally
       PHONE_PEPPER: ci-only-pepper
       ANCHOR_CRON_SECRET: ci-only-secret
+      TALLY_INVITE_CODE: ci-invite
+      OPS_CODE: ci-ops
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

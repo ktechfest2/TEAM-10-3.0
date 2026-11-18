@@ -12,7 +12,7 @@ const ease = "cubic-bezier(.3,.6,.2,1)";
 /**
  * Tally-mark seal. One stroke per party that signed; the slash closes the bundle:
  * dotted grey (nobody), dashed amber (one party), solid green (sealed), broken red (disputed).
- * The geometry is shared with the prototype, so animation is a stroke-dashoffset transition.
+ * Animation is a stroke-dashoffset transition on the shared geometry.
  */
 export function Seal({ signed, state, labels = true, className = "" }: { signed: string[]; state: SealState; labels?: boolean; className?: string }) {
   const stroke = (i: number): CSSProperties => ({
