@@ -38,7 +38,8 @@ async function actors(): Promise<Actors> {
 export async function simulationState() {
   const [{ remaining }] = await sql<{ remaining: number }[]>`
     select count(*)::int as remaining from reference_2023 r
-    where not exists (select 1 from events e where e.type = 'result.declared' and e.place_code = r.pu_code)`;
+    where not exists (select 1 from events e where e.type = 'result.declared' and e.place_code = r.pu_code)
+      and (r.accredited > 0 or exists (select 1 from jsonb_each_text(r.votes) v where v.value::int > 0))`;
   const [{ done }] = await sql<{ done: number }[]>`
     select count(*)::int as done from events e join actors a on a.id = e.author_id
     where e.type = 'result.declared' and a.display_name like 'DEMO %'`;
@@ -51,6 +52,7 @@ export async function stepSimulation(count: number) {
   const rows = await sql<{ pu_code: string; votes: Record<string, number>; accredited: number; registered: number }[]>`
     select r.pu_code, r.votes, r.accredited, r.registered from reference_2023 r
     where not exists (select 1 from events e where e.type = 'result.declared' and e.place_code = r.pu_code)
+      and (r.accredited > 0 or exists (select 1 from jsonb_each_text(r.votes) v where v.value::int > 0))
     order by md5(r.pu_code) limit ${count}`;
 
   let rejected = 0;

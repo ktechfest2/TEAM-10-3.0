@@ -6,7 +6,19 @@
  * Usage: BASE_URL=http://localhost:3100 npx tsx scripts/sim-check.mts
  */
 /* eslint-disable @typescript-eslint/no-explicit-any -- loose JSON from our own API in a check script */
+import postgres from "postgres";
 const BASE = process.env.BASE_URL ?? "http://localhost:3100";
+
+async function sqlSimUnit() {
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
+  try {
+    const [row] = await sql<{ place_code: string }[]>`select place_code from events where type = 'result.declared' order by seq limit 1`;
+    if (!row) throw new Error("no result on the ledger");
+    return row.place_code;
+  } finally {
+    await sql.end();
+  }
+}
 
 function assert(cond: unknown, msg: string): asserts cond {
   if (!cond) throw new Error(`FAIL · ${msg}`);
@@ -75,6 +87,20 @@ assert(rumourNothing.json.verdict?.verdict === "unverified", "a claim the ledger
 // The verdict is the same in every language; only the words change.
 const ha = await post("/api/rumour", { text: claim, placeCode: bad.json.wardCode, lang: "ha" });
 assert(ha.json.verdict?.verdict === "confirmed" && ha.json.verdict.headline.startsWith("Gaskiya ne"), "the same verdict is returned in Hausa");
+
+// Simulated results must say so wherever a voter can see them.
+const simUnit = (await sqlSimUnit()) as string;
+const simPage = await (await fetch(`${BASE}/p/${simUnit}`)).text();
+assert(simPage.includes("Simulated data"), "a simulated unit's page says the data is simulated");
+const simPoster = await fetch(`${BASE}/api/poster/${simUnit}`);
+assert(simPoster.status === 200, "the share card renders for a simulated unit");
+const simRumour = await post("/api/rumour", { text: "APC got 5 votes at " + simUnit });
+assert(simRumour.json.verdict?.simulated === true, "a verdict that rests on a simulated unit is marked simulated");
+
+// The photo reader is public and costs money: it is rate-limited like the rumour check.
+const codes: number[] = [];
+for (let i = 0; i < 8; i++) codes.push((await fetch(`${BASE}/api/ec8a/read`, { method: "POST", headers: { "Content-Type": "text/plain" }, body: "x" })).status);
+assert(codes.at(-1) === 429 && codes[0] === 400, "the photo reader is rate-limited per caller");
 
 const audit = await get("/api/verify");
 assert(audit.intact === true, `ledger intact after the simulation (${audit.entries} entries)`);
