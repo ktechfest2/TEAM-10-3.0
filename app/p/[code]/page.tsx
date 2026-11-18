@@ -2,7 +2,13 @@ import { Logo } from "@/components/logo";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Journey } from "@/components/journey";
+import { Seal, type SealState } from "@/components/seal";
+import { ShareButton } from "@/components/share-button";
 import { Card, Eyebrow, FiguresTable, StatusBadge, TrustMeter, shortHash, type Status } from "@/components/ui";
+import { ROLE_COLOR, type RoleKey } from "@/lib/roles";
+import { joinList } from "@/lib/core/journey";
+import { getUnitJourney } from "@/lib/server/journey";
 import {
   childSummaries,
   getBreadcrumb,
@@ -14,6 +20,7 @@ import {
   getUnitResults,
   type CollationCheck,
   type Place,
+  type ResultVersion,
 } from "@/lib/server/views";
 
 export const dynamic = "force-dynamic";
@@ -37,7 +44,23 @@ const EVENT: Record<string, string> = {
 export async function generateMetadata(props: PageProps<"/p/[code]">): Promise<Metadata> {
   const { code } = await props.params;
   const place = await getPlace(code);
-  return { title: place ? place.name : "Not found" };
+  if (!place) return { title: "Not found" };
+  return { title: place.name, description: `${place.name}: signed election results anyone can check on Tally.`, openGraph: { title: `${place.name} on Tally`, type: "website" }, twitter: { card: "summary_large_image" } };
+}
+
+function headline(best: ResultVersion | null | undefined) {
+  if (!best) return { state: "none" as SealState, title: "No signed result yet", text: "When the presiding officer records the EC8A and agents of rival parties co-sign it, it appears here.", tone: "text-fg" };
+  const parties = [...new Set(best.witnesses.filter((w) => w.party).map((w) => w.party as string))];
+  switch (best.trust.status) {
+    case "sealed":
+      return { state: "sealed" as SealState, title: "This result is sealed", text: `Agents of rival parties (${joinList(parties)}) signed these exact figures.`, tone: "text-sealed" };
+    case "disputed":
+      return { state: "disputed" as SealState, title: "This result is disputed", text: "Witnesses signed different figures. Every version is kept as evidence; nothing is overwritten.", tone: "text-alarm" };
+    case "witnessed":
+      return { state: "witnessed" as SealState, title: "Signed by one party", text: `${joinList(parties)} signed it. A rival party's signature seals it.`, tone: "text-amber" };
+    default:
+      return { state: "none" as SealState, title: "Recorded, not yet witnessed", text: "The officer recorded it. No party agent has signed yet.", tone: "text-fg" };
+  }
 }
 
 export default async function PlacePage(props: PageProps<"/p/[code]">) {
@@ -48,41 +71,42 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
   const [breadcrumb, children, results, timeline] = await Promise.all([getBreadcrumb(place), getChildren(code), getUnitResults(place), getTimeline(place)]);
   const [coverage, collation] = await Promise.all([getCoverage(place, results), getCollationCheck(place, results)]);
   const unit = place.level === "pu" ? results.get(code) : undefined;
-  const inclusion = place.level === "pu" ? await inclusionChecks(place, breadcrumb) : [];
+  const journey = place.level === "pu" ? await getUnitJourney(place, breadcrumb, unit) : [];
+  const hero = place.level === "pu" ? headline(unit?.best) : null;
 
   return (
     <div className="mx-auto w-full max-w-3xl flex-1 px-4 pb-16">
       <header className="flex items-center justify-between py-4">
         <Link href="/"><Logo size={22} /></Link>
-        <Link href="/app" className="text-sm font-semibold text-accent">Open app ›</Link>
+        <Link href="/app" className="text-sm font-bold text-blue">Open app ›</Link>
       </header>
 
-      <nav className="flex flex-wrap gap-1 text-xs text-muted" aria-label="Breadcrumb">
+      <nav className="flex flex-wrap gap-x-1.5 text-xs text-muted" aria-label="Breadcrumb">
         {breadcrumb.map((b) => (
           <span key={b.code}>
-            <Link href={`/p/${b.code}`} className="hover:text-ink hover:underline">{b.name}</Link> ›
+            <Link href={`/p/${b.code}`} className="hover:text-fg hover:underline">{b.name}</Link> ›
           </span>
         ))}
       </nav>
-      <h1 className="mt-1 text-3xl font-bold">{place.name}</h1>
+      <h1 className="font-display mt-2 text-3xl leading-tight font-extrabold sm:text-4xl">{place.name}</h1>
       <p className="mt-1 text-sm text-muted">
         {LEVEL[place.level]} · <span className="hash">{place.code}</span>
-        {place.registered ? ` · ${place.registered.toLocaleString()} registered voters` : ""}
+        {place.registered ? ` · ${place.registered.toLocaleString("en-US")} registered voters` : ""}
       </p>
 
       <div className="mt-6 space-y-4">
-        {place.level === "pu" ? (
-          unit?.best ? (
-            <>
-              <Card className={unit.best.trust.status === "disputed" ? "border-disputed" : unit.best.trust.status === "sealed" ? "border-sealed" : ""}>
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <Eyebrow>Result</Eyebrow>
-                    <p className="mt-2 text-lg font-semibold">{unit.best.trust.verdict}</p>
-                  </div>
-                  <StatusBadge status={unit.best.trust.status} />
+        {place.level === "pu" && hero ? (
+          <>
+            <Card className={unit?.best?.trust.status === "disputed" ? "border-alarm/60" : unit?.best?.trust.status === "sealed" ? "border-sealed/50" : ""}>
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+                <Seal signed={unit?.best ? [...new Set(unit.best.witnesses.filter((w) => w.party).map((w) => w.party as string))] : []} state={hero.state} className="w-40 shrink-0 sm:w-44" />
+                <div className="min-w-0">
+                  <h2 className={`font-display text-2xl leading-tight font-extrabold ${hero.tone}`}>{hero.title}</h2>
+                  <p className="mt-1.5 text-sm text-muted">{hero.text}</p>
                 </div>
-                <div className="mt-4 grid gap-6 sm:grid-cols-2">
+              </div>
+              {unit?.best && (
+                <div className="mt-5 grid gap-6 sm:grid-cols-2">
                   <FiguresTable totals={unit.best.figures} />
                   <div className="space-y-4">
                     <TrustMeter probability={unit.best.trust.probability} status={unit.best.trust.status} />
@@ -90,78 +114,77 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
                       <Eyebrow>Signed by</Eyebrow>
                       <ul className="mt-2 space-y-1.5 text-sm">
                         {unit.best.witnesses.map((w) => (
-                          <li key={w.actorId} className="flex justify-between gap-2">
+                          <li key={w.actorId} className={`flex justify-between gap-2 border-l-4 pl-2.5 ${ROLE_COLOR[w.role as RoleKey]?.border ?? "border-l-line"}`}>
                             <span>
-                              {w.party ? <span className="font-semibold">{w.party} </span> : null}
-                              {ROLE[w.role] ?? w.role}
+                              {w.party ? <span className="font-bold">{w.party} </span> : null}
+                              <span className="text-muted">{ROLE[w.role] ?? w.role}</span>
                             </span>
-                            <span className="text-muted">{new Date(w.signedAt).toLocaleTimeString()}</span>
+                            <span className="text-muted">{new Date(w.signedAt).toLocaleTimeString("en-NG", { timeStyle: "short" })}</span>
                           </li>
                         ))}
                       </ul>
                     </div>
                   </div>
                 </div>
-                <details className="mt-4 text-sm">
-                  <summary className="cursor-pointer font-semibold">Why this trust score</summary>
-                  <ul className="mt-2 space-y-1">
+              )}
+              {unit?.best && (
+                <div className="mt-5 border-t border-line pt-4">
+                  <ShareButton code={place.code} title={`${place.name} on Tally`} text={`${hero.title}. See it for yourself:`} />
+                </div>
+              )}
+            </Card>
+
+            <Card>
+              <Eyebrow>Was my result counted?</Eyebrow>
+              <p className="mt-1 text-sm text-muted">From opening to the final collation, as the signed ledger records it.</p>
+              <Journey steps={journey} />
+            </Card>
+
+            {unit?.best && (
+              <Card>
+                <details>
+                  <summary className="cursor-pointer text-sm font-bold">Proof: why you can trust this</summary>
+                  <ul className="mt-3 space-y-1.5 text-sm">
                     {unit.best.trust.trace.map((t) => (
                       <li key={t.id + t.label} className="flex justify-between gap-3">
                         <span>{t.label} <span className="text-muted">· {t.detail}</span></span>
-                        <span className={t.effect >= 0 ? "text-sealed" : "text-disputed"}>{t.effect >= 0 ? "+" : ""}{t.effect.toFixed(2)}</span>
+                        <span className={t.effect >= 0 ? "text-sealed" : "text-alarm"}>{t.effect >= 0 ? "+" : ""}{t.effect.toFixed(2)}</span>
                       </li>
                     ))}
                   </ul>
+                  <div className="mt-4 space-y-1 border-t border-line pt-3 text-xs text-muted">
+                    <p>Read by: {unit.best.readBy === "model" ? "AI reader, confirmed by the officer" : "entered by the officer"}</p>
+                    <p>Content hash <span className="hash text-fg">{unit.best.contentHash}</span></p>
+                    {unit.best.photoSha256 && (
+                      <p>
+                        EC8A photo <a className="text-blue underline" href={`/api/media/${unit.best.photoSha256}`}>view</a> · fingerprint <span className="hash">{shortHash(unit.best.photoSha256)}</span>
+                      </p>
+                    )}
+                  </div>
                 </details>
-                <div className="mt-4 space-y-1 border-t border-line pt-3 text-xs text-muted">
-                  <p>Read by: {unit.best.readBy === "model" ? "AI reader, confirmed by the officer" : "entered by the officer"}</p>
-                  <p>Content hash <span className="hash text-ink">{unit.best.contentHash}</span></p>
-                  {unit.best.photoSha256 && (
-                    <p>
-                      EC8A photo <a className="text-accent underline" href={`/api/media/${unit.best.photoSha256}`}>view</a> · fingerprint <span className="hash">{shortHash(unit.best.photoSha256)}</span>
-                    </p>
-                  )}
-                </div>
               </Card>
-              {unit.versions.length > 1 && (
-                <Card className="border-disputed">
-                  <Eyebrow>Other signed versions</Eyebrow>
-                  <p className="mt-1 text-sm text-muted">Every version stays on the ledger as evidence. Nothing is overwritten.</p>
-                  {unit.versions
-                    .filter((v) => v.contentHash !== unit.best!.contentHash)
-                    .map((v) => (
-                      <div key={v.contentHash} className="mt-3 rounded-xl bg-paper p-3">
-                        <div className="flex justify-between text-sm">
-                          <span>{v.witnesses.filter((w) => w.party).map((w) => w.party).join(", ") || "Officer only"}</span>
-                          <StatusBadge status={v.trust.status} />
-                        </div>
-                        <div className="mt-2">
-                          <FiguresTable totals={v.figures} compare={unit.best!.figures} />
-                        </div>
+            )}
+
+            {unit && unit.versions.length > 1 && (
+              <Card className="border-alarm/50">
+                <Eyebrow>Other signed versions</Eyebrow>
+                <p className="mt-1 text-sm text-muted">Every version stays on the ledger as evidence. Nothing is overwritten.</p>
+                {unit.versions
+                  .filter((v) => v.contentHash !== unit.best!.contentHash)
+                  .map((v) => (
+                    <div key={v.contentHash} className="mt-3 rounded-xl bg-raised p-3">
+                      <div className="flex justify-between text-sm">
+                        <span>{v.witnesses.filter((w) => w.party).map((w) => w.party).join(", ") || "Officer only"}</span>
+                        <StatusBadge status={v.trust.status} />
                       </div>
-                    ))}
-                </Card>
-              )}
-              {inclusion.length > 0 && (
-                <Card>
-                  <Eyebrow>Is what was on the wall what was counted?</Eyebrow>
-                  <ul className="mt-3 space-y-2">
-                    {inclusion.map((i) => (
-                      <li key={i.place.code} className="flex items-center justify-between gap-2 text-sm">
-                        <span>{LEVEL[i.place.level]} collation · {i.place.name}</span>
-                        <StatusBadge status={i.status} />
-                      </li>
-                    ))}
-                  </ul>
-                </Card>
-              )}
-            </>
-          ) : (
-            <Card>
-              <StatusBadge status={null} />
-              <p className="mt-2 text-sm text-muted">No signed result yet. When the presiding officer records the EC8A and rival agents co-sign it, it appears here.</p>
-            </Card>
-          )
+                      <div className="mt-2">
+                        <FiguresTable totals={v.figures} compare={unit.best!.figures} />
+                      </div>
+                    </div>
+                  ))}
+              </Card>
+            )}
+          </>
         ) : (
           <>
             <Card>
@@ -197,24 +220,26 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
 
         {timeline.length > 0 && (
           <Card>
-            <Eyebrow>Signed timeline</Eyebrow>
-            <ol className="mt-3 space-y-3">
-              {timeline.map((t) => (
-                <li key={t.id} className="flex gap-3 text-sm">
-                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-ink" />
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium">
-                      {EVENT[t.type] ?? t.type}
-                      {t.type === "transmission.attempted" ? ` — ${(t.payload as { outcome: string }).outcome}` : ""}
-                    </p>
-                    <p className="text-xs text-muted">
-                      {new Date(t.occurredAt).toLocaleString()} · {ROLE[t.role] ?? t.role}
-                      {t.party ? ` (${t.party})` : ""} · {t.witnesses} co-signature{t.witnesses === 1 ? "" : "s"} · ledger <span className="hash">{shortHash(t.ledgerHash)}</span>
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ol>
+            <details>
+              <summary className="cursor-pointer text-sm font-bold">Signed record ({timeline.length})</summary>
+              <ol className="mt-3 space-y-3">
+                {timeline.map((t) => (
+                  <li key={t.id} className="flex gap-3 text-sm">
+                    <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${ROLE_COLOR[t.role as RoleKey]?.dot ?? "bg-fg"}`} />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium">
+                        {EVENT[t.type] ?? t.type}
+                        {t.type === "transmission.attempted" ? ` — ${(t.payload as { outcome: string }).outcome}` : ""}
+                      </p>
+                      <p className="text-xs text-muted">
+                        {new Date(t.occurredAt).toLocaleString("en-NG")} · {ROLE[t.role] ?? t.role}
+                        {t.party ? ` (${t.party})` : ""} · {t.witnesses} co-signature{t.witnesses === 1 ? "" : "s"} · ledger <span className="hash">{shortHash(t.ledgerHash)}</span>
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </details>
           </Card>
         )}
         <p className="text-center text-xs text-muted">
@@ -226,10 +251,10 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
 }
 
 function Stat({ label, value, tone }: { label: string; value: number; tone?: "sealed" | "witnessed" | "disputed" }) {
-  const color = tone === "sealed" ? "text-sealed" : tone === "witnessed" ? "text-witnessed" : tone === "disputed" ? "text-disputed" : "text-ink";
+  const color = tone === "sealed" ? "text-sealed" : tone === "witnessed" ? "text-amber" : tone === "disputed" ? "text-alarm" : "text-fg";
   return (
-    <div className="rounded-xl bg-paper p-3">
-      <p className={`text-2xl font-bold tabular-nums ${color}`}>{value.toLocaleString()}</p>
+    <div className="rounded-xl bg-raised p-3">
+      <p className={`text-2xl font-bold tabular-nums ${color}`}>{value.toLocaleString("en-US")}</p>
       <p className="text-xs text-muted">{label}</p>
     </div>
   );
@@ -238,20 +263,16 @@ function Stat({ label, value, tone }: { label: string; value: number; tone?: "se
 function CollationPanel({ check }: { check: CollationCheck }) {
   const bad = check.rows.filter((r) => r.status === "mismatch");
   return (
-    <Card className={check.tamperSuspected ? "border-2 border-disputed bg-disputed-wash" : "border-sealed"}>
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <Eyebrow>Collation check</Eyebrow>
-          <h2 className={`mt-1 text-xl font-bold ${check.tamperSuspected ? "text-disputed" : "text-sealed"}`}>
-            {check.tamperSuspected ? `Tampering suspected: ${bad.length} row${bad.length === 1 ? " does" : "s do"} not match the sealed results` : "Collation matches every sealed result"}
-          </h2>
-          <p className="mt-1 text-sm text-muted">Entered by {check.officer} at {new Date(check.occurredAt).toLocaleString()}</p>
-        </div>
-      </div>
-      {check.arithmetic.length > 0 && <p className="mt-3 text-sm text-disputed">The announced total does not equal the sum of its own rows.</p>}
+    <Card className={check.tamperSuspected ? "border-2 border-alarm bg-alarm-wash" : "border-sealed/50"}>
+      <Eyebrow>Collation check</Eyebrow>
+      <h2 className={`mt-1 text-xl font-bold ${check.tamperSuspected ? "text-alarm" : "text-sealed"}`}>
+        {check.tamperSuspected ? `Tampering suspected: ${bad.length} row${bad.length === 1 ? " does" : "s do"} not match the sealed results` : "Collation matches every sealed result"}
+      </h2>
+      <p className="mt-1 text-sm text-muted">Entered by {check.officer} at {new Date(check.occurredAt).toLocaleString("en-NG")}</p>
+      {check.arithmetic.length > 0 && <p className="mt-3 text-sm text-alarm">The announced total does not equal the sum of its own rows.</p>}
       <ul className="mt-4 space-y-2">
         {check.rows.map((r) => (
-          <li key={r.code} className={`rounded-xl p-3 ${r.status === "mismatch" ? "bg-card" : "bg-card/60"}`}>
+          <li key={r.code} className="rounded-xl bg-raised p-3">
             <div className="flex items-center justify-between gap-2">
               <Link href={`/p/${r.code}`} className="font-medium hover:underline">{r.name}</Link>
               <StatusBadge status={r.status} />
@@ -259,10 +280,10 @@ function CollationPanel({ check }: { check: CollationCheck }) {
             {r.divergences.length > 0 && (
               <ul className="mt-2 text-sm">
                 {r.divergences.map((d) => (
-                  <li key={d.field} className="flex justify-between">
+                  <li key={d.field} className="flex justify-between gap-3">
                     <span>{d.field}</span>
-                    <span>
-                      announced <b className="text-disputed">{d.announced.toLocaleString()}</b> · sealed by rival agents <b className="text-sealed">{d.computed.toLocaleString()}</b>
+                    <span className="text-right">
+                      announced <b className="text-alarm">{d.announced.toLocaleString("en-US")}</b> · sealed by rival agents <b className="text-sealed">{d.computed.toLocaleString("en-US")}</b>
                     </span>
                   </li>
                 ))}
@@ -273,18 +294,4 @@ function CollationPanel({ check }: { check: CollationCheck }) {
       </ul>
     </Card>
   );
-}
-
-/** For a polling unit: did each collation level above it carry its sealed figures unchanged? */
-async function inclusionChecks(pu: Place, ancestors: Place[]) {
-  const out: { place: Place; status: "match" | "mismatch" | "unverified" }[] = [];
-  for (const ancestor of [...ancestors].reverse()) {
-    if (ancestor.level === "national") continue;
-    const results = await getUnitResults(ancestor);
-    const check = await getCollationCheck(ancestor, results);
-    if (!check) continue;
-    const row = check.rows.find((r) => pu.code === r.code || pu.code.startsWith(`${r.code}-`));
-    if (row) out.push({ place: ancestor, status: row.status });
-  }
-  return out;
 }
