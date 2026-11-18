@@ -70,6 +70,10 @@ assert(rumourHonest.json.verdict?.verdict === "false", "the same rumour about th
 const rumourNothing = await post("/api/rumour", { text: "Thugs are attacking voters at the school gate!!", placeCode: bad.json.wardCode });
 assert(rumourNothing.json.verdict?.verdict === "unverified", "a claim the ledger cannot settle stays unverified");
 
+// The verdict is the same in every language; only the words change.
+const ha = await post("/api/rumour", { text: claim, placeCode: bad.json.wardCode, lang: "ha" });
+assert(ha.json.verdict?.verdict === "confirmed" && ha.json.verdict.headline.startsWith("Gaskiya ne"), "the same verdict is returned in Hausa");
+
 const audit = await get("/api/verify");
 assert(audit.intact === true, `ledger intact after the simulation (${audit.entries} entries)`);
 

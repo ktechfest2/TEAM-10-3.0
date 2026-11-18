@@ -63,3 +63,11 @@ Gates run: 35 unit tests, typecheck, lint, `check:journey`, `check:sim` (local).
 | Anomaly agent on live results (mission alert, unit page) | done | Summary alert only. |
 | Official WhatsApp number, 5-language answers, voice notes, forwarded-copy chains | todo | WhatsApp needs a Meta account. |
 Gates run: 62 unit tests, typecheck, lint, `check:journey`, `check:sim` (local).
+
+## Slice 6: languages and voter alerts (Wed 18 Nov, night)
+| Item | Status | Notes |
+|---|---|---|
+| 5 languages: unit verdict, journey, rumour verdicts, share card | done | Draft, unreviewed by native speakers; labelled in the UI. |
+| Voter alerts: "changed since you last looked" | done | In-app only. Push needs VAPID keys (user). |
+| Voice (TTS), officer/agent flows in other languages | todo | |
+Gates run: 79 unit tests, typecheck, lint, `check:sim`, `check:journey` (local).

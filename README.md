@@ -40,7 +40,7 @@ pnpm check:journey              # end-to-end result journey against a running se
 ```
 Official roles (officer, agent, observer, collation officer) sign up with an invite code issued by the deploying organisation: set `TALLY_INVITE_CODE`. Operator tools (test data, ledger reset) live at `/ops` behind `OPS_CODE`; without it they are switched off in production.
 
-**Deploy:** link the repo to Vercel, add a Postgres database (Neon) from the Vercel Marketplace, and deploy. The build migrates and seeds automatically. AI runs through Vercel AI Gateway with no API key needed on Vercel.
+**Deploy:** link the repo to Vercel, add a Postgres database (Neon) from the Vercel Marketplace, and deploy. The build migrates and seeds automatically. AI runs through Vercel AI Gateway: set `AI_GATEWAY_API_KEY` (or enable the Gateway for the project). Without it the app still works: the officer enters figures by hand, and rumours are read by fixed rules, and the screens say so.
 
 ## Credits
 - **Data:** 2023 presidential polling-unit figures and coordinates for the FCT (2,822 units), from [mundus01/irev-2023-results-map](https://github.com/mundus01/irev-2023-results-map) (sums of INEC IReV polling-unit sheets). Polling-unit structure follows INEC codes.
