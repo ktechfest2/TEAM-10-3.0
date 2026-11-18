@@ -45,6 +45,10 @@ assert(mid.totals.sealed > 0 && mid.cells.includes(2), "sealed units appear on t
 assert(mid.simulation.simulated === mid.totals.reported, "every result is labelled as simulated by DEMO actors");
 assert(mid.councils.reduce((a: number, c: any) => a + c.sealed, 0) === mid.totals.sealed, "area-council counts add up to the total");
 
+assert(mid.totals.flagged > 0 && mid.alerts.some((a: any) => a.k === "STATISTICAL FLAGS"), `the anomaly agent flags ${mid.totals.flagged} live units for review`);
+const replay = await (await fetch(`${BASE}/replay`)).text();
+assert(replay.includes("2,822") && replay.includes("Flagged for review"), "Replay 2023 analyses every 2023 unit");
+
 const honest = await post("/api/ops/collate", { mode: "honest" });
 assert(honest.status === 200, `an honest ward collation was entered (${honest.json.ward})`);
 let snap = await fresh();

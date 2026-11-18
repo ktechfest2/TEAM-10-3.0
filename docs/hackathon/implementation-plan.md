@@ -54,3 +54,12 @@ Timeboxes:
 | Collation: progress, mismatch count, sticky sign bar | done | Not yet checked on a device. |
 | WhatsApp rumour check, 5-language answers, voter alerts | todo | Next slice. |
 Gates run: 35 unit tests, typecheck, lint, `check:journey`, `check:sim` (local). Deployed to production.
+
+## Slice 5: rumour check, anomaly agent (Wed 18 Nov, night)
+| Item | Status | Notes |
+|---|---|---|
+| Rumour check (`/check`, `/api/rumour`, share target) | done | Ledger decides, AI only reads. AI reader is **not live in production** (no AI Gateway key); the rules fallback runs and says so. |
+| Anomaly agent on 2023 data (`/replay`) | done | 288 of 2,822 FCT units flagged for review. No timeline: dataset has no timestamps. |
+| Anomaly agent on live results (mission alert, unit page) | done | Summary alert only. |
+| Official WhatsApp number, 5-language answers, voice notes, forwarded-copy chains | todo | WhatsApp needs a Meta account. |
+Gates run: 62 unit tests, typecheck, lint, `check:journey`, `check:sim` (local).
