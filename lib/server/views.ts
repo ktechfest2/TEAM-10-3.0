@@ -3,6 +3,7 @@ import { iso } from "./time";
 import { sqlClient as sql } from "@/lib/db/client";
 import type { ResultFigures } from "@/lib/core/events";
 import { checkResultArithmetic, figuresKey, reconcile, sumTotals, type Divergence, type Totals } from "@/lib/core/results";
+import { compareWall, type WallComparison } from "@/lib/core/wall";
 import { betaReliability, scoreResult, type ResultStatus, type ResultTrust, type ResultWitness } from "@/lib/core/trust";
 
 export type Place = {
@@ -260,4 +261,36 @@ export function childSummaries(children: Place[], results: Map<string, UnitResul
       status: child.level === "pu" ? (units[0]?.[1].best?.trust.status ?? null) : null,
     };
   });
+}
+
+export type VoterReports = { total: number; counts: Record<string, number>; latestLevel: string | null; latestAt: string | null; simulated: boolean };
+
+/** What people at a polling unit have signed about its queue and opening. Each person counts once, by their latest report. */
+export async function getVoterReports(place: Place): Promise<VoterReports> {
+  const rows = await sql<{ level: string; occurred_at: Date; display_name: string }[]>`
+    select distinct on (e.author_id) e.payload->>'level' as level, e.occurred_at, a.display_name
+    from events e join actors a on a.id = e.author_id
+    where e.type = 'pu.queue' and e.place_code = ${place.code}
+    order by e.author_id, e.seq desc`;
+  const counts: Record<string, number> = {};
+  for (const r of rows) counts[r.level] = (counts[r.level] ?? 0) + 1;
+  const latest = [...rows].sort((a, b) => +new Date(b.occurred_at) - +new Date(a.occurred_at))[0];
+  return { total: rows.length, counts, latestLevel: latest?.level ?? null, latestAt: latest ? iso(latest.occurred_at) : null, simulated: rows.some((r) => r.display_name.startsWith("DEMO ")) };
+}
+
+export type WallPhotos = { total: number; same: number; differs: number; unread: number; photos: { sha: string; state: WallComparison["state"]; fields: string[]; at: string }[]; simulated: boolean };
+
+/** Citizens' photos of the result sheet on the wall, each compared with the signed result. One per person, their latest. */
+export async function getWallPhotos(place: Place, results?: Map<string, UnitResult>): Promise<WallPhotos> {
+  const rows = await sql<{ payload: { data?: { kind?: string; photoSha256?: string; figures?: ResultFigures } }; occurred_at: Date; display_name: string }[]>`
+    select distinct on (e.author_id) e.payload, e.occurred_at, a.display_name
+    from events e join actors a on a.id = e.author_id
+    where e.type = 'claim.reported' and e.place_code = ${place.code} and e.payload->'data'->>'kind' = 'wall_photo'
+    order by e.author_id, e.seq desc`;
+  const best = (results ?? (await getUnitResults(place))).get(place.code)?.best;
+  const photos = rows
+    .filter((r) => r.payload.data?.photoSha256)
+    .map((r) => ({ sha: r.payload.data!.photoSha256!, at: iso(r.occurred_at), ...compareWall(r.payload.data?.figures ?? null, best?.figures ?? null) }))
+    .sort((a, b) => b.at.localeCompare(a.at));
+  return { total: photos.length, same: photos.filter((p) => p.state === "match").length, differs: photos.filter((p) => p.state === "differs").length, unread: photos.filter((p) => p.state === "unread" || p.state === "no_result").length, photos: photos.slice(0, 6), simulated: rows.some((r) => r.display_name.startsWith("DEMO ")) };
 }

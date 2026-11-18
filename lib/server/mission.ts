@@ -2,6 +2,8 @@ import "server-only";
 import raw from "@/lib/data/fct-map.json";
 import { sqlClient as sql } from "@/lib/db/client";
 import type { Margin } from "@/lib/core/margin";
+import type { ResultFigures } from "@/lib/core/events";
+import { compareWall } from "@/lib/core/wall";
 import { flagsForResults } from "./anomaly-live";
 import { getMargin } from "./margin";
 import { getUploadFailures } from "./uploads";
@@ -134,6 +136,30 @@ export async function missionSnapshot(): Promise<Mission> {
     const u = uploadFailures.units.find((x) => x.code === f.place_code);
     const body = !u ? "The officer signed a record of the failed upload attempt." : u.level === "certified" ? `Certified: ${joinList(u.witnesses)} saw the upload fail.` : u.level === "witnessed" ? `Co-signed by ${joinList(u.witnesses)}. One more independent witness certifies it.` : "Reported by the officer only. No independent witness has signed it.";
     alerts.push({ kind: "amber", k: u?.level === "certified" ? "UPLOAD FAILURE CERTIFIED" : "IREV UPLOAD FAILED", title: `Unit ${place.name}`, body, at: iso(f.occurred_at), href: `/p/${place.code}` });
+  }
+  // Voters report that officials have not arrived at a unit not marked open: shown only when two different people say so.
+  const notOpened = await sql<{ place_code: string; n: number; at: Date }[]>`
+    select q.place_code, count(distinct q.author_id)::int as n, max(q.occurred_at) as at from events q
+    where q.type = 'pu.queue' and q.payload->>'level' = 'not_opened'
+      and not exists (select 1 from events o where o.type = 'pu.opened' and o.place_code = q.place_code)
+    group by q.place_code having count(distinct q.author_id) >= 2 order by max(q.occurred_at) desc limit 3`;
+  for (const r of notOpened) {
+    const place = await getPlace(r.place_code);
+    if (place) alerts.push({ kind: "amber", k: "VOTERS REPORT NO OFFICIALS", title: `Unit ${place.name}`, body: `${r.n} voters say the officials have not arrived, and the unit is not recorded as open.`, at: iso(r.at), href: `/p/${place.code}` });
+  }
+  // A citizen's photo of the wall sheet that reads differently from the signed result. A misreading is as likely as a changed sheet, so it is only a prompt to look.
+  const wallRows = await sql<{ place_code: string; at: Date; figures: unknown }[]>`
+    select distinct on (e.place_code, e.author_id) e.place_code, e.occurred_at as at, e.payload->'data'->'figures' as figures
+    from events e where e.type = 'claim.reported' and e.payload->'data'->>'kind' = 'wall_photo' and e.payload->'data'->'figures' is not null
+    order by e.place_code, e.author_id, e.seq desc`;
+  const wallDiffs = wallRows.filter((r) => {
+    const best = results.get(r.place_code)?.best;
+    return best && compareWall(r.figures as ResultFigures, best.figures).state === "differs";
+  });
+  if (wallDiffs.length > 0) {
+    const w = wallDiffs.sort((a, b) => +new Date(b.at) - +new Date(a.at))[0]!;
+    const wp = await getPlace(w.place_code);
+    if (wp) alerts.push({ kind: "amber", k: "WALL SHEET READS DIFFERENTLY", title: `Unit ${wp.name}`, body: `${wallDiffs.length} citizen photo${wallDiffs.length === 1 ? "" : "s"} of the sheet on the wall read differently from the signed result. This can be a misreading, so it is a prompt to look, not a finding.`, at: iso(w.at), href: `/p/${wp.code}` });
   }
   // The anomaly agent: statistical flags on live results, for review. One summary alert, never a list of accusations.
   const flags = await flagsForResults(results);

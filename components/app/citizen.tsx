@@ -4,7 +4,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { Identity } from "@/lib/client/store";
 import { Card, Eyebrow, StatusBadge, timeAgo, type Status } from "@/components/ui";
+import { LanguagePicker } from "@/components/language-picker";
+import { t, type Lang } from "@/lib/core/i18n";
 import { PlaceSearch } from "./place-search";
+import { VoterReport } from "./voter-report";
+import { WallPhoto } from "./wall-photo";
 
 type Followed = { code: string; name: string };
 type Live = { level: string; status: Status; line: string; key: string; at?: string } | "error";
@@ -23,7 +27,7 @@ function summarise(data: {
   return { level: data.place.level, status: c.disputed ? "disputed" : null, key: `${c.sealed}/${c.disputed}`, line: `${c.sealed.toLocaleString("en-US")} of ${c.units.toLocaleString("en-US")} units sealed${c.disputed ? ` · ${c.disputed} disputed` : ""}` };
 }
 
-export function CitizenHome({ identity }: { identity: Identity }) {
+export function CitizenHome({ identity, lang = "en" }: { identity: Identity; lang?: Lang }) {
   const router = useRouter();
   // Rendered only on the client (after the device identity loads), so reading storage here is safe.
   const [followed, setFollowed] = useState<Followed[]>(() => {
@@ -100,6 +104,11 @@ export function CitizenHome({ identity }: { identity: Identity }) {
           />
         </div>
       </Card>
+      <Card>
+        <LanguagePicker lang={lang} label={t(lang, "language")} draft={t(lang, "draft")} />
+      </Card>
+      <VoterReport identity={identity} lang={lang} followed={followed} />
+      <WallPhoto identity={identity} lang={lang} followed={followed} />
       {followed.length > 0 ? (
         <Card>
           <Eyebrow>Your places</Eyebrow>

@@ -33,3 +33,17 @@ export function figuresFromReference(votes: Record<string, number>, accredited: 
   const totalValid = Object.values(votes).reduce((a, b) => a + b, 0);
   return { votes, accredited, registered, rejected: 0, totalValid };
 }
+
+export type QueueLevel = "none" | "short" | "medium" | "long" | "not_opened";
+
+/** About 8% of units get one to three simulated voter reports; a very few have officials who "have not arrived". Deterministic per unit. */
+export function planVoterReports(unitCode: string): QueueLevel[] {
+  if (unitRandom(unitCode, "voters") >= 0.08) return [];
+  const n = 1 + Math.floor(unitRandom(unitCode, "voters-n") * 3);
+  const stuck = unitRandom(unitCode, "voters-stuck") < 0.12;
+  return Array.from({ length: n }, (_, i) => {
+    if (stuck) return "not_opened";
+    const r = unitRandom(unitCode, `voters-level-${i}`);
+    return r < 0.3 ? "none" : r < 0.6 ? "short" : r < 0.8 ? "medium" : "long";
+  });
+}

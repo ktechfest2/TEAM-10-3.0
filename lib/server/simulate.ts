@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { hexToBytes, keyPairFromSeed, sha256Hex, type KeyPair } from "@/lib/core/crypto";
 import { cosign, signEvent, type Role } from "@/lib/core/events";
 import { sumTotals, type Totals } from "@/lib/core/results";
-import { figuresFromReference, planOutcome, SIM_PARTIES } from "@/lib/core/simulation";
+import { figuresFromReference, planOutcome, planVoterReports, SIM_PARTIES } from "@/lib/core/simulation";
 import { sqlClient as sql } from "@/lib/db/client";
 import { ingest } from "./ledger";
 import { getPlace, getUnitResults } from "./views";
@@ -13,7 +13,7 @@ export const demoEnabled = () => process.env.DEMO_ENABLED !== "0";
 const SEED = process.env.DEMO_SEED ?? "tally-demo-actors";
 
 type DemoActor = { id: string; keys: KeyPair };
-type Actors = { officer: DemoActor; collation: DemoActor; agents: Record<string, DemoActor> };
+type Actors = { officer: DemoActor; collation: DemoActor; agents: Record<string, DemoActor>; voters: DemoActor[] };
 let cache: Actors | null = null;
 
 async function upsert(name: string, role: Exclude<Role, "system">, party: string | null): Promise<DemoActor> {
@@ -31,7 +31,8 @@ async function actors(): Promise<Actors> {
   if (cache) return cache;
   const agents: Record<string, DemoActor> = {};
   for (const p of SIM_PARTIES) agents[p] = await upsert(`DEMO ${p} agent`, "party_agent", p);
-  cache = { officer: await upsert("DEMO Presiding officer", "presiding_officer", null), collation: await upsert("DEMO Collation officer", "collation_officer", null), agents };
+  const voters = [await upsert("DEMO Voter 1", "citizen", null), await upsert("DEMO Voter 2", "citizen", null), await upsert("DEMO Voter 3", "citizen", null)];
+  cache = { officer: await upsert("DEMO Presiding officer", "presiding_officer", null), collation: await upsert("DEMO Collation officer", "collation_officer", null), agents, voters };
   return cache;
 }
 
@@ -44,6 +45,32 @@ export async function simulationState() {
     select count(*)::int as done from events e join actors a on a.id = e.author_id
     where e.type = 'result.declared' and a.display_name like 'DEMO %'`;
   return { remaining, simulated: done };
+}
+
+/** Simulated voters (labelled DEMO) report on a minority of units, signed and ingested like any citizen's report. */
+async function signVoterReports(a: Actors, unitCode: string) {
+  const levels = planVoterReports(unitCode);
+  for (const [i, level] of levels.entries()) {
+    const voter = a.voters[i]!;
+    const ev = signEvent({ id: randomUUID(), type: "pu.queue", placeCode: unitCode, payload: { level }, occurredAt: new Date().toISOString(), authorKey: voter.keys.publicKeyHex }, voter.keys.secretKeyHex);
+    await ingest({ event: ev }, "simulation");
+  }
+}
+
+/** For a simulation already running: adds the voter reports to units that have a simulated result but no simulated voter yet. */
+export async function simulateVoterReports() {
+  const a = await actors();
+  const units = await sql<{ place_code: string }[]>`
+    select distinct e.place_code from events e join actors x on x.id = e.author_id
+    where e.type = 'result.declared' and x.display_name like 'DEMO %'
+      and not exists (select 1 from events q join actors v on v.id = q.author_id where q.type = 'pu.queue' and q.place_code = e.place_code and v.display_name like 'DEMO Voter%')`;
+  let signed = 0;
+  for (const u of units) {
+    const n = planVoterReports(u.place_code).length;
+    await signVoterReports(a, u.place_code);
+    signed += n;
+  }
+  return { units: units.length, signed };
 }
 
 /** Signs the next batch of units. Every event goes through the same ingest path as a real phone's sync. */
@@ -67,6 +94,7 @@ export async function stepSimulation(count: number) {
       rejected++;
       continue;
     }
+    await signVoterReports(a, row.pu_code);
     if (plan.failedUpload) {
       const t = signEvent({ id: randomUUID(), type: "transmission.attempted", placeCode: row.pu_code, payload: { outcome: "failed", detail: "BVAS upload failed (simulated)" }, occurredAt: now, authorKey: a.officer.keys.publicKeyHex }, a.officer.keys.secretKeyHex);
       const seen = plan.failureWitnesses.map((p) => cosign(t.contentHash, a.agents[p].keys.secretKeyHex, a.agents[p].keys.publicKeyHex, now));

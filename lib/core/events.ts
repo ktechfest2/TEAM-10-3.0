@@ -91,7 +91,7 @@ export const PAYLOAD_SCHEMAS: Record<EventType, z.ZodType> = {
   "material.received": freeTextPayload,
   "staff.checked_in": freeTextPayload,
   "pu.opened": freeTextPayload,
-  "pu.queue": z.object({ level: z.enum(["short", "medium", "long"]) }),
+  "pu.queue": z.object({ level: z.enum(["none", "short", "medium", "long", "not_opened"]) }),
   "pu.closed": freeTextPayload,
   "result.declared": resultDeclaredPayload,
   "transmission.attempted": transmissionPayload,

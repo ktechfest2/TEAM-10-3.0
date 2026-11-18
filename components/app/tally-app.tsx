@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { clearIdentity, listOutbox, loadIdentity, type Identity, type OutboxItem } from "@/lib/client/store";
 import { flushOutbox, startAutoSync } from "@/lib/client/sync";
+import type { Lang } from "@/lib/core/i18n";
 import { AgentHome } from "./agent-flow";
 import { Logo } from "@/components/logo";
 import { ROLE_COLOR } from "@/lib/roles";
@@ -21,7 +22,7 @@ const ROLE_LABEL: Record<Identity["role"], string> = {
   logistics: "Logistics",
 };
 
-export function TallyApp() {
+export function TallyApp({ lang = "en" }: { lang?: Lang }) {
   const [identity, setIdentity] = useState<Identity | null | undefined>(undefined);
   const [outbox, setOutbox] = useState<OutboxItem[]>([]);
   const online = useSyncExternalStore(
@@ -101,7 +102,7 @@ export function TallyApp() {
           {identity.role === "party_agent" && <AgentHome identity={identity} />}
           {identity.role === "observer" && <AgentHome identity={identity} />}
           {identity.role === "collation_officer" && <CollationHome identity={identity} />}
-          {(identity.role === "citizen" || identity.role === "community_leader" || identity.role === "logistics") && <CitizenHome identity={identity} />}
+          {(identity.role === "citizen" || identity.role === "community_leader" || identity.role === "logistics") && <CitizenHome identity={identity} lang={lang} />}
         </>
       )}
     </div>

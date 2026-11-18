@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { figuresFromReference, planOutcome, unitRandom } from "./simulation";
+import { figuresFromReference, planOutcome, planVoterReports, unitRandom } from "./simulation";
 
 describe("simulation planning", () => {
   it("is deterministic per unit", () => {
@@ -42,5 +42,21 @@ describe("simulated upload failures", () => {
       levels.add(p.failureWitnesses.length);
     }
     expect([...levels].sort()).toEqual([0, 1, 2]);
+  });
+});
+
+describe("simulated voter reports", () => {
+  it("reach a minority of units, one to three voters each, and are deterministic", () => {
+    let withReports = 0;
+    for (let i = 0; i < 4000; i++) {
+      const plan = planVoterReports(`37-02-03-${i}`);
+      expect(plan).toEqual(planVoterReports(`37-02-03-${i}`));
+      if (plan.length) {
+        withReports++;
+        expect(plan.length).toBeLessThanOrEqual(3);
+      }
+    }
+    expect(withReports).toBeGreaterThan(200);
+    expect(withReports).toBeLessThan(450);
   });
 });
