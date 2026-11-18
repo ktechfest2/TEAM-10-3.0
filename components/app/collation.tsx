@@ -49,7 +49,7 @@ export function CollationHome({ identity }: { identity: Identity }) {
     return (
       <Card className="space-y-3">
         <h2 className="text-xl font-bold">Collation signed</h2>
-        <p className="text-sm text-muted">It is on its way to the ledger. Anyone can now compare it with the sealed polling-unit results.</p>
+        <p className="text-sm text-muted">It is being sent to the public record. Anyone can now compare it with the sealed polling-unit results.</p>
         <Link href={`/p/${data.place.code}`} className="inline-block font-semibold text-blue">See the public check ›</Link>
       </Card>
     );

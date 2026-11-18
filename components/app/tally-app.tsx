@@ -64,7 +64,7 @@ export function TallyApp() {
           </span>
           {pending > 0 && (
             <button onClick={() => void flushOutbox().then(refresh)} className="rounded-full bg-ink px-2.5 py-1 font-semibold text-paper">
-              {pending} waiting to sync
+              {pending} waiting to send
             </button>
           )}
         </div>
@@ -83,7 +83,7 @@ export function TallyApp() {
             </span>
             <button
               onClick={async () => {
-                if (!confirm("Remove this device's key? Unsynced items stay in the outbox.")) return;
+                if (!confirm("Remove your signature from this phone? Anything not yet sent stays on the phone until you are online.")) return;
                 await clearIdentity();
                 setIdentity(null);
               }}
@@ -94,7 +94,7 @@ export function TallyApp() {
           </div>
           {rejected.length > 0 && (
             <p className="mb-4 rounded-xl bg-disputed-wash p-3 text-sm text-disputed">
-              {rejected.length} item(s) were refused by the ledger: {rejected[0].reason}
+              {rejected.length} item(s) were not accepted: {rejected[0].reason}
             </p>
           )}
           {identity.role === "presiding_officer" && <PoHome identity={identity} />}

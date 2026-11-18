@@ -9,7 +9,7 @@ import { ROLE_COLOR } from "@/lib/roles";
 const ROLES: { role: Identity["role"]; title: string; detail: string; place: PlaceHit["level"][] | null }[] = [
   { role: "citizen", title: "Voter", detail: "Check your polling unit, its result and whether a rumour is true.", place: null },
   { role: "presiding_officer", title: "Presiding officer", detail: "Open the unit, record the EC8A result, collect agents' signatures.", place: ["pu"] },
-  { role: "party_agent", title: "Party agent", detail: "Check the figures and co-sign the result with your own key.", place: ["pu"] },
+  { role: "party_agent", title: "Party agent", detail: "Check the figures against the sheet and sign the result yourself.", place: ["pu"] },
   { role: "observer", title: "Observer", detail: "Independent witness for results and incidents.", place: ["pu", "ward"] },
   { role: "collation_officer", title: "Collation officer", detail: "Enter ward or area council collation; Tally checks it against sealed units.", place: ["ward", "lga"] },
 ];
@@ -73,7 +73,7 @@ export function Onboarding({ onDone }: { onDone: (identity: Identity) => void })
       <div className="space-y-3">
         <div>
           <h1 className="text-2xl font-bold">Who are you on election day?</h1>
-          <p className="mt-1 text-sm text-muted">Tally creates a signing key that never leaves this phone.</p>
+          <p className="mt-1 text-sm text-muted">Tally creates your personal signature on this phone. It never leaves the phone.</p>
         </div>
         {ROLES.map((r) => (
           <button key={r.role} onClick={() => setRole(r)} className={`block w-full rounded-2xl border border-line border-l-4 bg-card p-4 text-left hover:brightness-125 ${ROLE_COLOR[r.role].border}`}>
@@ -133,7 +133,7 @@ export function Onboarding({ onDone }: { onDone: (identity: Identity) => void })
         )}
         {error && <p className="text-sm text-disputed">{error}</p>}
         <Button onClick={finish} disabled={!ready || busy} className="w-full">
-          {busy ? "Creating your key…" : "Create my signing key"}
+          {busy ? "Creating your signature…" : "Create my signature"}
         </Button>
       </Card>
     </div>

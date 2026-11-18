@@ -7,7 +7,7 @@ import { LanguagePicker } from "@/components/language-picker";
 import { MarginCard } from "@/components/margin-card";
 import { Seal, type SealState } from "@/components/seal";
 import { ShareButton } from "@/components/share-button";
-import { Card, Eyebrow, FiguresTable, StatusBadge, TrustMeter, shortHash, type Status } from "@/components/ui";
+import { Card, Eyebrow, FiguresTable, StatusBadge, TrustMeter, type Status } from "@/components/ui";
 import { ROLE_COLOR, type RoleKey } from "@/lib/roles";
 import { t, type Lang, type MessageKey } from "@/lib/core/i18n";
 import { joinList } from "@/lib/core/journey";
@@ -126,7 +126,6 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
                 <div className="mt-5 grid gap-6 sm:grid-cols-2">
                   <FiguresTable totals={unit.best.figures} labels={figLabels} />
                   <div className="space-y-4">
-                    <TrustMeter probability={unit.best.trust.probability} status={unit.best.trust.status} label={t(lang, "ui.trust")} />
                     <div>
                       <Eyebrow>{t(lang, "ui.signedBy")}</Eyebrow>
                       <ul className="mt-2 space-y-1.5 text-sm">
@@ -174,23 +173,29 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
             {unit?.best && (
               <Card>
                 <details>
-                  <summary className="cursor-pointer text-sm font-bold">Proof: why you can trust this</summary>
-                  <ul className="mt-3 space-y-1.5 text-sm">
-                    {unit.best.trust.trace.map((t) => (
-                      <li key={t.id + t.label} className="flex justify-between gap-3">
-                        <span>{t.label} <span className="text-muted">· {t.detail}</span></span>
-                        <span className={t.effect >= 0 ? "text-sealed" : "text-alarm"}>{t.effect >= 0 ? "+" : ""}{t.effect.toFixed(2)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="mt-4 space-y-1 border-t border-line pt-3 text-xs text-muted">
-                    <p>Read by: {unit.best.readBy === "model" ? "AI reader, confirmed by the officer" : "entered by the officer"}</p>
-                    <p>Content hash <span className="hash text-fg">{unit.best.contentHash}</span></p>
+                  <summary className="cursor-pointer text-sm font-bold">How this result was checked</summary>
+                  <div className="mt-3 space-y-4 text-sm">
+                    <TrustMeter probability={unit.best.trust.probability} status={unit.best.trust.status} label={t(lang, "ui.trust")} />
+                    <p className="text-muted">The score rises with the number of independent people who signed the same figures, and falls if anyone signed different ones. It is a measure of how well supported the figures are, not a forecast.</p>
+                    <ul className="space-y-1.5">
+                      {unit.best.trust.trace.map((tr) => (
+                        <li key={tr.id + tr.label} className="flex gap-2">
+                          <span aria-hidden className={tr.effect >= 0 ? "text-sealed" : "text-alarm"}>{tr.effect >= 0 ? "+" : "−"}</span>
+                          <span>{tr.label} <span className="text-muted">· {tr.detail}</span></span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="text-muted">{unit.best.readBy === "model" ? "The handwriting was read by an AI model, and the officer confirmed every figure against the sheet." : "The officer typed these figures from the sheet."}</p>
                     {unit.best.photoSha256 && (
                       <p>
-                        EC8A photo <a className="text-blue underline" href={`/api/media/${unit.best.photoSha256}`}>view</a> · fingerprint <span className="hash">{shortHash(unit.best.photoSha256)}</span>
+                        <a className="font-bold text-blue underline" href={`/api/media/${unit.best.photoSha256}`}>See the photo of the sheet</a>
                       </p>
                     )}
+                    <details className="border-t border-line pt-3 text-xs text-muted">
+                      <summary className="cursor-pointer font-bold text-fg">For auditors</summary>
+                      <p className="mt-2">Content hash <span className="hash break-all text-fg">{unit.best.contentHash}</span></p>
+                      {unit.best.photoSha256 && <p className="mt-1">Photo fingerprint <span className="hash break-all">{unit.best.photoSha256}</span></p>}
+                    </details>
                   </div>
                 </details>
               </Card>
@@ -199,7 +204,7 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
             {unit && unit.versions.length > 1 && (
               <Card className="border-alarm/50">
                 <Eyebrow>Other signed versions</Eyebrow>
-                <p className="mt-1 text-sm text-muted">Every version stays on the ledger as evidence. Nothing is overwritten.</p>
+                <p className="mt-1 text-sm text-muted">Every version is kept as evidence. Nothing is overwritten.</p>
                 {unit.versions
                   .filter((v) => v.contentHash !== unit.best!.contentHash)
                   .map((v) => (
@@ -273,7 +278,7 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
         {timeline.length > 0 && (
           <Card>
             <details>
-              <summary className="cursor-pointer text-sm font-bold">Signed record ({timeline.length})</summary>
+              <summary className="cursor-pointer text-sm font-bold">Everything signed at this place ({timeline.length})</summary>
               <ol className="mt-3 space-y-3">
                 {timeline.map((t) => (
                   <li key={t.id} className="flex gap-3 text-sm">
@@ -285,7 +290,7 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
                       </p>
                       <p className="text-xs text-muted">
                         {new Date(t.occurredAt).toLocaleString("en-NG")} · {ROLE[t.role] ?? t.role}
-                        {t.party ? ` (${t.party})` : ""} · {t.witnesses} co-signature{t.witnesses === 1 ? "" : "s"} · ledger <span className="hash">{shortHash(t.ledgerHash)}</span>
+                        {t.party ? ` (${t.party})` : ""} · {t.witnesses === 0 ? "no witnesses yet" : `${t.witnesses} witness${t.witnesses === 1 ? "" : "es"} signed it`}
                       </p>
                     </div>
                   </li>
@@ -295,7 +300,7 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
           </Card>
         )}
         <p className="text-center text-xs text-muted">
-          Every entry is signed and hash-chained. <Link href="/verify" className="underline">Verify the whole ledger</Link>
+          Every record is signed and locked in order. <Link href="/verify" className="underline">Check the records yourself</Link>
         </p>
       </div>
     </div>

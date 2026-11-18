@@ -54,7 +54,7 @@ export function MissionView() {
         <div className="flex flex-wrap items-center gap-2">
           {simulated && <Chip tone="amber">Simulated data · signed by labelled test actors</Chip>}
           <span className="inline-flex h-7 items-center gap-2 rounded-full bg-alarm-wash px-3 text-xs font-bold tracking-wider text-alarm"><i className={`h-2 w-2 rounded-full bg-alarm ${failed ? "" : "animate-pulse"}`} />{failed ? "OFFLINE" : "LIVE"}</span>
-          <Link href="/verify" className="text-sm font-bold text-thumb">Verify the ledger ›</Link>
+          <Link href="/verify" className="text-sm font-bold text-thumb">Check the records ›</Link>
         </div>
       </header>
 
@@ -105,7 +105,7 @@ export function MissionView() {
           </div>
         </div>
       </div>
-      <p className="mt-8 max-w-prose text-xs text-muted">Map: real polling-site locations on the FCT boundary (GRID3 via geoBoundaries, CC BY 4.0). Results appear only when signed through the ledger. {failed && "The connection to the server was lost; the numbers shown may be out of date."}</p>
+      <p className="mt-8 max-w-prose text-xs text-muted">Map data: polling-site locations on the FCT boundary, GRID3 via geoBoundaries (CC BY 4.0). Results appear here only once they are signed. {failed && "The connection to the server was lost; the numbers shown may be out of date."}</p>
     </div>
   );
 }
