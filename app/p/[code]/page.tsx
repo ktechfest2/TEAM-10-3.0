@@ -8,6 +8,7 @@ import { ShareButton } from "@/components/share-button";
 import { Card, Eyebrow, FiguresTable, StatusBadge, TrustMeter, shortHash, type Status } from "@/components/ui";
 import { ROLE_COLOR, type RoleKey } from "@/lib/roles";
 import { joinList } from "@/lib/core/journey";
+import { flagsForResults } from "@/lib/server/anomaly-live";
 import { getUnitJourney } from "@/lib/server/journey";
 import {
   childSummaries,
@@ -73,6 +74,9 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
   const unit = place.level === "pu" ? results.get(code) : undefined;
   const journey = place.level === "pu" ? await getUnitJourney(place, breadcrumb, unit) : [];
   const hero = place.level === "pu" ? headline(unit?.best) : null;
+  // Statistical flags compare this unit with the other reported units in its ward.
+  const ward = breadcrumb.find((b) => b.level === "ward");
+  const unitFlags = unit?.best && ward ? (await flagsForResults(await getUnitResults(ward))).filter((f) => f.code === code) : [];
 
   return (
     <div className="mx-auto w-full max-w-3xl flex-1 px-4 pb-16">
@@ -139,6 +143,20 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
               <p className="mt-1 text-sm text-muted">From opening to the final collation, as the signed ledger records it.</p>
               <Journey steps={journey} />
             </Card>
+
+            {unitFlags.length > 0 && (
+              <Card className="border-amber/40">
+                <Eyebrow>Flagged for review</Eyebrow>
+                <ul className="mt-2 space-y-1.5 text-sm">
+                  {unitFlags.map((f) => (
+                    <li key={f.kind}>
+                      <b>{f.title}.</b> <span className="text-muted">{f.detail}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-3 text-xs text-muted">A statistical flag, not an accusation. It can come from a data-entry error as easily as from a problem at the unit. <Link href="/replay" className="text-blue underline">How flags are raised</Link></p>
+              </Card>
+            )}
 
             {unit?.best && (
               <Card>
