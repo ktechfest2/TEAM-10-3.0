@@ -26,11 +26,11 @@ const STATUS_TEXT: Record<CellStatus, string> = { 0: "text-muted", 1: "text-ambe
  * One cell per polling site on the real FCT boundary. Small city cells and huge rural cells show coverage at a glance.
  * A magnifier follows the unit that last changed.
  */
-export function TerritoryMap({ geometry, cells, focus }: { geometry: Geometry; cells: CellStatus[] | null; focus: { cell: number; label: string; status: CellStatus } | null }) {
+export function TerritoryMap({ geometry, cells, focus, label = "Map of the Federal Capital Territory. Each cell is a polling site, coloured by whether its result is sealed." }: { geometry: Geometry; cells: CellStatus[] | null; focus: { cell: number; label: string; status: CellStatus } | null; label?: string }) {
   const f = focus ? geometry.cells[focus.cell] : null;
   return (
     <div className="relative rounded-2xl bg-bg p-2">
-      <svg viewBox={`0 0 ${geometry.w} ${geometry.h}`} className="block h-auto w-full" role="img" aria-label="Map of the Federal Capital Territory. Each cell is a polling site, coloured by whether its result is sealed.">
+      <svg viewBox={`0 0 ${geometry.w} ${geometry.h}`} className="block h-auto w-full" role="img" aria-label={label}>
         <g id="tally-cells" className="stroke-bg" strokeWidth={0.7} strokeLinejoin="round">
           {geometry.cells.map((c, i) => (
             <path key={i} d={c.d} className={`${FILL[cells?.[i] ?? 0]} transition-[fill] duration-700`} />

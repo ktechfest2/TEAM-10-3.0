@@ -1,6 +1,7 @@
 import "server-only";
 import raw from "@/lib/data/fct-map.json";
 import { sqlClient as sql } from "@/lib/db/client";
+import { flagsForResults } from "./anomaly-live";
 import { simulationState } from "./simulate";
 import { iso } from "./time";
 import { getCollationCheck, getPlace } from "./views";
@@ -27,6 +28,10 @@ export const publicGeometry = {
 const cellOfCode = new Map<string, number>();
 geometry.cells.forEach((c, i) => c.codes.forEach((code) => cellOfCode.set(code, i)));
 
+/** Map cell for a polling unit; several units can share one polling site. */
+export const cellIndex = (code: string) => cellOfCode.get(code);
+export const cellCount = geometry.cells.length;
+
 /** 0 no result, 1 witnessed, 2 sealed, 3 tampering or dispute */
 export type CellStatus = 0 | 1 | 2 | 3;
 
@@ -34,7 +39,7 @@ export type MissionAlert = { kind: "red" | "amber" | "green" | "grey"; k: string
 
 export type Mission = {
   at: string;
-  totals: { units: number; reported: number; sealed: number; witnessed: number; unwitnessed: number; tamper: number };
+  totals: { units: number; reported: number; sealed: number; witnessed: number; unwitnessed: number; tamper: number; flagged: number };
   cells: CellStatus[];
   councils: { name: string; units: number; sealed: number }[];
   alerts: MissionAlert[];
@@ -120,6 +125,15 @@ export async function missionSnapshot(): Promise<Mission> {
     const place = await getPlace(f.place_code);
     if (place) alerts.push({ kind: "amber", k: "IREV UPLOAD FAILED", title: `Unit ${place.name}`, body: "The officer signed a record of the failed upload attempt.", at: iso(f.occurred_at) });
   }
+  // The anomaly agent: statistical flags on live results, for review. One summary alert, never a list of accusations.
+  const flags = await flagsForResults(results);
+  const flaggedCodes = [...new Set(flags.map((f) => f.code))];
+  if (flags.length > 0) {
+    const top = flags[0]!;
+    const topPlace = await getPlace(top.code);
+    const latest = flaggedCodes.map((c) => results.get(c)?.best?.occurredAt ?? "").sort().at(-1) ?? new Date().toISOString();
+    alerts.push({ kind: "amber", k: "STATISTICAL FLAGS", title: `${flaggedCodes.length.toLocaleString("en-US")} unit${flaggedCodes.length === 1 ? "" : "s"} flagged for review`, body: `${topPlace?.name ?? top.code}: ${top.title.toLowerCase()}. ${top.detail} A flag is not an accusation.`, at: latest });
+  }
   const [anchor] = await sql<{ merkle_root: string; from_seq: number; to_seq: number; status: string; created_at: Date }[]>`select merkle_root, from_seq, to_seq, status, created_at from anchors order by created_at desc limit 1`;
   if (anchor) alerts.push({ kind: "grey", k: anchor.status === "confirmed" ? "ANCHORED ON BITCOIN" : "SUBMITTED TO BITCOIN", title: `Entries ${anchor.from_seq.toLocaleString("en-US")} to ${anchor.to_seq.toLocaleString("en-US")}`, body: `root ${anchor.merkle_root.slice(0, 10)}…${anchor.merkle_root.slice(-6)}`, at: iso(anchor.created_at) });
   alerts.sort((a, b) => b.at.localeCompare(a.at));
@@ -130,7 +144,7 @@ export async function missionSnapshot(): Promise<Mission> {
 
   const value: Mission = {
     at: new Date().toISOString(),
-    totals: { units, reported: results.size, sealed, witnessed, unwitnessed, tamper },
+    totals: { units, reported: results.size, sealed, witnessed, unwitnessed, tamper, flagged: flaggedCodes.length },
     cells,
     councils: geometry.lgas.map((l, i) => ({ name: l.n, units: lgaUnits.find((x) => Number(x.l) === i + 1)?.n ?? 0, sealed: councilSealed[i] })),
     alerts: alerts.slice(0, 10),
