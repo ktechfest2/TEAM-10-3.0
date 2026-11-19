@@ -128,7 +128,7 @@ export function AgentHome({ identity, startWith }: { identity: Identity; startWi
           <p className="text-sm text-muted">Your stroke is on the tally.</p>
         </div>
         <QrCodeView level="L" value={sigQr} label="Show this to the presiding officer, who scans it" />
-        <p className="text-sm text-muted">Your phone keeps a signed copy and delivers it when it finds a network. If the officer&apos;s phone is lost, yours can still prove these figures.</p>
+        <p className="text-sm text-muted">Saved on your phone. Sent when you have a network.</p>
         <Button variant="secondary" onClick={() => { setPending(null); setView("home"); }} className="w-full">Done</Button>
       </Card>
     );
@@ -139,7 +139,7 @@ export function AgentHome({ identity, startWith }: { identity: Identity; startWi
       <Card className="space-y-3">
         <Eyebrow>{role}</Eyebrow>
         <h2 className="font-display text-2xl leading-tight font-extrabold tracking-tight">{identity.placeName}</h2>
-        <p className="text-sm text-muted">After counting, scan the presiding officer&apos;s code, compare it with the sheet on the wall, and hold to sign.</p>
+        <p className="text-sm text-muted">Scan the officer&apos;s code, compare with the wall sheet, hold to sign.</p>
         <Button onClick={() => setView("scan")} className="min-h-14 w-full text-base">Scan result to sign</Button>
         {error && <p className="text-sm text-alarm" role="alert">{error}</p>}
       </Card>

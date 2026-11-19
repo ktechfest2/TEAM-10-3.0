@@ -49,7 +49,7 @@ export function CollationHome({ identity }: { identity: Identity }) {
     return (
       <Card className="space-y-3">
         <h2 className="text-xl font-bold">Collation signed</h2>
-        <p className="text-sm text-muted">It is being sent to the public record. Anyone can now compare it with the sealed polling-unit results.</p>
+        <p className="text-sm text-muted">Sent to the public record.</p>
         <Link href={`/p/${data.place.code}`} className="inline-block font-semibold text-blue">See the public check ›</Link>
       </Card>
     );
@@ -84,7 +84,7 @@ export function CollationHome({ identity }: { identity: Identity }) {
       <Card>
         <Eyebrow>{levelName}</Eyebrow>
         <h2 className="font-display mt-1 text-2xl font-extrabold">{data.place.name}</h2>
-        <p className="mt-1 text-sm text-muted">Enter each row as it is read out. Tally checks it against what rival agents sealed at the unit.</p>
+        <p className="mt-1 text-sm text-muted">Enter each row as it is read out. Tally checks it against the sealed result.</p>
         <div className="mt-4 flex items-center justify-between text-sm" role="status">
           <span className="font-bold">{done} of {data.children.length} rows entered</span>
           <span className={mismatched ? "font-bold text-alarm" : "text-muted"}>
@@ -130,7 +130,7 @@ export function CollationHome({ identity }: { identity: Identity }) {
           </Card>
         );
       })}
-      {mismatched > 0 && <p className="rounded-xl bg-alarm-wash p-3 text-sm text-alarm">You can still sign. The difference between your figures and the sealed ones will be public.</p>}
+      {mismatched > 0 && <p className="rounded-xl bg-alarm-wash p-3 text-sm text-alarm">You can still sign. The difference will be public.</p>}
       <div className="sticky bottom-0 -mx-4 bg-black/90 px-4 py-3 backdrop-blur">
         <Button onClick={() => void sign()} disabled={!complete} className="w-full">{complete ? "Sign collation" : `Enter ${data.children.length - done} more row${data.children.length - done === 1 ? "" : "s"} to sign`}</Button>
       </div>

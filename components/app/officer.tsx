@@ -59,9 +59,9 @@ export function PoHome({ identity, demo }: { identity: Identity; demo?: { photoU
 
       {!opened && (
         <Card className="space-y-4">
-          <h3 className="font-display text-2xl font-extrabold tracking-tight">Open the polling unit</h3>
-          <p className="text-sm text-muted">This signed record tells voters and supervisors that voting has started. Do it when you open.</p>
-          <Button onClick={() => void record("pu.opened", { text: "Polling unit opened" })} className="min-h-14 w-full text-base">Sign: the polling unit is open</Button>
+          <h3 className="font-display text-2xl font-extrabold tracking-tight">Open your polling unit</h3>
+          <p className="text-sm text-muted">Tells everyone voting has started.</p>
+          <Button onClick={() => void record("pu.opened", { text: "Polling unit opened" })} className="min-h-14 w-full text-base">Sign: we are open</Button>
         </Card>
       )}
 
@@ -77,7 +77,7 @@ export function PoHome({ identity, demo }: { identity: Identity; demo?: { photoU
       {result && (
         <Card className="space-y-3">
           <Eyebrow>Step 4 · IReV upload</Eyebrow>
-          <p className="text-sm text-muted">Record each attempt to upload the sheet to IReV. Rival agents can see whether a claimed failure really happened.</p>
+          <p className="text-sm text-muted">Did the IReV upload work?</p>
           <div className="grid grid-cols-2 gap-2">
             <Button variant="secondary" onClick={() => void record("transmission.attempted", { outcome: "success" })}>Upload worked</Button>
             <Button variant="secondary" onClick={() => void record("transmission.attempted", { outcome: "failed", detail: "BVAS upload failed" })}>Upload failed</Button>
@@ -102,7 +102,7 @@ export function PoHome({ identity, demo }: { identity: Identity; demo?: { photoU
                     {failed && certifying === a.contentHash && (
                       <div className="mt-3 flex flex-col items-center gap-2">
                         <QrCodeView level="L" value={encodeEventQr(a.event)} label="Agents scan this if they saw the upload fail, and sign" />
-                        <p className="text-center text-xs text-muted">A failure only you report is a claim. When agents of two rival parties sign it, it is certified on the public page.</p>
+                        <p className="text-center text-xs text-muted">Two rival agents signing makes it certified.</p>
                       </div>
                     )}
                   </li>
@@ -132,8 +132,8 @@ function SealStep({ result, parties, onChange }: { result: HeldEvent; parties: s
     async (text: string) => {
       setScanning(false);
       const msg = decodeQr(text);
-      if (!msg) return setMessage("That is not a code this version of Tally can read. Close and reopen Tally on both phones so they run the same version, then scan again.");
-      if (msg.k === "ev") return setMessage("That is a result code, not an agent's signature. Ask the agent to hold to sign first; their phone then shows a separate signature code.");
+      if (!msg) return setMessage("Tally cannot read that code. Reopen Tally on both phones, then scan again.");
+      if (msg.k === "ev") return setMessage("That is a result code. Ask the agent to sign first, then scan their signature code.");
       if (msg.c.contentHash !== result.contentHash) return setMessage("That signature is for a different result.");
       if (!verifyCosignature(msg.c)) return setMessage("The signature check failed. Ask the agent to sign again.");
       rememberParty(msg.c.witnessKey, msg.p);

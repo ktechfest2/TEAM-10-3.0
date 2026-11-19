@@ -21,11 +21,10 @@ export function MarginCard({ margin, uploads }: { margin: Margin; uploads?: { to
           </p>
           {margin.unsettledUnits > 0 && (
             <p className="mt-1.5 text-sm text-muted">
-              {n(margin.unsettledUnits)} units are not sealed. If every registered voter in them ({n(margin.atStake)}) voted for the runner-up, that is the most they could change.
-              {margin.state === "safe" ? " The lead is larger than that." : " The lead is not larger than that yet."}
+              {n(margin.unsettledUnits)} units unsealed could shift at most {n(margin.atStake)} votes. {margin.state === "safe" ? "The lead is larger." : "The lead is not larger yet."}
             </p>
           )}
-          <p className="mt-2 text-xs text-muted">Arithmetic on sealed results, not a forecast. Tally never declares a winner.</p>
+          <p className="mt-2 text-xs text-muted">Arithmetic, not a forecast. Never a winner.</p>
         </div>
       )}
       {uploads && uploads.total > 0 && (
