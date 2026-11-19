@@ -2,10 +2,10 @@ import Link from "next/link";
 import { HomeSearch } from "@/components/home-search";
 import { Logo } from "@/components/logo";
 import { Seal } from "@/components/seal";
-import { TerritoryMap } from "@/components/territory-map";
+import { ReplayMap } from "@/components/replay-map";
 import { Card, Chip, Eyebrow } from "@/components/ui";
 import { verifyLedger } from "@/lib/server/ledger";
-import { missionSnapshot, publicGeometry } from "@/lib/server/mission";
+import { missionSnapshot } from "@/lib/server/mission";
 
 export const dynamic = "force-dynamic";
 
@@ -57,7 +57,7 @@ export default async function Home() {
         </div>
 
         <Link href="/mission" className="group block rounded-3xl border border-line bg-surface p-3 transition-colors hover:border-muted">
-          {mission ? <TerritoryMap geometry={publicGeometry} cells={mission.cells} focus={null} /> : <div className="aspect-[1000/940] rounded-2xl bg-raised" />}
+          {mission ? <ReplayMap cells={mission.cells} label="Map of the Federal Capital Territory. Each cell is a polling site, coloured by whether its result is sealed." /> : <div className="aspect-[1000/940] rounded-2xl bg-raised" />}
           <div className="flex items-center justify-between gap-3 px-2 pt-3 pb-1">
             {live && t ? (
               <span className="text-sm font-bold"><span className="text-sealed">{n(t.sealed)}</span> of {n(t.units)} units sealed{t.tamper ? <span className="text-alarm"> · {t.tamper} alert{t.tamper === 1 ? "" : "s"}</span> : null}</span>

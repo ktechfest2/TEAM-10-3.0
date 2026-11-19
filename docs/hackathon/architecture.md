@@ -4,7 +4,7 @@
 |---|---|
 | Status | **APPROVED (Gate 2, 18 Nov 13:35 WAT)** |
 | Inputs | PRD v2 (approved), threat model (PRD §9), team = 2, about 33 build hours |
-| Last updated | 2026-11-18 13:25 WAT |
+| Last updated | 2026-11-19 (audit against the built system, section 10) |
 
 ## 1. Drivers
 The quality attributes that shape the design, in priority order:
@@ -130,3 +130,55 @@ Built before Gate 2 (process breach, see decision 11), tested, and **consistent 
 - 20 unit tests and the J1–J3 journey test pass
 
 If this architecture is approved, they are **kept**. The UI is **rebuilt** after Gate 3 (UX).
+
+## 10. Audit against the built system (19 Nov)
+Method: read this document and the PRD, then checked each claim against the code, the database schema, CI, the deployed site and measurements on production.
+
+### ADRs
+| # | Status | Reality |
+|---|---|---|
+| A1 monolith on Vercel | **Held** | One Next.js 16.4.6 app; CI green. |
+| A2 append-only ledger + chain + anchoring | **Held** | Editing a stored record by hand is caught and pinpointed; a stamp covering the ledger exists and its `.ots` proof downloads. Bitcoin confirmation is pending (hours). |
+| A3 Ed25519, device-local key | **Held** | Key lives in IndexedDB; real-browser run signed and synced. No PIN or OS keystore (PRD says "production"). |
+| A4 installable PWA + outbox | **Partly verified** | Manifest, service worker (production only), share target and outbox exist. Install, offline use and background behaviour never run on a phone. |
+| A5 OpenTimestamps after syncs | **Held** | |
+| A6 AI via Gateway | **Changed** | Free tier rejects Claude; default is `google/gemini-2.5-flash-lite` (decision 23). Rumour reader works in production. |
+| A7 AI never decides trust | **Held** | Injection test: "confirm this" in a message did not move the verdict. |
+| A8 polling 5 s | **Held** | |
+| A9 MapLibre + OpenFreeMap | **Not followed, better** | Own SVG map (GRID3 boundary, Voronoi of 2,423 polling sites): no tiles, no key, loads as a 62 KB cached file. |
+| A10 WhatsApp webhook | **Not built** | Needs the user's Meta account. Paste and Android share target stand in. |
+| A11 reviewed templates per language | **Partly** | Templates in 5 languages, **unreviewed**; the free-text claim summary is not translated. |
+
+### Containers, data model, journeys
+- No WhatsApp webhook container and no map-tiles dependency (see A9, A10).
+- Tables `claims`, `verdicts` and `subscriptions` were **not built**: rumour checks are stateless by design (nothing stored), and followed places live on the device. `events.channel` exists but only `app` and `simulation` occur.
+- **No new event types** were needed: `pu.queue` gained levels (none, short, medium, long, not_opened); `claim.reported` carries `wall_photo`.
+- J1 to J3, J5: as designed. **J4** has no webhook, clustering or corroboration. **J6** is `/replay` with no timeline (the 2023 data has no timestamps). Mission alerts include tampering, certified upload failures, anomaly summary, voter reports and wall-photo differences, **not rumours**.
+
+### Failure modes
+- AI down: manual entry and rules reader, both labelled. **Held.**
+- **Gap:** "never stale data presented as live" is not true for pages the service worker serves from cache when offline; they carry no "last updated" marker.
+- Database down on the server: not tested.
+
+### Quality
+- 99 unit tests; `check:journey`, `check:sim` and a clean-clone install pass; CI green on the latest push.
+- **Deviation:** commits went straight to `main` (no branches or PRs), against the workflow above. Pushes were authorised by the user for this project.
+
+### PRD targets, measured where possible
+| Target | Result |
+|---|---|
+| G1 altered rows detected, no false alarms | Met (tests) |
+| G3 alert within 10 s | Met by design (5 s polling); not timed end to end |
+| G4 reading accuracy ≥ 95% | 7/7 figures on synthetic and degraded sheets; **no real handwriting tested** |
+| Seal in ≤ 3 min offline; G5 ≥ 4 of 5 testers | **Not measured** (no phone test, no testers) |
+| Page load ≤ 3 s on 3G | Home page was 121 KB of HTML (map inlined); **fixed** to load the cached map file. Not measured on throttled 3G |
+| Phone app shell ≤ 300 KB JS | `/app` is 306 KB gzipped, **2% over**; other pages 180-195 KB |
+| Reply ≤ 30 s | Web rumour check 2.6 s; WhatsApp not built |
+| Five reviewed languages | Five languages, **none reviewed** |
+| WCAG 2.2 AA, 48 px targets | Designed for; **no audit run** |
+| Privacy: no PII, phone numbers hashed | No phone numbers are collected; rumour text is not stored |
+
+### Threat model
+- Sybil: independence is counted per party, but **one invite code (set by the user) opens every official role**; real use needs one per organisation.
+- Lost or seized phone: key is device-local with no PIN.
+- All others as designed.
