@@ -5,6 +5,8 @@ import { cosign, signEvent, type Role } from "@/lib/core/events";
 import { sumTotals, type Totals } from "@/lib/core/results";
 import { figuresFromReference, planOutcome, planVoterReports, SIM_PARTIES } from "@/lib/core/simulation";
 import { sqlClient as sql } from "@/lib/db/client";
+import { planRelocations } from "@/lib/core/relocation";
+import { notifyFor } from "./alerts";
 import { ingest } from "./ledger";
 import { getPlace, getUnitResults } from "./views";
 
@@ -137,6 +139,26 @@ export async function collateWard(mode: "honest" | "tamper") {
 
 /** Wipes the ledger so the demo can start again. Only meant for demo deployments. */
 export async function resetDemo() {
-  await sql`truncate table events, witnesses, anchors, media restart identity`;
+  await sql`truncate table events, witnesses, anchors, media, alert_deliveries restart identity`;
   return { ok: true };
+}
+
+/**
+ * Estimated polling-unit moves, for testing alerts end to end. Each is signed by the labelled DEMO collation officer
+ * through the real ledger, marked `estimated`, and texts anyone following the unit. Not announced moves.
+ */
+export async function simulateRelocations() {
+  const a = await actors();
+  const units = await sql<{ code: string; name: string; ward: string; lat: number; lng: number }[]>`
+    select code, name, parent_code as ward, lat, lng from places where level = 'pu' and lat is not null`;
+  const moved = new Set((await sql<{ place_code: string }[]>`select place_code from events where type = 'pu.relocated'`).map((r) => r.place_code));
+  const plan = planRelocations(units).filter((m) => !moved.has(m.from.code));
+  let texted = 0;
+  for (const m of plan) {
+    const payload = { toName: m.to.name, toCode: m.to.code, lat: m.to.lat, lng: m.to.lng, distanceKm: m.distanceKm, reason: m.reason, estimated: true };
+    const event = signEvent({ id: randomUUID(), type: "pu.relocated", placeCode: m.from.code, payload, occurredAt: new Date().toISOString(), authorKey: a.collation.keys.publicKeyHex }, a.collation.keys.secretKeyHex);
+    const res = await ingest({ event }, "simulation");
+    if (res.status === "accepted") texted += (await notifyFor(event)).sent;
+  }
+  return { moved: plan.length, alreadyMoved: moved.size, texted };
 }

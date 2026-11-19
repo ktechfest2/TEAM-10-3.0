@@ -9,6 +9,10 @@ import { MarginCard } from "@/components/margin-card";
 import { ResultBars } from "@/components/result-bars";
 import { Seal, type SealState } from "@/components/seal";
 import { ShareButton } from "@/components/share-button";
+import { SmsAlerts } from "@/components/sms-alerts";
+import { Icon } from "@/components/icons";
+import { directionsUrl } from "@/lib/core/relocation";
+import { getRelocation } from "@/lib/server/alerts";
 import { Card, Eyebrow, FiguresTable, StatusBadge, TrustMeter, type Status } from "@/components/ui";
 import { ROLE_COLOR, type RoleKey } from "@/lib/roles";
 import { t, type Lang, type MessageKey } from "@/lib/core/i18n";
@@ -51,6 +55,7 @@ const EVENT: Record<string, string> = {
   "staff.checked_in": "Staff checked in",
   "incident.reported": "Incident reported",
   "cancellation.recorded": "Cancellation recorded",
+  "pu.relocated": "Polling unit moved",
 };
 
 const ROLE_KEYS: Record<string, MessageKey | undefined> = { presiding_officer: "role.presiding_officer", party_agent: "role.party_agent", observer: "role.observer", citizen: "role.citizen", community_leader: "role.community_leader" };
@@ -93,6 +98,7 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
   const spoken = hero ? [hero.title, hero.text, ...(unit?.best ? Object.entries(unit.best.figures.votes).sort((a, b) => b[1] - a[1]).map(([party, v]) => `${party}: ${v}`) : [])].map((part) => part.replace(/\.+$/, "")).join(". ") : "";
   const reports = place.level === "pu" ? await getVoterReports(place) : null;
   const wall = place.level === "pu" ? await getWallPhotos(place, results) : null;
+  const moved = place.level === "pu" ? await getRelocation(code) : null;
   const figLabels = { totalValid: t(lang, "fig.totalValid"), rejected: t(lang, "fig.rejected"), accredited: t(lang, "fig.accredited") };
   // Statistical flags compare this unit with the other reported units in its ward.
   const ward = breadcrumb.find((b) => b.level === "ward");
@@ -127,6 +133,26 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
       <div className="mt-6 space-y-4">
         {place.level === "pu" && hero ? (
           <>
+            {moved && (
+              <section className="overflow-hidden rounded-2xl border-2 border-amber bg-amber-wash">
+                <div className="flex items-start gap-3 p-5">
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-amber text-black"><Icon name="pin" size={22} /></span>
+                  <div className="min-w-0">
+                    <p className="text-xs font-extrabold tracking-widest text-amber uppercase">{t(lang, "mv.title")}</p>
+                    <h2 className="font-display mt-1 text-2xl leading-tight font-extrabold">{t(lang, "mv.to", { to: moved.toName })}</h2>
+                    <p className="mt-1 text-sm text-muted">
+                      {moved.distanceKm !== undefined ? `${t(lang, "mv.far", { km: moved.distanceKm })} · ` : ""}
+                      {t(lang, "mv.why", { why: moved.reason })}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-3 border-t border-amber/30 px-5 py-3">
+                  <a href={directionsUrl(moved.lat, moved.lng)} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-amber px-4 font-bold text-black"><Icon name="map" size={18} />{t(lang, "mv.go")}</a>
+                  {moved.toCode && <Link href={`/p/${moved.toCode}`} className="text-sm font-bold text-amber">{moved.toCode} ›</Link>}
+                  {(moved.estimated || moved.demo) && <span className="w-full text-xs text-amber">{t(lang, "mv.est")}</span>}
+                </div>
+              </section>
+            )}
             <Card className={unit?.best?.trust.status === "disputed" ? "border-alarm/60" : unit?.best?.trust.status === "sealed" ? "border-sealed/50" : ""}>
               <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
                 <Seal signed={unit?.best ? [...new Set(unit.best.witnesses.filter((w) => w.party).map((w) => w.party as string))] : []} state={hero.state} className="w-40 shrink-0 sm:w-44" />
@@ -163,6 +189,8 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
                 </div>
               )}
             </Card>
+
+            <SmsAlerts code={place.code} labels={{ title: t(lang, "sms.title"), hint: t(lang, "sms.hint"), phone: t(lang, "sms.phone"), go: t(lang, "sms.go"), ok: t(lang, "sms.ok"), off: t(lang, "sms.off"), fail: t(lang, "sms.fail") }} />
 
             {reports && reports.total > 0 && (
               <Card className={reports.counts.not_opened ? "border-amber/40" : ""}>

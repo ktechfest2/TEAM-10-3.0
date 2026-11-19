@@ -3,6 +3,7 @@ import { z } from "zod";
 import { anchorPending } from "@/lib/server/anchor";
 import { signedEventSchema } from "@/lib/core/events";
 import { parseJson } from "@/lib/server/http";
+import { notifyFor } from "@/lib/server/alerts";
 import { ingest } from "@/lib/server/ledger";
 
 const cosignature = z.object({
@@ -28,9 +29,14 @@ export async function POST(request: Request) {
   const parsed = await parseJson(request, schema);
   if ("error" in parsed) return parsed.error;
   const results = [];
+  const alerts: NonNullable<(typeof parsed.data.items)[number]["event"]>[] = [];
   for (const item of parsed.data.items) {
-    results.push(await ingest(item, request.headers.get("x-tally-channel") ?? "app"));
+    const r = await ingest(item, request.headers.get("x-tally-channel") ?? "app");
+    results.push(r);
+    if (r.status === "accepted" && item.event && (item.event.type === "pu.relocated" || item.event.type === "pu.opened")) alerts.push(item.event);
   }
+  // Text the people following these units, after responding so a slow SMS provider never delays the phone.
+  if (alerts.length) after(async () => { for (const e of alerts) await notifyFor(e).catch((err) => console.error("Alert failed:", err)); });
   // Anchor new entries to Bitcoin (via OpenTimestamps) at most every 10 minutes, after responding.
   after(() => anchorPending().catch((e) => console.error("Anchoring failed:", e)));
   return Response.json({ results });

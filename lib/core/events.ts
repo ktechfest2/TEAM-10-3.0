@@ -30,6 +30,7 @@ export const EVENT_TYPES = [
   "collation.entered",
   "incident.reported",
   "claim.reported",
+  "pu.relocated",
 ] as const;
 export type EventType = (typeof EVENT_TYPES)[number];
 
@@ -47,6 +48,7 @@ export const AUTHOR_ROLES: Record<EventType, readonly Role[]> = {
   "collation.entered": ["collation_officer"],
   "incident.reported": ["citizen", "observer", "party_agent", "community_leader", "presiding_officer"],
   "claim.reported": ["citizen", "observer", "party_agent", "community_leader", "system"],
+  "pu.relocated": ["collation_officer"],
 };
 
 export const resultFiguresSchema = z.object({
@@ -86,6 +88,18 @@ export const freeTextPayload = z.object({
   data: z.record(z.string(), z.unknown()).optional(),
 });
 
+/** A polling unit moved to a new site. The new site is another unit's location in the same ward, or a described place. */
+export const relocationPayload = z.object({
+  toName: z.string().min(2).max(160),
+  toCode: z.string().min(2).max(32).optional(),
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+  distanceKm: z.number().min(0).max(500).optional(),
+  reason: z.string().min(2).max(280),
+  /** True when the move is an estimate generated for testing, not an announced move. */
+  estimated: z.boolean().optional(),
+});
+
 export const PAYLOAD_SCHEMAS: Record<EventType, z.ZodType> = {
   "material.dispatched": freeTextPayload,
   "material.received": freeTextPayload,
@@ -99,6 +113,7 @@ export const PAYLOAD_SCHEMAS: Record<EventType, z.ZodType> = {
   "collation.entered": collationEnteredPayload,
   "incident.reported": freeTextPayload,
   "claim.reported": freeTextPayload,
+  "pu.relocated": relocationPayload,
 };
 
 /** The signed, portable form of an event. Created offline, verifiable anywhere. */

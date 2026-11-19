@@ -81,6 +81,13 @@ export function OpsView() {
     }
   }
 
+  async function relocate() {
+    setMessage("Moving units…");
+    const res = await fetch("/api/ops/relocate", { method: "POST", headers: { "x-ops-code": code } });
+    const data = await res.json();
+    setMessage(res.ok ? `${data.moved} units moved (estimated), ${data.texted} texts sent.` : (data.error ?? "Failed"));
+  }
+
   async function reset() {
     loop.current++;
     setRunning(false);
@@ -114,6 +121,7 @@ export function OpsView() {
             {running ? <Button variant="secondary" onClick={() => { loop.current++; setRunning(false); }}>Pause</Button> : <Button onClick={() => void run()} disabled={progress?.remaining === 0}>{(progress?.simulated ?? 0) > 0 ? "Continue" : "Start"}</Button>}
             <Button variant="secondary" onClick={() => void collate("honest")}>Collate a ward</Button>
             <Button variant="danger" onClick={() => void collate("tamper")} className="col-span-2">Collate a ward with an altered number</Button>
+            <Button variant="secondary" onClick={() => void relocate()} className="col-span-2">Move some polling units (estimated)</Button>
           </div>
           {confirmReset ? (
             <div className="flex items-center gap-2 text-sm"><span className="flex-1 text-muted">Clear every signed result?</span><Button variant="danger" onClick={() => void reset()} className="min-h-10">Clear</Button><Button variant="secondary" onClick={() => setConfirmReset(false)} className="min-h-10">Cancel</Button></div>

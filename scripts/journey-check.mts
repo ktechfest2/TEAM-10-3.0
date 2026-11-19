@@ -161,6 +161,29 @@ assert(statuses.every((s) => s === 403 || s === 429), `five wrong guesses are re
 const locked = await login(user, "abc123", generateKeyPair());
 assert(locked.status === 429, "after five wrong guesses the account is locked, even for the right password");
 
+// Alerts: a voter follows a unit by SMS; when the unit moves, they get exactly one alert, even if the move is synced twice.
+const moveUnit = units[1]!.pu_code;
+const subscribeAs = (phone: string) => fetch(`${BASE}/api/alerts`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ placeCode: moveUnit, phone }) });
+assert((await subscribeAs("12345")).status === 400, "a number that is not a Nigerian mobile is refused");
+const phoneNo = `0803${String(Date.now()).slice(-7)}`;
+const sub = await subscribeAs(phoneNo);
+const subBody = await sub.json();
+assert(sub.status === 200 && ["sent", "not_configured", "failed"].includes(subBody.sms), `following a unit by SMS works (sms: ${subBody.sms})`);
+const move = { toName: "Check Relocation Site", lat: 9.05, lng: 7.49, distanceKm: 1.2, reason: "The building is under renovation", estimated: true };
+assert((await sync(makeEvent(phoneC, "pu.relocated", moveUnit, move))).status === "rejected", "a voter cannot announce that a unit moved");
+const moveEvent = makeEvent(officer, "pu.relocated", moveUnit, move);
+assert((await sync(moveEvent)).status === "accepted", "a collation officer's signed move is accepted");
+await post("/api/sync", { items: [{ event: moveEvent }] });
+await new Promise((r) => setTimeout(r, 1500));
+const e164 = `+234${phoneNo.slice(1)}`;
+const deliveries = await sql`select d.status, d.message from alert_deliveries d join alert_subscriptions s on s.id = d.subscription_id where s.phone = ${e164} and d.content_hash = ${moveEvent.contentHash}`;
+assert(deliveries.length === 1 && String(deliveries[0]!.message).includes("MOVED to Check Relocation Site"), `the follower gets exactly one move alert, even after a re-sync (status: ${deliveries[0]?.status})`);
+const movedPage = await (await fetch(`${BASE}/p/${moveUnit}`)).text();
+assert(movedPage.includes("This polling unit has moved") && movedPage.includes("Check Relocation Site") && movedPage.includes("google.com/maps/dir"), "the unit page leads with the move and directions");
+const placeApi = await (await fetch(`${BASE}/api/places/${moveUnit}`)).json();
+assert(placeApi.relocation?.toName === "Check Relocation Site", "the app's place summary carries the move");
+await sql`delete from alert_subscriptions where phone = ${e164}`;
+
 const audit = await (await fetch(`${BASE}/api/verify`)).json();
 assert(audit.intact === true, `ledger intact (${audit.entries} entries)`);
 

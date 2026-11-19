@@ -170,6 +170,15 @@ export async function missionSnapshot(): Promise<Mission> {
     const latest = flaggedCodes.map((c) => results.get(c)?.best?.occurredAt ?? "").sort().at(-1) ?? new Date().toISOString();
     alerts.push({ kind: "amber", k: "STATISTICAL FLAGS", title: `${flaggedCodes.length.toLocaleString("en-US")} unit${flaggedCodes.length === 1 ? "" : "s"} flagged for review`, body: `${topPlace?.name ?? top.code}: ${top.title.toLowerCase()}. ${top.detail} A flag is not an accusation.`, at: latest, href: `/p/${top.code}` });
   }
+  // Polling units that moved. One summary alert: the newest move and how many there are.
+  const moves = await sql<{ place_code: string; at: Date; to_name: string; n: number; estimated: boolean }[]>`
+    select place_code, occurred_at as at, payload->>'toName' as to_name, count(*) over ()::int as n, coalesce((payload->>'estimated')::boolean, false) as estimated
+    from events where type = 'pu.relocated' order by seq desc limit 1`;
+  if (moves[0]) {
+    const m = moves[0];
+    const mp = await getPlace(m.place_code);
+    if (mp) alerts.push({ kind: "amber", k: m.n === 1 ? "POLLING UNIT MOVED" : `${m.n} POLLING UNITS MOVED`, title: `Unit ${mp.name}`, body: `Now votes at ${m.to_name}.${m.estimated ? " Estimated move for testing." : ""}`, at: iso(m.at), href: `/p/${mp.code}` });
+  }
   const [anchor] = await sql<{ merkle_root: string; from_seq: number; to_seq: number; status: string; created_at: Date }[]>`select merkle_root, from_seq, to_seq, status, created_at from anchors order by created_at desc limit 1`;
   if (anchor) alerts.push({ kind: "grey", k: anchor.status === "confirmed" ? "ANCHORED ON BITCOIN" : "SUBMITTED TO BITCOIN", title: `Entries ${anchor.from_seq.toLocaleString("en-US")} to ${anchor.to_seq.toLocaleString("en-US")}`, body: `root ${anchor.merkle_root.slice(0, 10)}…${anchor.merkle_root.slice(-6)}`, at: iso(anchor.created_at) });
   alerts.sort((a, b) => b.at.localeCompare(a.at));

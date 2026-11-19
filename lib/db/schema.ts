@@ -127,3 +127,30 @@ export const reference2023 = pgTable("reference_2023", {
   registered: integer("registered").notNull(),
   source: text("source").notNull(),
 });
+
+/** A phone number that wants SMS alerts about one polling unit. The number is only read by the server to send alerts. */
+export const alertSubscriptions = pgTable(
+  "alert_subscriptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    placeCode: text("place_code").notNull(),
+    phone: text("phone").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("alert_sub_unique").on(t.placeCode, t.phone), index("alert_sub_place_idx").on(t.placeCode)],
+);
+
+/** One alert per subscription per event, so a re-sync never texts anyone twice. */
+export const alertDeliveries = pgTable(
+  "alert_deliveries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    subscriptionId: uuid("subscription_id").notNull().references(() => alertSubscriptions.id, { onDelete: "cascade" }),
+    contentHash: text("content_hash").notNull(),
+    message: text("message").notNull(),
+    status: text("status").notNull(),
+    detail: text("detail"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("alert_delivery_once").on(t.subscriptionId, t.contentHash)],
+);

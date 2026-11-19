@@ -12,16 +12,20 @@ import { VoterReport } from "./voter-report";
 import { WallPhoto } from "./wall-photo";
 
 type Followed = { code: string; name: string };
-type Live = { level: string; status: Status; line: string; key: string; at?: string } | "error";
+type Live = { level: string; status: Status; line: string; key: string; at?: string; movedTo?: string } | "error";
 
 /** What the place summary API says, reduced to the one line a voter wants. */
 function summarise(data: {
   place: { level: string };
   coverage: { units: number; sealed: number; disputed: number };
   result: { best: { trust: { status: Status }; occurredAt: string } | null } | null;
+  relocation?: { toName: string; at: string } | null;
 }): Live {
   if (data.place.level === "pu") {
     const best = data.result?.best;
+    const moved = data.relocation;
+    // A move matters more on the day than anything else about the unit, so it leads.
+    if (moved && !best) return { level: "pu", status: null, line: `Moved to ${moved.toName}`, key: `moved:${moved.at}`, at: moved.at, movedTo: moved.toName };
     return best ? { level: "pu", status: best.trust.status, line: "Result", key: `${best.trust.status}`, at: best.occurredAt } : { level: "pu", status: null, line: "Waiting for the result", key: "none" };
   }
   const c = data.coverage;
@@ -145,18 +149,18 @@ export function CitizenHome({ identity, lang = "en" }: { identity: Identity; lan
               return (
                 <li key={f.code} className="flex items-center gap-1 rounded-2xl border border-line bg-surface pr-1">
                   <Link href={`/p/${f.code}`} onClick={() => l && l !== "error" && markSeen(f.code, l.key)} className="flex min-w-0 flex-1 items-center gap-3 p-3">
-                    <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${l && l !== "error" && l.status === "sealed" ? "bg-sealed-wash text-sealed" : l && l !== "error" && l.status === "disputed" ? "bg-alarm-wash text-alarm" : "bg-raised text-muted"}`}>
+                    <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${l && l !== "error" && l.movedTo ? "bg-amber text-black" : l && l !== "error" && l.status === "sealed" ? "bg-sealed-wash text-sealed" : l && l !== "error" && l.status === "disputed" ? "bg-alarm-wash text-alarm" : "bg-raised text-muted"}`}>
                       <Icon name={l && l !== "error" && l.status === "sealed" ? "check" : "pin"} size={20} />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-bold">{f.name}</span>
-                      <span className="block truncate text-xs text-muted">
+                      <span className={`block truncate text-xs ${l && l !== "error" && l.movedTo ? "font-bold text-amber" : "text-muted"}`}>
                         {!l ? "Checking…" : l === "error" ? "Could not load. Your last view is kept offline." : l.line}
                         {l && l !== "error" && l.at ? ` · ${timeAgo(l.at)}` : ""}
                       </span>
                       {changed && <span className="block text-xs font-bold text-amber">Changed since you last looked</span>}
                     </span>
-                    {l && l !== "error" && l.level === "pu" && <StatusBadge status={l.status} />}
+                    {l && l !== "error" && l.level === "pu" && !l.movedTo && <StatusBadge status={l.status} />}
                   </Link>
                   <button type="button" onClick={() => save(followed.filter((x) => x.code !== f.code))} aria-label={`Stop following ${f.name}`} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-muted hover:bg-raised hover:text-fg">
                     <Icon name="close" size={18} />
