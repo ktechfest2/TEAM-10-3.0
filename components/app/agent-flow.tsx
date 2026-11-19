@@ -127,7 +127,7 @@ export function AgentHome({ identity, startWith }: { identity: Identity; startWi
           <Seal state="witnessed" signed={[identity.party ?? "OBS"]} className="h-24 w-36" />
           <p className="text-sm text-muted">Your stroke is on the tally.</p>
         </div>
-        <QrCodeView value={sigQr} label="Show this to the presiding officer, who scans it" />
+        <QrCodeView level="L" value={sigQr} label="Show this to the presiding officer, who scans it" />
         <p className="text-sm text-muted">Your phone keeps a signed copy and delivers it when it finds a network. If the officer&apos;s phone is lost, yours can still prove these figures.</p>
         <Button variant="secondary" onClick={() => { setPending(null); setView("home"); }} className="w-full">Done</Button>
       </Card>

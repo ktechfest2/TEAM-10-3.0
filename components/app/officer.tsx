@@ -101,7 +101,7 @@ export function PoHome({ identity, demo }: { identity: Identity; demo?: { photoU
                     </div>
                     {failed && certifying === a.contentHash && (
                       <div className="mt-3 flex flex-col items-center gap-2">
-                        <QrCodeView value={encodeEventQr(a.event)} label="Agents scan this if they saw the upload fail, and sign" />
+                        <QrCodeView level="L" value={encodeEventQr(a.event)} label="Agents scan this if they saw the upload fail, and sign" />
                         <p className="text-center text-xs text-muted">A failure only you report is a claim. When agents of two rival parties sign it, it is certified on the public page.</p>
                       </div>
                     )}
@@ -161,7 +161,7 @@ function SealStep({ result, parties, onChange }: { result: HeldEvent; parties: s
       </div>
 
       <div className="flex flex-col items-center gap-2">
-        {scanning ? <QrScanner onResult={(t) => void onScan(t)} /> : <QrCodeView value={encodeEventQr(result.event)} label="Agents scan this, check the wall, and sign" />}
+        {scanning ? <QrScanner onResult={(t) => void onScan(t)} /> : <QrCodeView level="L" value={encodeEventQr(result.event)} label="Agents scan this, check the wall, and sign" />}
       </div>
 
       <ul className="space-y-2">

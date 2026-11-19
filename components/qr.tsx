@@ -3,21 +3,32 @@ import jsQR from "jsqr";
 import QRCode from "qrcode";
 import { useEffect, useRef, useState } from "react";
 
-/** Renders text as a QR code, fully offline. */
-export function QrCodeView({ value, label }: { value: string; label?: string }) {
+/** Renders text as a QR code, fully offline. Tap it to fill the screen: a bigger code is much easier for another phone's camera. */
+export function QrCodeView({ value, label, level = "M" }: { value: string; label?: string; level?: "L" | "M" }) {
   const [src, setSrc] = useState<string | null>(null);
+  const [big, setBig] = useState(false);
   useEffect(() => {
-    QRCode.toDataURL(value, { errorCorrectionLevel: "M", margin: 2, width: 720 }).then(setSrc).catch(() => setSrc(null));
-  }, [value]);
+    QRCode.toDataURL(value, { errorCorrectionLevel: level, margin: 3, width: 960 }).then(setSrc).catch(() => setSrc(null));
+  }, [value, level]);
   return (
     <figure className="flex flex-col items-center">
       {src ? (
-        // eslint-disable-next-line @next/next/no-img-element -- data URL generated on device
-        <img src={src} alt={label ?? "QR code"} className="aspect-square w-full max-w-[340px] rounded-xl bg-white" />
+        <button type="button" onClick={() => setBig(true)} aria-label="Fill the screen with this code" className="block w-full max-w-[420px]">
+          {/* eslint-disable-next-line @next/next/no-img-element -- data URL generated on device */}
+          <img src={src} alt={label ?? "QR code"} className="aspect-square w-full rounded-xl bg-white" />
+        </button>
       ) : (
-        <div className="aspect-square w-full max-w-[340px] animate-pulse rounded-xl bg-line" />
+        <div className="aspect-square w-full max-w-[420px] animate-pulse rounded-xl bg-line" />
       )}
       {label && <figcaption className="mt-2 text-center text-xs text-muted">{label}</figcaption>}
+      {src && level === "L" && <p className="mt-1 text-center text-xs text-muted">Tap the code to fill the screen. Turn the screen brightness up and hold the other phone steady.</p>}
+      {big && src && (
+        <div role="dialog" aria-modal="true" aria-label="QR code, full screen" onClick={() => setBig(false)} className="fixed inset-0 z-50 grid place-items-center bg-white p-2">
+          {/* eslint-disable-next-line @next/next/no-img-element -- data URL generated on device */}
+          <img src={src} alt={label ?? "QR code"} className="aspect-square w-[min(98vw,98vh)]" />
+          <p className="absolute bottom-3 text-sm font-bold text-neutral-600">Tap anywhere to close</p>
+        </div>
+      )}
     </figure>
   );
 }
