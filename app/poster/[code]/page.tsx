@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import QRCode from "qrcode";
 import { PrintButton } from "@/components/print-button";
 import { LANGS, t } from "@/lib/core/i18n";
+import { rainbowQrSvg } from "@/lib/core/rainbow-qr";
 import { getBreadcrumb, getPlace } from "@/lib/server/views";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +19,7 @@ export default async function PosterPage(props: PageProps<"/poster/[code]">) {
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
   const url = `${host.startsWith("localhost") ? "http" : "https"}://${host}/p/${place.code}`;
-  const svg = await QRCode.toString(url, { type: "svg", margin: 1, errorCorrectionLevel: "M", color: { dark: "#000000", light: "#ffffff" } });
+  const svg = rainbowQrSvg(url);
   const where = breadcrumb.filter((b) => b.level === "ward" || b.level === "lga").map((b) => b.name).reverse().join(" · ");
 
   return (
