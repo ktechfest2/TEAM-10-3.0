@@ -6,11 +6,74 @@ import { Card, Chip, Eyebrow } from "@/components/ui";
 import { MarginCard } from "@/components/margin-card";
 import { COUNCIL_COLORS, TerritoryMap, type Geometry } from "@/components/territory-map";
 import { Logo } from "@/components/logo";
+import { Icon, type IconName } from "@/components/icons";
 
 const n = (v: number) => v.toLocaleString("en-US");
 
-const KIND: Record<string, string> = { red: "border-alarm bg-alarm-wash", green: "border-line bg-surface", amber: "border-line bg-surface", grey: "border-line bg-surface" };
 const KIND_TEXT: Record<string, string> = { red: "text-alarm", green: "text-sealed", amber: "text-amber", grey: "text-muted" };
+const KIND_BG: Record<string, string> = { red: "bg-alarm-wash text-alarm", green: "bg-sealed-wash text-sealed", amber: "bg-amber-wash text-amber", grey: "bg-raised text-muted" };
+const KIND_ICON: Record<string, IconName> = { red: "alert", green: "check", amber: "eye", grey: "lock" };
+const FILTERS = [
+  { key: "all", label: "All" },
+  { key: "red", label: "Tampering" },
+  { key: "amber", label: "Needs a look" },
+  { key: "green", label: "Sealed" },
+  { key: "grey", label: "Records" },
+] as const;
+const RANK: Record<string, number> = { red: 0, amber: 1, green: 2, grey: 3 };
+
+function Alerts({ alerts }: { alerts: Mission["alerts"] }) {
+  const [filter, setFilter] = useState<string>("all");
+  const [all, setAll] = useState(false);
+  const count = (k: string) => (k === "all" ? alerts.length : alerts.filter((a) => a.kind === k).length);
+  const shown = alerts.filter((a) => filter === "all" || a.kind === filter);
+  // Problems first, then the newest.
+  const ordered = filter === "all" ? [...shown].sort((x, y) => (RANK[x.kind] ?? 9) - (RANK[y.kind] ?? 9) || +new Date(y.at) - +new Date(x.at)) : shown;
+  const list = all ? ordered : ordered.slice(0, 6);
+  return (
+    <section aria-label="Alerts" className="space-y-3">
+      <div className="flex items-center justify-between">
+        <Eyebrow>Alerts</Eyebrow>
+        <span className="text-xs text-muted">{alerts.length} in total</span>
+      </div>
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {FILTERS.filter((f) => f.key === "all" || count(f.key) > 0).map((f) => (
+          <button key={f.key} onClick={() => { setFilter(f.key); setAll(false); }} aria-pressed={filter === f.key} className={`inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-sm font-bold ${filter === f.key ? "bg-fg text-bg" : "bg-raised text-muted hover:text-fg"}`}>
+            {f.label}<span className={`text-xs tabular-nums ${filter === f.key ? "opacity-70" : ""}`}>{count(f.key)}</span>
+          </button>
+        ))}
+      </div>
+      {alerts.length === 0 && <Card><p className="text-sm text-muted">No alerts yet.</p></Card>}
+      <ul className="overflow-hidden rounded-2xl border border-line bg-surface">
+        {list.map((a, i) => {
+          const body = (
+            <>
+              <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${KIND_BG[a.kind]}`}><Icon name={KIND_ICON[a.kind] ?? "check"} size={18} /></span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-baseline justify-between gap-3">
+                  <span className={`truncate text-[11px] font-extrabold tracking-widest uppercase ${KIND_TEXT[a.kind]}`}>{a.k}</span>
+                  <span className="shrink-0 text-xs text-muted tabular-nums">{new Date(a.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                </span>
+                <span className="mt-0.5 block font-bold leading-snug">{a.title}</span>
+                <span className="mt-0.5 line-clamp-2 block text-sm text-muted">{a.body}</span>
+              </span>
+              {a.href && <Icon name="chevron" size={18} className="mt-2 shrink-0 text-muted" />}
+            </>
+          );
+          const cls = `flex gap-3 px-4 py-3.5 ${i > 0 ? "border-t border-line" : ""} ${a.kind === "red" ? "bg-alarm-wash/40" : ""}`;
+          return (
+            <li key={`${a.at}-${i}`}>
+              {a.href ? <Link href={a.href} className={`${cls} hover:bg-raised`}>{body}</Link> : <div className={cls}>{body}</div>}
+            </li>
+          );
+        })}
+      </ul>
+      {ordered.length > 6 && (
+        <button onClick={() => setAll((v) => !v)} className="w-full rounded-2xl border border-line py-3 text-sm font-bold text-blue">{all ? "Show fewer" : `Show all ${ordered.length}`}</button>
+      )}
+    </section>
+  );
+}
 
 /** Live, read-only view of the election from the ledger. Everything here is computed from signed results. */
 export function MissionView() {
@@ -92,25 +155,7 @@ export function MissionView() {
 
           {data && <MarginCard margin={data.margin} uploads={data.uploads} />}
 
-          <div className="space-y-2.5">
-            <Eyebrow>Alerts · newest first</Eyebrow>
-            {data && data.alerts.length === 0 && <Card><p className="text-sm text-muted">No alerts yet. They appear as results are signed and collated.</p></Card>}
-            {data?.alerts.map((a, i) => {
-              const inner = (
-                <>
-                  <div className={`text-[11px] font-bold tracking-widest ${KIND_TEXT[a.kind]}`}>{a.k} · {new Date(a.at).toLocaleTimeString()}</div>
-                  <div className="mt-1 font-bold">{a.title}</div>
-                  <div className="mt-0.5 text-sm text-muted">{a.body}</div>
-                  {a.href && <div className="mt-1.5 text-xs font-bold text-blue">See the proof ›</div>}
-                </>
-              );
-              return a.href ? (
-                <Link key={`${a.at}-${i}`} href={a.href} className={`block rounded-2xl border px-4 py-3 hover:brightness-125 ${KIND[a.kind]}`}>{inner}</Link>
-              ) : (
-                <div key={`${a.at}-${i}`} className={`rounded-2xl border px-4 py-3 ${KIND[a.kind]}`}>{inner}</div>
-              );
-            })}
-          </div>
+          {data && <Alerts alerts={data.alerts} />}
         </div>
       </div>
       <p className="mt-8 max-w-prose text-xs text-muted">Map data: polling-site locations on the FCT boundary, GRID3 via geoBoundaries (CC BY 4.0). Results appear here only once they are signed. {failed && "The connection to the server was lost; the numbers shown may be out of date."}</p>

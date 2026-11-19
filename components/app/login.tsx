@@ -40,8 +40,8 @@ export function Login({ onDone, onBack }: { onDone: (identity: Identity) => void
       <h1 className="font-display text-2xl font-extrabold">Log in</h1>
       <Card className="space-y-4">
         <label className="block">
-          <Eyebrow>Your name</Eyebrow>
-          <input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="name" spellCheck={false} placeholder="your name" className="mt-1 min-h-12 w-full rounded-xl border border-line bg-raised px-4 outline-none focus:border-thumb" />
+          <Eyebrow>Username</Eyebrow>
+          <input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" autoCapitalize="none" spellCheck={false} placeholder="your username" className="mt-1 min-h-12 w-full rounded-xl border border-line bg-raised px-4 outline-none focus:border-thumb" />
         </label>
         <label className="block">
           <Eyebrow>Password</Eyebrow>

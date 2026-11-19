@@ -1,14 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { normaliseUsername, passwordProblem, usernameProblem } from "./credentials";
 
-describe("names used to log in", () => {
-  it("ignore case, outer spaces and repeated spaces", () => expect(normaliseUsername("  Amaka   Okafor ")).toBe("amaka okafor"));
-  it("accept ordinary names, including accents and apostrophes", () => {
-    for (const n of ["Amaka Okafor", "Ngozi Adeyemi-Bello", "Chukwuemeka O'Neil", "Ọláwálé Adébáyọ̀", "Halima 2", "Mama Ngozi"]) expect(usernameProblem(n)).toBeNull();
+describe("usernames", () => {
+  it("ignore case when matched", () => expect(normaliseUsername("  Amaka_O ")).toBe("amaka_o"));
+  it("accept short handles", () => {
+    for (const n of ["amaka", "Ngozi_B", "chuks.o", "halima-2", "abc"]) expect(usernameProblem(n)).toBeNull();
   });
-  it("refuse too short, too long and odd characters", () => {
-    expect(usernameProblem("A")).not.toBeNull();
-    expect(usernameProblem("a".repeat(61))).not.toBeNull();
+  it("refuse spaces, too short, too long and odd characters", () => {
+    expect(usernameProblem("Amaka Okafor")).not.toBeNull();
+    expect(usernameProblem("ab")).not.toBeNull();
+    expect(usernameProblem("a".repeat(21))).not.toBeNull();
     expect(usernameProblem("amaka@home")).not.toBeNull();
     expect(usernameProblem("<script>")).not.toBeNull();
   });

@@ -134,12 +134,12 @@ assert(mission.alerts.some((a: { k: string }) => a.k === "VOTERS REPORT NO OFFIC
 assert(mission.alerts.some((a: { k: string }) => a.k === "WALL SHEET READS DIFFERENTLY"), "a wall photo that reads differently raises a neutral alert");
 
 // Accounts: a username and password log a person in on a new phone; a lost phone can be signed out; guessing is locked out.
-const user = `Check Person ${Date.now().toString(36)}`;
+const user = `check_${Date.now().toString(36)}`;
 const regAs = async (keys: KeyPair, name: string, password: string | undefined) =>
   fetch(`${BASE}/api/actors`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ role: "citizen", displayName: name, party: null, publicKey: keys.publicKeyHex, placeCode: null, password }) });
 const phoneA = generateKeyPair();
 assert((await regAs(phoneA, user, "123")).status === 400, "a password under six characters is refused");
-assert((await regAs(generateKeyPair(), "<b>x</b>", "123456")).status === 400, "a name with odd characters is refused");
+assert((await regAs(generateKeyPair(), "<b>x</b>", "123456")).status === 400, "a username with odd characters is refused");
 assert((await regAs(phoneA, user, "abc123")).status === 200, "sign-up with a name and a plain six-character password works");
 assert((await regAs(generateKeyPair(), `  ${user.toUpperCase()}  `, "abc123")).status === 409, "a name that is taken is refused, in any case");
 const login = (username: string, password: string, keys: KeyPair, signOutOthers = false) =>

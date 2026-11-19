@@ -122,8 +122,8 @@ export function Onboarding({ onDone }: { onDone: (identity: Identity) => void })
       </div>
       <Card className="space-y-4">
         <label className="block">
-          <Eyebrow>Your full name</Eyebrow>
-          <input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" className="mt-1 min-h-12 w-full rounded-xl border border-line bg-paper px-4 outline-none focus:border-ink" />
+          <Eyebrow>Choose a username</Eyebrow>
+          <input value={name} onChange={(e) => setName(e.target.value)} autoComplete="username" autoCapitalize="none" spellCheck={false} placeholder="e.g. amaka_o" className="mt-1 min-h-12 w-full rounded-xl border border-line bg-paper px-4 outline-none focus:border-ink" />
           {name && nameProblem && <span className="mt-1 block text-xs text-muted">{nameProblem}</span>}
         </label>
         {role.role === "party_agent" && (
@@ -164,7 +164,7 @@ export function Onboarding({ onDone }: { onDone: (identity: Identity) => void })
           </label>
         )}
         <div className="space-y-3 border-t border-line pt-4">
-          <p className="text-xs text-muted">You will log back in with your name and this password, on another phone or after logging out.</p>
+          <p className="text-xs text-muted">You will log in with your username and this password, on another phone or after logging out.</p>
           <label className="block">
             <Eyebrow>Password (6 or more characters)</Eyebrow>
             <span className="mt-1 flex gap-2">

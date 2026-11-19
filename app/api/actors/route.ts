@@ -25,11 +25,12 @@ export async function POST(request: Request) {
 
   // The simulation and the test scripts register without a login; a person signing up always sends a password, and their name is how they log in.
   const username = body.password === undefined ? null : normaliseUsername(body.displayName);
+  const nameError = body.password === undefined ? null : usernameProblem(body.displayName);
   if (username !== null) {
-    const problem = usernameProblem(username) ?? passwordProblem(body.password ?? "");
+    const problem = nameError ?? passwordProblem(body.password ?? "");
     if (problem) return badRequest(problem);
     const [taken] = await sql`select 1 from actors where username = ${username}`;
-    if (taken) return badRequest("Someone already uses that name. Add your surname or a number so you can be told apart.", 409);
+    if (taken) return badRequest("That username is taken. Try another, for example add a number.", 409);
   }
   if (body.role !== "citizen" && !inviteCodeValid(body.inviteCode)) {
     return badRequest("This role needs a valid invite code from your organisation.", 403);

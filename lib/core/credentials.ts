@@ -1,21 +1,21 @@
 /**
- * Log-in rules, shared by the phone and the server. A person logs in with their name and a password they choose: six
- * characters or more, any characters, no forced symbols. A short password is kept safe by the lockout and slow hashing on
- * the server, not by rules that make people write it down. The name is matched ignoring case and extra spaces.
+ * Log-in rules, shared by the phone and the server. A person logs in with a username they choose (3 to 20 characters:
+ * letters, numbers, dot, dash or underscore, no spaces; unique, ignoring case) and a password of six characters or more,
+ * any characters. A short password is kept safe by the lockout and slow hashing on the server.
  */
 export const MIN_PASSWORD = 6;
 
-/** The form of a name used to find an account: lowercase, single spaces. */
+/** The form of a username used to find an account: lowercase, no outer spaces. */
 export function normaliseUsername(input: string): string {
   return input.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
-/** Returns a message for the person if the name cannot be used to log in, or null. */
+/** Returns a message for the person if the username cannot be chosen, or null. Existing accounts may predate these rules and can still log in. */
 export function usernameProblem(input: string): string | null {
-  const u = normaliseUsername(input);
-  if (u.length < 2) return "Your name needs at least 2 characters.";
-  if (u.length > 60) return "Your name can have at most 60 characters.";
-  if (!/^[\p{L}\p{M}\p{N} .'\u2019-]+$/u.test(u)) return "Use letters, numbers, spaces, dots, dashes or apostrophes in your name.";
+  const u = input.trim();
+  if (u.length < 3) return "A username needs at least 3 characters.";
+  if (u.length > 20) return "A username can have at most 20 characters.";
+  if (!/^[A-Za-z0-9._-]+$/.test(u)) return "Use letters, numbers, dots, dashes or underscores. No spaces.";
   return null;
 }
 
