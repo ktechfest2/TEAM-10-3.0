@@ -88,3 +88,10 @@ Gates run: unit tests, typecheck, lint, `check:sim`, `check:journey` (local).
 | Citizen wall photo, compared with the signed result | done | browser-tested with the real reader |
 | WhatsApp number | todo | needs the user's Meta account |
 | Materials tracking, escalation, priority help | todo | |
+
+## Slice 9: log-in and recovery (Thu 19 Nov)
+| Item | Status | Notes |
+|---|---|---|
+| Recovery code, log in on a new phone, sign out a lost phone | done | browser-tested end to end; 4 unit tests, 8 journey assertions |
+| Per-organisation invite codes; units enforced per officer/agent; admin page | todo | integrity gap |
+| SMS (OTP, alerts), my polling unit + relocation alerts | todo | needs an Africa's Talking account |

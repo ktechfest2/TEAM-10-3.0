@@ -3,6 +3,7 @@ import { useState } from "react";
 import { generateKeyPair } from "@/lib/core/crypto";
 import { saveIdentity, type Identity } from "@/lib/client/store";
 import { Button, Card, Eyebrow } from "@/components/ui";
+import { Login } from "./login";
 import { PlaceSearch, type PlaceHit } from "./place-search";
 import { ROLE_COLOR } from "@/lib/roles";
 
@@ -24,6 +25,10 @@ export function Onboarding({ onDone }: { onDone: (identity: Identity) => void })
   const [invite, setInvite] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [showLogin, setShowLogin] = useState(false);
+  const [saved, setSaved] = useState<{ code: string; identity: Identity } | null>(null);
+  const [confirmed, setConfirmed] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const needsInvite = role && role.role !== "citizen";
   const ready = role && name.trim().length >= 2 && (!role.place || place) && (role.role !== "party_agent" || party) && (!needsInvite || invite);
@@ -59,6 +64,9 @@ export function Onboarding({ onDone }: { onDone: (identity: Identity) => void })
         actorId: data.id,
         createdAt: new Date().toISOString(),
       };
+      // The recovery code is shown once. The identity is kept on this phone only after the person says they have saved it,
+      // so closing the page here never leaves an account nobody can get back into.
+      if (data.recoveryCode) return setSaved({ code: data.recoveryCode, identity });
       await saveIdentity(identity);
       onDone(identity);
     } catch (e) {
@@ -67,6 +75,27 @@ export function Onboarding({ onDone }: { onDone: (identity: Identity) => void })
       setBusy(false);
     }
   }
+
+  if (saved) {
+    return (
+      <div className="space-y-4">
+        <h1 className="font-display text-2xl font-extrabold">Keep your recovery code</h1>
+        <Card className="space-y-4">
+          <p className="text-sm text-muted">This is the only way to log back in if you lose this phone, clear your browser or use another phone. We cannot show it again.</p>
+          <p className="rounded-xl bg-raised p-4 text-center font-mono text-xl font-bold whitespace-nowrap select-all" aria-label="Recovery code">{saved.code}</p>
+          <Button variant="secondary" onClick={() => void navigator.clipboard.writeText(saved.code).then(() => setCopied(true)).catch(() => setCopied(false))} className="w-full">{copied ? "Copied" : "Copy the code"}</Button>
+          <p className="text-xs text-muted">Write it down or take a screenshot. Anyone with this code can log in as you, so do not share it.</p>
+          <label className="flex items-start gap-3 text-sm">
+            <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} className="mt-1 h-5 w-5" />
+            <span>I have saved my recovery code.</span>
+          </label>
+          <Button onClick={() => void saveIdentity(saved.identity).then(() => onDone(saved.identity))} disabled={!confirmed} className="w-full">Continue</Button>
+        </Card>
+      </div>
+    );
+  }
+
+  if (showLogin) return <Login onDone={onDone} onBack={() => setShowLogin(false)} />;
 
   if (!role) {
     return (
@@ -81,6 +110,7 @@ export function Onboarding({ onDone }: { onDone: (identity: Identity) => void })
             <span className="mt-0.5 block text-sm text-muted">{r.detail}</span>
           </button>
         ))}
+        <button onClick={() => setShowLogin(true)} className="block w-full rounded-2xl border border-line p-4 text-center text-sm font-bold text-blue">I already have an account · Log in</button>
       </div>
     );
   }

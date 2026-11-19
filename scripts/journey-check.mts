@@ -133,6 +133,24 @@ const mission = await (await fetch(`${BASE}/api/mission`)).json();
 assert(mission.alerts.some((a: { k: string }) => a.k === "VOTERS REPORT NO OFFICIALS"), "two voters saying officials have not arrived raises an alert");
 assert(mission.alerts.some((a: { k: string }) => a.k === "WALL SHEET READS DIFFERENTLY"), "a wall photo that reads differently raises a neutral alert");
 
+// Accounts: a recovery code logs a person in on a new phone; a lost phone can be signed out.
+const reg = async (keys: KeyPair, name: string) => (await fetch(`${BASE}/api/actors`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ role: "citizen", displayName: name, party: null, publicKey: keys.publicKeyHex, placeCode: null }) })).json();
+const phoneA = generateKeyPair();
+const account = await reg(phoneA, "Account holder (check)");
+assert(/^[A-Z2-9]{4}(-[A-Z2-9]{4}){3}$/.test(account.recoveryCode), "sign-up returns a recovery code, shown once");
+assert((await reg(phoneA, "Account holder (check)")).recoveryCode === undefined, "registering the same phone again does not issue a second code");
+const login = (code: string, keys: KeyPair, signOutOthers = false) => fetch(`${BASE}/api/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ recoveryCode: code, publicKey: keys.publicKeyHex, signOutOthers }) });
+assert((await login("ABCD-EFGH-JKMN-PQRS", generateKeyPair())).status === 403, "a wrong recovery code is refused");
+const phoneB = generateKeyPair();
+const okLogin = await login(account.recoveryCode.toLowerCase().replaceAll("-", " "), phoneB);
+assert(okLogin.status === 200 && (await okLogin.json()).displayName === "Account holder (check)", "the recovery code logs in on a new phone, typed any way");
+const sendQueue = async (keys: KeyPair) => (await sync(makeEvent(keys, "pu.queue", reportUnit, { level: "short" }))).status;
+assert((await sendQueue(phoneB)) === "accepted" && (await sendQueue(phoneA)) === "accepted", "both phones can sign for the same account");
+const phoneC = generateKeyPair();
+assert((await login(account.recoveryCode, phoneC, true)).status === 200, "logging in with 'my other phone is lost' succeeds");
+assert((await sendQueue(phoneA)) === "rejected" && (await sendQueue(phoneB)) === "rejected", "signed-out phones can no longer sign anything");
+assert((await sendQueue(phoneC)) === "accepted", "the phone just logged in still can");
+
 const audit = await (await fetch(`${BASE}/api/verify`)).json();
 assert(audit.intact === true, `ledger intact (${audit.entries} entries)`);
 
