@@ -25,7 +25,7 @@ export type IngestResult = {
 type ActorRow = { id: string; role: Role; party: string | null };
 
 async function actorByKey(tx: typeof sql, key: string): Promise<ActorRow | undefined> {
-  const [row] = await tx<ActorRow[]>`select id, role, party from actors where public_key = ${key}`;
+  const [row] = await tx<ActorRow[]>`select id, role, party from actors where public_key = ${key} and revoked_at is null`;
   return row;
 }
 

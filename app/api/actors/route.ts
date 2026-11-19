@@ -1,7 +1,10 @@
 import { z } from "zod";
 import { sqlClient as sql } from "@/lib/db/client";
 import { ROLES } from "@/lib/core/events";
+import { newRecoveryCode, normaliseRecoveryCode } from "@/lib/core/recovery";
+import { hashRecovery } from "@/lib/server/accounts";
 import { badRequest, inviteCodeValid, parseJson } from "@/lib/server/http";
+import { rateLimited } from "@/lib/server/ratelimit";
 
 const schema = z.object({
   role: z.enum(ROLES).exclude(["system"]),
@@ -13,6 +16,8 @@ const schema = z.object({
 });
 
 export async function POST(request: Request) {
+  // Anyone can sign up as a voter, so sign-ups are limited per caller.
+  if (rateLimited(request, "register", 30)) return badRequest("Too many sign-ups from this connection. Wait a minute and try again.", 429);
   const parsed = await parseJson(request, schema);
   if ("error" in parsed) return parsed.error;
   const body = parsed.data;
@@ -32,5 +37,10 @@ export async function POST(request: Request) {
             ${body.placeCode ?? null}, ${process.env.NODE_ENV === "production" ? 0 : 1})
     on conflict (public_key) do update set display_name = excluded.display_name
     returning id`;
-  return Response.json({ id: actor.id });
+  // A new account gets a recovery code, shown to the person once. A key registered again (same phone) keeps its account.
+  const code = newRecoveryCode();
+  const [fresh] = await sql<{ id: string }[]>`
+    update actors set account_id = id, recovery_hash = ${hashRecovery(normaliseRecoveryCode(code)!)}
+    where id = ${actor.id} and account_id is null returning id`;
+  return Response.json({ id: actor.id, ...(fresh ? { recoveryCode: code } : {}) });
 }
