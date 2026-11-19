@@ -51,7 +51,7 @@ Run Wed 18 Nov 2026, night, against `main` at the time of writing and the produc
 | B4 Replay 2023 | **Partial** | no timeline |
 | V1 role-based app | **Partial** | one home per role; the ≤ 2 taps target is untested on a phone |
 | V2 public proof pages | Met | |
-| V3 WhatsApp official number | **Not met** | needs a Meta developer account and number from the user |
+| V3 WhatsApp official number | **Cut on purpose** | decision 28; replaced by paste and the share target |
 | V4 languages | **Partial** | EN, PCM, HA, YO, IG for the voter sentences; **draft, not native-reviewed**; officer, agent, collation and mission screens are English only |
 | V5 voter alerts | **Partial** | in-app "changed since you last looked"; no push, SMS or WhatsApp; no opening or delay alerts |
 
@@ -76,7 +76,7 @@ Production runs the latest `main`; migrations and seed applied; `TALLY_INVITE_CO
 2. Submission pack not started: write-up, system diagram, problem-brief PDF, demo script, demo video, official form.
 
 **Judge-visible gaps**
-3. No WhatsApp number (V3). Needs the user to create a Meta developer account.
+3. No WhatsApp number (V3): **cut on purpose** (decision 28). Say so plainly in the pitch; the forwarded-message check works by paste and share target.
 4. No materials tracking, escalation or priority-help flow; no push alerts; no voice input.
 5. Real handwriting untested; officer, agent and collation screens English only; translations unreviewed.
 

@@ -41,7 +41,7 @@ Timeboxes:
 ## Needed from the user (blocking)
 - [ ] **AI Gateway key** (or Vercel login so `vercel env pull` works)
 - [ ] Vercel account for deployment (and Neon via the Marketplace)
-- [ ] Meta developer account → WhatsApp Cloud API test number (Tier 2)
+- [x] ~~Meta developer account → WhatsApp Cloud API test number~~ **cut (decision 28)**
 - [ ] Africa's Talking sandbox account (Tier 3)
 - [ ] The submission form URL saved in `event-context.md`
 
@@ -86,7 +86,7 @@ Gates run: unit tests, typecheck, lint, `check:sim`, `check:journey` (local).
 | Listen (voice replies) | done | needs a voice on the phone |
 | Voter queue / officials-not-arrived reports + alert | done | browser-tested |
 | Citizen wall photo, compared with the signed result | done | browser-tested with the real reader |
-| WhatsApp number | todo | needs the user's Meta account |
+| WhatsApp number | **cut** | decision 28 |
 | Materials tracking, escalation, priority help | todo | |
 
 ## Slice 9: log-in and recovery (Thu 19 Nov)

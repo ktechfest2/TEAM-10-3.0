@@ -76,7 +76,7 @@ flowchart TB
 | A7 | **AI never decides trust.** A transparent trust engine (log-odds over independent witness chains) decides | LLM judging truth | Explainable, testable, can't hallucinate a verdict; based on the user's Stage 1 design | Needs explicit evidence; defaults to "unverified" |
 | A8 | **Mission control refreshes by polling (5 s)** | Server-Sent Events; WebSockets | Serverless-friendly, simple, robust on bad networks | Up to 5 s latency (within the G3 target of 10 s) |
 | A9 | **Map: MapLibre GL + OpenFreeMap tiles** | Google Maps / Mapbox | Free, no key, open data | Plain base map style |
-| A10 | **WhatsApp: Meta Cloud API webhook → `after()` processing → reply** | Twilio sandbox; third-party BSP | Official, free test number, gives the `forwarded` flag we need for hearsay depth | Test number reaches only 5 registered phones (enough for the demo) |
+| A10 | **CUT (decision 28): no WhatsApp webhook.** Was: Meta Cloud API webhook → `after()` processing → reply** | Twilio sandbox; third-party BSP | Official, free test number, gives the `forwarded` flag we need for hearsay depth | Test number reaches only 5 registered phones (enough for the demo) |
 | A11 | **Languages: reviewed message templates per language; the LLM only translates the free-text claim summary (labelled)** | Full LLM translation | Verdict wording is predictable and safe in all 5 languages | Fewer phrasings |
 
 ## 5. Data model
@@ -146,7 +146,7 @@ Method: read this document and the PRD, then checked each claim against the code
 | A7 AI never decides trust | **Held** | Injection test: "confirm this" in a message did not move the verdict. |
 | A8 polling 5 s | **Held** | |
 | A9 MapLibre + OpenFreeMap | **Not followed, better** | Own SVG map (GRID3 boundary, Voronoi of 2,423 polling sites): no tiles, no key, loads as a 62 KB cached file. |
-| A10 WhatsApp webhook | **Not built** | Needs the user's Meta account. Paste and Android share target stand in. |
+| A10 WhatsApp webhook | **Cut on purpose** (19 Nov) | Account setup cost hours and could not be finished in time. Paste and the Android share target carry J4. |
 | A11 reviewed templates per language | **Partly** | Templates in 5 languages, **unreviewed**; the free-text claim summary is not translated. |
 
 ### Containers, data model, journeys

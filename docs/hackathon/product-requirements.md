@@ -93,7 +93,7 @@ Capacity: about 42 hours left. The final 20% is reserved, leaving **about 33 bui
 |---|---|---|
 | V1 | Role-based app | One home screen per role; the core task is reachable in ≤ 2 taps from home |
 | V2 | Public proof pages | Unit → ward → LGA → state drill-down; trust score with its reasoning; signers; the "wall = counted" check |
-| V3 | WhatsApp intake (official number) | Forwarded text, image or voice note is received; reply within 30 s; reply in the sender's language |
+| V3 | ~~WhatsApp intake (official number)~~ **CUT 19 Nov (decision 28)**; replaced by in-app paste and the installed app as an Android share target | Forwarded text, image or voice note is received; reply within 30 s; reply in the sender's language |
 | V4 | Languages | All voter-facing answers are available in EN, HA, YO, IG, PCM; templates reviewed by a native speaker where possible |
 | V5 | Voter alerts | Subscribe to a unit; get notified on opening, delay and sealed result |
 
@@ -126,7 +126,7 @@ Capacity: about 42 hours left. The final 20% is reserved, leaving **about 33 bui
 |---|---|
 | Party agents carry smartphones that can scan QR codes | Assumption; validate in user testing |
 | Vercel hosting + Neon Postgres + AI Gateway (no API keys; OIDC on Vercel) | The user is linking the repo |
-| Meta WhatsApp Cloud API test number | Needed for J4. **The user must create it.** |
+| Meta WhatsApp Cloud API test number | **Dropped (decision 28).** J4 runs through paste and the share target |
 | OpenTimestamps calendars reachable | Verified 18 Nov |
 | Real 2023 FCT unit data | In repo (credited) |
 
