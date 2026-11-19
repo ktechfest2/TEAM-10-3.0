@@ -37,6 +37,7 @@ export default async function Home() {
       <header className="flex items-center justify-between py-5">
         <Link href="/"><Logo size={30} /></Link>
         <nav className="flex items-center gap-5 text-sm font-bold">
+          <Link href="/rig" className="hidden text-alarm sm:inline">Try to rig it</Link>
           <Link href="/mission" className="hidden sm:inline">Mission control</Link>
           <Link href="/check" className="hidden sm:inline">Check a message</Link>
           <Link href="/verify" className="hidden sm:inline">Check records</Link>
@@ -53,6 +54,7 @@ export default async function Home() {
           <div className="mt-7 max-w-xl">
             <HomeSearch />
           </div>
+          <Link href="/rig" className="mt-5 inline-flex min-h-12 items-center gap-2 rounded-2xl border-2 border-alarm px-5 font-extrabold text-alarm hover:bg-alarm-wash">Try to rig this election ›</Link>
           <p className="mt-3 text-sm text-muted">2,822 polling units in the FCT. Got a forwarded message? <Link href="/check" className="font-bold text-blue">Check if it is true ›</Link></p>
         </div>
 

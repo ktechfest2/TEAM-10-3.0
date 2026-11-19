@@ -162,3 +162,13 @@ export async function simulateRelocations() {
   }
   return { moved: plan.length, alreadyMoved: moved.size, texted };
 }
+
+/** Signs a ward collation as the labelled DEMO collation officer, through the real ledger. Used by the "try to rig it" page. */
+export async function signDemoCollation(wardCode: string, rows: { code: string; totals: Totals }[]) {
+  const a = await actors();
+  const announced = sumTotals(rows.map((r) => r.totals));
+  const event = signEvent({ id: randomUUID(), type: "collation.entered", placeCode: wardCode, payload: { level: "ward", rows, announced }, occurredAt: new Date().toISOString(), authorKey: a.collation.keys.publicKeyHex }, a.collation.keys.secretKeyHex);
+  const res = await ingest({ event }, "simulation");
+  if (res.status === "rejected") throw new Error(res.reason ?? "Collation rejected");
+  return event;
+}

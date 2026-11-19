@@ -88,6 +88,8 @@ export async function missionSnapshot(): Promise<Mission> {
   const tamperCodes = new Set<string>();
   const latest = await sql<{ place_code: string }[]>`select distinct on (place_code) place_code from events where type = 'collation.entered' order by place_code, seq desc`;
   let tamper = 0;
+  // The newest tampered collation draws the map's spotlight to the unit whose figures were changed.
+  let newestTamper: { code: string; at: string } | null = null;
   for (const { place_code } of latest) {
     const place = await getPlace(place_code);
     const check = place ? await getCollationCheck(place, results) : null;
@@ -97,6 +99,7 @@ export async function missionSnapshot(): Promise<Mission> {
       const bad = check.rows.find((r) => r.status === "mismatch");
       check.rows.filter((r) => r.status === "mismatch").forEach((r) => tamperCodes.add(r.code));
       const d = bad?.divergences[0];
+      if (bad && (!newestTamper || check.occurredAt > newestTamper.at)) newestTamper = { code: bad.code, at: check.occurredAt };
       alerts.push({ kind: "red", k: "TAMPERING SUSPECTED", title: `${place.name} ward collation`, body: bad && d ? `${bad.name}: ${d.field} announced ${d.announced.toLocaleString("en-US")}, sealed by rival agents ${d.computed.toLocaleString("en-US")}.` : "Announced totals do not match the sealed results.", at: check.occurredAt, href: `/p/${place.code}` });
     } else {
       alerts.push({ kind: "green", k: "COLLATION MATCHES", title: `${place.name} ward collation`, body: `${check.rows.length} units read out; every one equals its sealed result.`, at: check.occurredAt, href: `/p/${place.code}` });
@@ -183,7 +186,7 @@ export async function missionSnapshot(): Promise<Mission> {
   if (anchor) alerts.push({ kind: "grey", k: anchor.status === "confirmed" ? "ANCHORED ON BITCOIN" : "SUBMITTED TO BITCOIN", title: `Entries ${anchor.from_seq.toLocaleString("en-US")} to ${anchor.to_seq.toLocaleString("en-US")}`, body: `root ${anchor.merkle_root.slice(0, 10)}…${anchor.merkle_root.slice(-6)}`, at: iso(anchor.created_at) });
   alerts.sort((a, b) => b.at.localeCompare(a.at));
 
-  const focusCode = recent[0]?.place_code;
+  const focusCode = newestTamper && (!recent[0] || newestTamper.at > iso(recent[0].occurred_at)) ? newestTamper.code : recent[0]?.place_code;
   const focusCell = focusCode !== undefined ? cellOfCode.get(focusCode) : undefined;
   const focusPlace = focusCode ? await getPlace(focusCode) : null;
 

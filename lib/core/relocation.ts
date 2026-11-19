@@ -61,3 +61,7 @@ export function openedSms(unitName: string, link: string): string {
 export function directionsUrl(lat: number, lng: number): string {
   return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
 }
+
+export function tamperSms(unitName: string, wardName: string, field: string, announced: number, sealed: number, link: string): string {
+  return `Tally ALERT: at ${wardName} collation, ${unitName} was announced with ${field} ${announced}, but party agents signed ${sealed} at the unit. Proof: ${link}`;
+}
