@@ -8,12 +8,13 @@ import { Login } from "./login";
 import { PlaceSearch, type PlaceHit } from "./place-search";
 import { ROLE_COLOR } from "@/lib/roles";
 
-const ROLES: { role: Identity["role"]; title: string; detail: string; place: PlaceHit["level"][] | null }[] = [
-  { role: "citizen", title: "Voter", detail: "Check your polling unit, its result and whether a rumour is true.", place: null },
-  { role: "presiding_officer", title: "Presiding officer", detail: "Open the unit, record the EC8A result, collect agents' signatures.", place: ["pu"] },
-  { role: "party_agent", title: "Party agent", detail: "Check the figures against the sheet and sign the result yourself.", place: ["pu"] },
-  { role: "observer", title: "Observer", detail: "Independent witness for results and incidents.", place: ["pu", "ward"] },
-  { role: "collation_officer", title: "Collation officer", detail: "Enter ward or area council collation; Tally checks it against sealed units.", place: ["ward", "lga"] },
+/** Plain-language descriptions. The official job titles stay (people at polling units know them), each with who it is and what you do. */
+const ROLES: { role: Identity["role"]; title: string; who: string; detail: string; place: PlaceHit["level"][] | null }[] = [
+  { role: "citizen", title: "Voter", who: "Anyone who votes", detail: "Look up your polling unit, see who signed its result, and check a message you were sent. No code needed.", place: null },
+  { role: "presiding_officer", title: "Presiding officer", who: "In charge of a polling unit", detail: "You record the result from the paper sheet and sign it. Party agents then sign it too.", place: ["pu"] },
+  { role: "party_agent", title: "Party agent", who: "Represents a party at a polling unit", detail: "You compare the result with the paper sheet and sign if it is right.", place: ["pu"] },
+  { role: "observer", title: "Observer", who: "Watches for an independent group", detail: "You watch the count, check results and report problems.", place: ["pu", "ward"] },
+  { role: "collation_officer", title: "Collation officer", who: "Adds up results at a ward or council office", detail: "You enter the totals read out there. Tally checks them against what the polling units signed.", place: ["ward", "lga"] },
 ];
 
 const PARTIES = ["APC", "LP", "PDP", "NNPP", "ADC", "APGA", "SDP", "YPP"];
@@ -79,15 +80,28 @@ export function Onboarding({ onDone }: { onDone: (identity: Identity) => void })
   if (showLogin) return <Login onDone={onDone} onBack={() => setShowLogin(false)} />;
 
   if (!role) {
+    const [voter, ...jobs] = ROLES;
     return (
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold">Who are you on election day?</h1>
-          <p className="mt-1 text-sm text-muted">Tally creates your personal signature on this phone. It never leaves the phone.</p>
+          <h1 className="font-display text-3xl leading-tight font-extrabold">Welcome to Tally</h1>
+          <p className="mt-1 text-muted">Check election results, and find out if a message you were sent is true. Pick the one that describes you.</p>
         </div>
-        {ROLES.map((r) => (
+        <button onClick={() => setRole(voter!)} className={`block w-full rounded-2xl border border-line border-l-4 bg-surface p-5 text-left hover:brightness-125 ${ROLE_COLOR[voter!.role].border}`}>
+          <span className={`block text-xl font-bold ${ROLE_COLOR[voter!.role].text}`}>I am a voter</span>
+          <span className="mt-1 block text-[15px] text-muted">{voter!.detail}</span>
+        </button>
+        <div className="pt-2">
+          <p className="text-xs font-bold tracking-[0.14em] text-muted uppercase">I have a job on election day</p>
+          <p className="mt-1 text-sm text-muted">These need a code from your party, group or electoral office. If you do not have one yet, ask them.</p>
+        </div>
+        {jobs.map((r) => (
           <button key={r.role} onClick={() => setRole(r)} className={`block w-full rounded-2xl border border-line border-l-4 bg-card p-4 text-left hover:brightness-125 ${ROLE_COLOR[r.role].border}`}>
-            <span className={`block font-bold ${ROLE_COLOR[r.role].text}`}>{r.title}</span>
+            <span className="flex items-start justify-between gap-2">
+              <span className={`block font-bold ${ROLE_COLOR[r.role].text}`}>{r.title}</span>
+              <span className="shrink-0 rounded-full bg-raised px-2 py-0.5 text-[11px] font-bold text-muted">Needs a code</span>
+            </span>
+            <span className="block text-sm font-semibold">{r.who}</span>
             <span className="mt-0.5 block text-sm text-muted">{r.detail}</span>
           </button>
         ))}
@@ -98,17 +112,20 @@ export function Onboarding({ onDone }: { onDone: (identity: Identity) => void })
 
   return (
     <div className="space-y-4">
-      <button onClick={() => setRole(null)} className="text-sm text-muted">‹ Change role</button>
-      <h1 className="text-2xl font-bold">{role.title}</h1>
+      <button onClick={() => setRole(null)} className="text-sm text-muted">‹ Back</button>
+      <div>
+        <h1 className="font-display text-2xl font-extrabold">{role.role === "citizen" ? "Create your account" : `Create your account as ${role.title.toLowerCase() === "observer" ? "an observer" : `a ${role.title.toLowerCase()}`}`}</h1>
+        <p className="mt-1 text-sm text-muted">{role.who}. {role.role === "citizen" ? "" : role.detail}</p>
+      </div>
       <Card className="space-y-4">
         <label className="block">
-          <Eyebrow>Your name</Eyebrow>
+          <Eyebrow>Your full name</Eyebrow>
           <input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" className="mt-1 min-h-12 w-full rounded-xl border border-line bg-paper px-4 outline-none focus:border-ink" />
           {name && nameProblem && <span className="mt-1 block text-xs text-muted">{nameProblem}</span>}
         </label>
         {role.role === "party_agent" && (
           <div>
-            <Eyebrow>Your party</Eyebrow>
+            <Eyebrow>Which party do you represent?</Eyebrow>
             <div className="mt-2 flex flex-wrap gap-2">
               {PARTIES.map((p) => (
                 <button key={p} onClick={() => setParty(p)} className={`min-h-11 rounded-xl border px-4 text-sm font-semibold ${party === p ? "border-ink bg-ink text-paper" : "border-line bg-paper"}`}>
@@ -120,7 +137,7 @@ export function Onboarding({ onDone }: { onDone: (identity: Identity) => void })
         )}
         {role.place && (
           <div>
-            <Eyebrow>{role.place.includes("pu") ? "Your polling unit" : "Where you collate"}</Eyebrow>
+            <Eyebrow>{role.place.includes("pu") ? "Your polling unit" : "Your ward or council office"}</Eyebrow>
             <div className="mt-2">
               {place ? (
                 <div className="flex items-center justify-between rounded-xl bg-paper px-4 py-3">
@@ -131,16 +148,16 @@ export function Onboarding({ onDone }: { onDone: (identity: Identity) => void })
                   <button onClick={() => setPlace(null)} className="text-sm text-muted">Change</button>
                 </div>
               ) : (
-                <PlaceSearch onPick={setPlace} levels={role.place} />
+                <PlaceSearch onPick={setPlace} levels={role.place} placeholder={role.place.length === 1 && role.place[0] === "pu" ? "Type the name of your polling unit" : role.place.includes("pu") ? "Type the name of your polling unit or ward" : "Type the name of your ward or council"} />
               )}
             </div>
           </div>
         )}
         {needsInvite && (
           <label className="block">
-            <Eyebrow>Invite code from your organisation</Eyebrow>
+            <Eyebrow>Code from your party or group</Eyebrow>
             <input value={invite} onChange={(e) => setInvite(e.target.value.toUpperCase())} className="mt-1 min-h-12 w-full rounded-xl border border-line bg-paper px-4 font-mono outline-none focus:border-ink" />
-            <span className="mt-1 block text-xs text-muted">Parties, observer groups and INEC issue codes to their own people.</span>
+            <span className="mt-1 block text-xs text-muted">Ask your party, group or electoral office for this code. It shows that you are who you say you are.</span>
           </label>
         )}
         <div className="space-y-3 border-t border-line pt-4">
