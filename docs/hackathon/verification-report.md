@@ -87,3 +87,34 @@ Production runs the latest `main`; migrations and seed applied; `TALLY_INVITE_CO
 ## 9. Added after this report was first written
 Poster, listen, voter reports and citizen wall photos were built the next morning. Verified by: 99 unit tests; `check:journey` (voter reports, role rules, wall photos, alerts); `check:sim` (labels, rate limit, simulated voters); a QR decode of the poster; a mocked speech engine; and a **real-browser run against a production build** (sign up as a voter, report a queue, upload a photo through the real reader, sign and send, then see it on the ledger, unit page and mission control). That run also found and fixed: phone photos over the server's 3 MB limit were rejected in the officer's wizard (now downscaled), and `/api/media` had no rate limit.
 Still not run on a physical phone: camera capture, QR scanning between two phones, offline queue, install, share target.
+
+## Full audit, Thu 19 Nov 2026 (main de95e3e + production)
+| Check | Result |
+|---|---|
+| Unit tests | 117 passed |
+| Typecheck, lint | clean |
+| Production build | passes |
+| `check:journey`, `check:sim` | pass (production-mode server) |
+| `pnpm audit --prod` | no known vulnerabilities |
+| Secrets in tracked files | none found; only `.env.example` (names only; WhatsApp variables removed, OPS_CODE and TALLY_INVITE_CODE added) |
+| Deployed pages | `/`, `/app`, `/mission`, `/check`, `/verify`, `/replay`, `/p/…`, `/poster/…`, `/sw.js`, manifest all 200; `/design` 404 on purpose |
+| Protected routes on production | `/api/ops/*` 403 without code (default `ops-dev` refused); `/api/anchor` needs the cron secret; `/api/sync` rejects bad bodies |
+| Production data | 434 simulated units, all labelled; 1 tamper alert; ledger intact |
+
+### Problems, by severity
+**Blockers for the submission**
+1. `demo-script.md` not started; no write-up, system diagram, problem-brief PDF, demo video or official form.
+2. Nothing run on a physical phone (camera, QR between phones, offline, install, share target).
+
+**Judge-visible**
+3. One shared invite code for all official roles; units not enforced per officer or agent; no admin page.
+4. Translations in Hausa, Yorùbá, Igbo and Pidgin are unreviewed drafts; only voter screens are translated.
+5. Sign-up has no email or phone, so a forgotten password cannot be reset.
+6. Real handwriting never tested with the EC8A reader.
+7. Mission control, verify and check pages only lightly de-wordified.
+
+**Minor**
+8. `/app` JS is about 306 KB against a 300 KB budget.
+9. No materials tracking, escalation, relocation alerts or push/SMS.
+10. Obsolete `lib/core/recovery.ts` and its test remain (needs `git rm`); AGENTS.md has an uncommitted heading change.
+11. Rate limiter is per server instance.
