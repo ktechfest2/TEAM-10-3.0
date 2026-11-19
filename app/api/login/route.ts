@@ -52,7 +52,7 @@ export async function POST(request: Request) {
       // The lock time is worked out inside SQL: the driver does not accept a JavaScript date as a parameter here.
       await sql`update actors set failed_logins = ${lock ? 0 : failed}, locked_until = ${lock ? sql`now() + make_interval(mins => ${LOCK_MINUTES})` : null} where id = ${root.id}`;
     }
-    return badRequest("Wrong username or password.", 403);
+    return badRequest("Wrong name or password.", 403);
   }
   await sql`update actors set failed_logins = 0, locked_until = null where id = ${root.id}`;
 

@@ -13,7 +13,6 @@ const schema = z.object({
   publicKey: z.string().regex(/^[0-9a-f]{64}$/),
   placeCode: z.string().max(32).nullable().optional(),
   inviteCode: z.string().max(64).optional(),
-  username: z.string().max(60).optional(),
   password: z.string().max(100).optional(),
 });
 
@@ -24,13 +23,13 @@ export async function POST(request: Request) {
   if ("error" in parsed) return parsed.error;
   const body = parsed.data;
 
-  // The simulation and the test scripts register without a login; a person signing up always sends a username and a password.
-  const username = body.username === undefined ? null : normaliseUsername(body.username);
+  // The simulation and the test scripts register without a login; a person signing up always sends a password, and their name is how they log in.
+  const username = body.password === undefined ? null : normaliseUsername(body.displayName);
   if (username !== null) {
     const problem = usernameProblem(username) ?? passwordProblem(body.password ?? "");
     if (problem) return badRequest(problem);
     const [taken] = await sql`select 1 from actors where username = ${username}`;
-    if (taken) return badRequest("That username is taken. Try another.", 409);
+    if (taken) return badRequest("Someone already uses that name. Add your surname or a number so you can be told apart.", 409);
   }
   if (body.role !== "citizen" && !inviteCodeValid(body.inviteCode)) {
     return badRequest("This role needs a valid invite code from your organisation.", 403);
