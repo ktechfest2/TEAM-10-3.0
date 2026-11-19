@@ -30,7 +30,7 @@ export type Verdict = { verdict: VerdictKind; headline: string; reasons: string[
 
 export const KNOWN_PARTIES = ["APC", "PDP", "LP", "NNPP", "APGA", "ADC", "SDP", "YPP", "ZLP", "AA", "AAC", "ADP", "APM", "APP", "BP", "NRM", "PRP"];
 const UNIT_CODE = /\b\d{2}-\d{2}-\d{2}-\d{3}\b/;
-const CHANGE_WORDS = /\b(chang\w*|alter\w*|tamper\w*|manipulat\w*|rigg\w*|swap\w*|inflat\w*|doctor\w*|falsif\w*|fake\w*|cook\w*)\b/i;
+const CHANGE_WORDS = /\b(chang\w*|alter\w*|tamper\w*|manipulat\w*|rigg\w*|swap\w*|inflat\w*|doctor\w*|falsif\w*|fake\w*|cook\w*|cheat\w*|steal\w*|stole\w*|thumbprint\w*)\b/i;
 
 /** Deterministic reading, used when the AI is unavailable. Finds a unit code, a party figure and change words. */
 export function extractByRules(text: string): Claim {
@@ -84,4 +84,10 @@ function judge(claim: Claim, ev: Evidence, lang: Lang): Verdict {
   if (c.tamperSuspected) return mk("confirmed", "r.col.tamper.h", c.mismatchedUnits === 1 ? "r.col.tamper.one" : "r.col.tamper.many", { n: n(c.mismatchedUnits), where });
   if (c.unverifiedUnits === 0) return mk("false", "r.col.allmatch.h", "r.col.allmatch.r", { n: n(c.matchedUnits), where });
   return mk("unverified", "r.col.partial.h", "r.col.partial.r", { n: n(c.matchedUnits), m: n(c.unverifiedUnits) });
+}
+
+/** The party a message is about, if it names exactly one known party. */
+export function partyMentioned(text: string): string | undefined {
+  const found = KNOWN_PARTIES.filter((p) => new RegExp(`\\b${p}\\b`, "i").test(text));
+  return found.length === 1 ? found[0] : undefined;
 }

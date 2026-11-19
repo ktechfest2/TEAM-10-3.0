@@ -11,7 +11,8 @@ type Claim = { summary: string; by: "ai" | "rules" };
 type Candidate = { code: string; name: string; level: string; path: string };
 type Result =
   | { status: "needs_place"; claim: Claim; candidates: Candidate[] }
-  | { status: "checked"; claim: Claim; place: { code: string; name: string } | null; verdict: Verdict };
+  | { status: "checked"; claim: Claim; place: { code: string; name: string } | null; verdict: Verdict; context?: Context };
+type Context = { party?: string; tampered: { ward: string; wardCode: string; unit: string; party: string; announced: number; sealed: number }[]; disputed: number; signedByParty: number; sealed: number; simulated: boolean };
 
 const TONE = {
   confirmed: { label: "r.confirmed", text: "text-sealed", border: "border-sealed/50", dot: "bg-sealed" },
@@ -112,14 +113,17 @@ export function RumourCheck({ initialText = "", lang = "en" }: { initialText?: s
             <span aria-hidden className={`h-2.5 w-2.5 rounded-full ${TONE[result.verdict.verdict].dot}`} />
             {t(lang, TONE[result.verdict.verdict].label)}
           </p>
-          <h2 className="font-display mt-2 text-2xl leading-tight font-extrabold">{result.verdict.headline}</h2>
-          <ul className="mt-3 space-y-2 text-sm text-muted">
-            {result.verdict.reasons.map((r) => (
-              <li key={r}>{r}</li>
-            ))}
-          </ul>
-          <div className="mt-3"><ListenButton lang={lang} text={[t(lang, TONE[result.verdict.verdict].label), result.verdict.headline, ...result.verdict.reasons].map((part) => part.replace(/\.+$/, "")).join(". ")} labels={{ listen: t(lang, "ui.listen"), stop: t(lang, "ui.stop"), noVoice: t(lang, "ui.novoice") }} /></div>
+          <h2 className="font-display mt-2 text-2xl leading-tight font-extrabold">{result.context ? t(lang, "ctx.head") : result.verdict.headline}</h2>
+          {!result.context && (
+            <ul className="mt-3 space-y-2 text-sm text-muted">
+              {result.verdict.reasons.map((r) => (
+                <li key={r}>{r}</li>
+              ))}
+            </ul>
+          )}
+          <div className="mt-3"><ListenButton lang={lang} text={[t(lang, TONE[result.verdict.verdict].label), ...(result.context ? [t(lang, "ctx.head")] : [result.verdict.headline, ...result.verdict.reasons])].map((part) => part.replace(/\.+$/, "")).join(". ")} labels={{ listen: t(lang, "ui.listen"), stop: t(lang, "ui.stop"), noVoice: t(lang, "ui.novoice") }} /></div>
           {result.verdict.simulated && <p role="note" className="mt-3 rounded-xl border border-amber/40 bg-amber-wash px-3 py-2 text-xs text-amber">{t(lang, "sim.note")}</p>}
+          {result.context && <SignedFacts c={result.context} lang={lang} />}
           {result.place && (
             <Link href={`/p/${result.place.code}`} className="mt-4 inline-block font-bold text-blue">{t(lang, "c.record", { place: result.place.name })} ›</Link>
           )}
@@ -130,5 +134,31 @@ export function RumourCheck({ initialText = "", lang = "en" }: { initialText?: s
         </Card>
       )}
     </div>
+  );
+}
+
+const num = (v: number) => v.toLocaleString("en-US");
+
+/** The signed facts behind a message Tally cannot settle. Facts only, never who cheated. */
+function SignedFacts({ c, lang }: { c: Context; lang: Lang }) {
+  return (
+    <section className="mt-4 rounded-2xl bg-raised p-4">
+      <p className="text-xs font-bold tracking-[0.14em] text-muted uppercase">{t(lang, "ctx.title")}{c.party ? ` · ${c.party}` : ""}</p>
+      <ul className="mt-3 space-y-2.5 text-sm">
+        {c.tampered.length > 0 ? (
+          c.tampered.map((x) => (
+            <li key={`${x.wardCode}-${x.unit}-${x.party}`} className="flex gap-2.5">
+              <span aria-hidden className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-alarm" />
+              <Link href={`/p/${x.wardCode}`} className="hover:underline">{t(lang, "ctx.tamper", { ward: x.ward, unit: x.unit, party: x.party, announced: num(x.announced), sealed: num(x.sealed) })} ›</Link>
+            </li>
+          ))
+        ) : (
+          <li className="flex gap-2.5"><span aria-hidden className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-sealed" />{t(lang, "ctx.none")}</li>
+        )}
+        {c.party && c.sealed > 0 && <li className="flex gap-2.5"><span aria-hidden className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-sealed" />{t(lang, "ctx.signed", { party: c.party, n: num(c.signedByParty), total: num(c.sealed) })}</li>}
+        {c.disputed > 0 && <li className="flex gap-2.5"><span aria-hidden className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-amber" />{t(lang, "ctx.disputed", { n: num(c.disputed) })}</li>}
+      </ul>
+      <p className="mt-3 text-xs text-muted">{t(lang, "ctx.note")}{c.simulated ? ` ${t(lang, "sim.label")}.` : ""}</p>
+    </section>
   );
 }

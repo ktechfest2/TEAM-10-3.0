@@ -2,7 +2,8 @@ import "server-only";
 import { generateText, Output } from "ai";
 import { z } from "zod";
 import type { Lang } from "@/lib/core/i18n";
-import { extractByRules, judgeClaim, KNOWN_PARTIES, type Claim, type Evidence, type Verdict } from "@/lib/core/rumour";
+import { extractByRules, judgeClaim, KNOWN_PARTIES, partyMentioned, type Claim, type Evidence, type Verdict } from "@/lib/core/rumour";
+import { sqlClient as sql } from "@/lib/db/client";
 import { getBreadcrumb, getCollationCheck, getPlace, getUnitResults, isSimulated, searchPlaces, type Place } from "./views";
 
 const MODEL = process.env.TALLY_MODEL ?? "google/gemini-2.5-flash-lite";
@@ -34,16 +35,59 @@ async function readMessage(text: string): Promise<Claim> {
     const unitCode = output.unitCode && UNIT_CODE.test(output.unitCode) ? output.unitCode : undefined;
     // A figure claim without a usable party and number cannot be judged; the rules may still find them.
     if (output.kind === "result_figures" && (!party || !KNOWN_PARTIES.includes(party) || output.votes === null)) throw new Error("incomplete figure claim");
-    return { kind: output.kind, unitCode, placeName: output.placeName ?? undefined, party: party && KNOWN_PARTIES.includes(party) ? party : undefined, votes: output.votes ?? undefined, summary: output.summary.slice(0, 200), by: "ai" };
+    return { kind: output.kind, unitCode, placeName: output.placeName ?? undefined, party: party && KNOWN_PARTIES.includes(party) ? party : partyMentioned(text), votes: output.votes ?? undefined, summary: output.summary.slice(0, 200), by: "ai" };
   } catch (error) {
     console.error("Rumour reading by AI failed; using rules:", error instanceof Error ? error.message : error);
     return extractByRules(text);
   }
 }
 
+export type SignedContext = {
+  party?: string;
+  tampered: { ward: string; wardCode: string; unit: string; party: string; announced: number; sealed: number }[];
+  disputed: number;
+  signedByParty: number;
+  sealed: number;
+  simulated: boolean;
+};
+
 export type RumourResult =
   | { status: "needs_place"; claim: Claim; candidates: { code: string; name: string; level: string; path: string }[] }
-  | { status: "checked"; claim: Claim; place: Pick<Place, "code" | "name" | "level"> | null; verdict: Verdict };
+  | { status: "checked"; claim: Claim; place: Pick<Place, "code" | "name" | "level"> | null; verdict: Verdict; context?: SignedContext };
+
+const TOTAL_FIELDS = new Set(["accredited", "rejected", "totalValid"]);
+
+/**
+ * For a message Tally cannot settle (no place, or a general accusation), the signed facts about the party it names:
+ * collations that differ from sealed results, disputed units, and how many sealed results its agents co-signed.
+ * Facts only. It never says who cheated.
+ */
+async function signedContext(party?: string): Promise<SignedContext | undefined> {
+  const national = await getPlace("NG");
+  if (!national) return undefined;
+  const results = await getUnitResults(national);
+  let sealed = 0, disputed = 0, signedByParty = 0, simulated = false;
+  for (const r of results.values()) {
+    const s = r.best?.trust.status;
+    if (s === "disputed") disputed++;
+    if (s !== "sealed") continue;
+    sealed++;
+    if (isSimulated(r.best)) simulated = true;
+    if (party && r.best!.witnesses.some((w) => w.party === party)) signedByParty++;
+  }
+  const tampered: SignedContext["tampered"] = [];
+  const latest = await sql<{ place_code: string }[]>`select distinct on (place_code) place_code from events where type = 'collation.entered' order by place_code, seq desc`;
+  for (const { place_code } of latest) {
+    const p = await getPlace(place_code);
+    const check = p ? await getCollationCheck(p, results) : null;
+    if (!p || !check?.tamperSuspected) continue;
+    for (const row of check.rows.filter((x) => x.status === "mismatch")) {
+      const d = row.divergences.find((x) => !TOTAL_FIELDS.has(x.field) && (!party || x.field === party));
+      if (d) tampered.push({ ward: p.name, wardCode: p.code, unit: row.name, party: d.field, announced: d.announced, sealed: d.computed });
+    }
+  }
+  return { party, tampered: tampered.slice(0, 4), disputed, signedByParty, sealed, simulated };
+}
 
 /** "Pai ward" or "Kuje area council" should search for "Pai" / "Kuje": place names in our data do not carry the level word. */
 const stripLevelWords = (name: string) => name.replace(/\b(ward|lga|l\.g\.a|area council|local government( area)?|polling unit|council|collation|centre|center)\b/gi, " ").replace(/\s+/g, " ").trim();
@@ -93,5 +137,8 @@ export async function checkRumour(text: string, pickedPlace?: string, lang: Lang
     return { status: "needs_place", claim, candidates: candidates.map((c) => ({ code: c.code, name: c.name, level: c.level, path: c.path })) };
   }
   const evidence = place && claim.kind !== "other" ? await gatherEvidence(claim, place) : {};
-  return { status: "checked", claim, place: place ? { code: place.code, name: place.name, level: place.level } : null, verdict: judgeClaim(claim, evidence, lang) };
+  const verdict = judgeClaim(claim, evidence, lang);
+  // A message Tally cannot settle about no particular place still gets the signed facts about the party it names.
+  const context = verdict.verdict === "unverified" && !place ? await signedContext(claim.party ?? partyMentioned(text)) : undefined;
+  return { status: "checked", claim, place: place ? { code: place.code, name: place.name, level: place.level } : null, verdict, context };
 }
