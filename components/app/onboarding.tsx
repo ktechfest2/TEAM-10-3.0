@@ -4,6 +4,7 @@ import { generateKeyPair } from "@/lib/core/crypto";
 import { saveIdentity, type Identity } from "@/lib/client/store";
 import { Button, Card, Eyebrow } from "@/components/ui";
 import { passwordProblem, usernameProblem } from "@/lib/core/credentials";
+import { Icon } from "@/components/icons";
 import { Login } from "./login";
 import { PlaceSearch, type PlaceHit } from "./place-search";
 import { ROLE_COLOR } from "@/lib/roles";
@@ -11,11 +12,13 @@ import { ROLE_COLOR } from "@/lib/roles";
 /** Plain-language descriptions. The official job titles stay (people at polling units know them), each with who it is and what you do. */
 const ROLES: { role: Identity["role"]; title: string; who: string; detail: string; place: PlaceHit["level"][] | null }[] = [
   { role: "citizen", title: "Voter", who: "Anyone who votes", detail: "Look up your polling unit, see who signed its result, and check a message you were sent. No code needed.", place: null },
-  { role: "presiding_officer", title: "Presiding officer", who: "In charge of a polling unit", detail: "You record the result from the paper sheet and sign it. Party agents then sign it too.", place: ["pu"] },
-  { role: "party_agent", title: "Party agent", who: "Represents a party at a polling unit", detail: "You compare the result with the paper sheet and sign if it is right.", place: ["pu"] },
-  { role: "observer", title: "Observer", who: "Watches for an independent group", detail: "You watch the count, check results and report problems.", place: ["pu", "ward"] },
-  { role: "collation_officer", title: "Collation officer", who: "Adds up results at a ward or council office", detail: "You enter the totals read out there. Tally checks them against what the polling units signed.", place: ["ward", "lga"] },
+  { role: "presiding_officer", title: "Presiding officer", who: "Runs a polling unit", detail: "You record the result from the paper sheet and sign it. Party agents then sign it too.", place: ["pu"] },
+  { role: "party_agent", title: "Party agent", who: "Watches for a party", detail: "You compare the result with the paper sheet and sign if it is right.", place: ["pu"] },
+  { role: "observer", title: "Observer", who: "Independent watcher", detail: "You watch the count, check results and report problems.", place: ["pu", "ward"] },
+  { role: "collation_officer", title: "Collation officer", who: "Ward and council count", detail: "You enter the totals read out there. Tally checks them against what the polling units signed.", place: ["ward", "lga"] },
 ];
+
+const TOP: Partial<Record<Identity["role"], string>> = { presiding_officer: "border-t-orange", party_agent: "border-t-blue", observer: "border-t-cyan", collation_officer: "border-t-thumb" };
 
 const PARTIES = ["APC", "LP", "PDP", "NNPP", "ADC", "APGA", "SDP", "YPP"];
 
@@ -82,30 +85,30 @@ export function Onboarding({ onDone }: { onDone: (identity: Identity) => void })
   if (!role) {
     const [voter, ...jobs] = ROLES;
     return (
-      <div className="space-y-4">
-        <div>
-          <h1 className="font-display text-3xl leading-tight font-extrabold">Welcome to Tally</h1>
-          <p className="mt-1 text-muted">Check election results, and find out if a message you were sent is true. Pick the one that describes you.</p>
-        </div>
-        <button onClick={() => setRole(voter!)} className={`block w-full rounded-2xl border border-line border-l-4 bg-surface p-5 text-left hover:brightness-125 ${ROLE_COLOR[voter!.role].border}`}>
-          <span className={`block text-xl font-bold ${ROLE_COLOR[voter!.role].text}`}>I am a voter</span>
-          <span className="mt-1 block text-[15px] text-muted">{voter!.detail}</span>
+      <div className="space-y-5">
+        <h1 className="font-display text-3xl leading-tight font-extrabold">Welcome to Tally</h1>
+        <button onClick={() => setRole(voter!)} className="flex w-full items-center gap-4 rounded-3xl border border-line bg-[radial-gradient(120%_140%_at_0%_0%,rgba(244,114,182,0.22),transparent_60%)] bg-surface p-5 text-left hover:brightness-125">
+          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-raised text-pink"><Icon name="people" size={30} /></span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-xl font-extrabold">I am a voter</span>
+            <span className="block text-sm text-muted">No code needed</span>
+          </span>
+          <Icon name="chevron" className="text-muted" />
         </button>
-        <div className="pt-2">
-          <p className="text-xs font-bold tracking-[0.14em] text-muted uppercase">I have a job on election day</p>
-          <p className="mt-1 text-sm text-muted">These need a code from your party, group or electoral office. If you do not have one yet, ask them.</p>
+        <div>
+          <p className="mb-2 flex items-center gap-2 text-xs font-bold tracking-[0.14em] text-muted uppercase">
+            <Icon name="check" size={14} /> I work on election day · needs a code
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {jobs.map((r) => (
+              <button key={r.role} onClick={() => setRole(r)} className={`rounded-2xl border border-line border-t-4 bg-card p-4 text-left hover:brightness-125 ${TOP[r.role] ?? ""}`}>
+                <span className={`block text-base font-extrabold ${ROLE_COLOR[r.role].text}`}>{r.title}</span>
+                <span className="mt-1 block text-[13px] leading-snug text-muted">{r.who}</span>
+              </button>
+            ))}
+          </div>
         </div>
-        {jobs.map((r) => (
-          <button key={r.role} onClick={() => setRole(r)} className={`block w-full rounded-2xl border border-line border-l-4 bg-card p-4 text-left hover:brightness-125 ${ROLE_COLOR[r.role].border}`}>
-            <span className="flex items-start justify-between gap-2">
-              <span className={`block font-bold ${ROLE_COLOR[r.role].text}`}>{r.title}</span>
-              <span className="shrink-0 rounded-full bg-raised px-2 py-0.5 text-[11px] font-bold text-muted">Needs a code</span>
-            </span>
-            <span className="block text-sm font-semibold">{r.who}</span>
-            <span className="mt-0.5 block text-sm text-muted">{r.detail}</span>
-          </button>
-        ))}
-        <button onClick={() => setShowLogin(true)} className="block w-full rounded-2xl border border-line p-4 text-center text-sm font-bold text-blue">I already have an account · Log in</button>
+        <button onClick={() => setShowLogin(true)} className="block w-full rounded-2xl border border-line p-3.5 text-center text-sm font-bold text-blue">Already have an account? Log in</button>
       </div>
     );
   }
@@ -115,7 +118,7 @@ export function Onboarding({ onDone }: { onDone: (identity: Identity) => void })
       <button onClick={() => setRole(null)} className="text-sm text-muted">‹ Back</button>
       <div>
         <h1 className="font-display text-2xl font-extrabold">{role.role === "citizen" ? "Create your account" : `Create your account as ${role.title.toLowerCase() === "observer" ? "an observer" : `a ${role.title.toLowerCase()}`}`}</h1>
-        <p className="mt-1 text-sm text-muted">{role.who}. {role.role === "citizen" ? "" : role.detail}</p>
+        <p className="mt-1 text-sm text-muted">{role.who}</p>
       </div>
       <Card className="space-y-4">
         <label className="block">
