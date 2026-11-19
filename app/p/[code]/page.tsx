@@ -6,6 +6,7 @@ import { Journey } from "@/components/journey";
 import { LanguagePicker } from "@/components/language-picker";
 import { ListenButton } from "@/components/listen-button";
 import { MarginCard } from "@/components/margin-card";
+import { ResultBars } from "@/components/result-bars";
 import { Seal, type SealState } from "@/components/seal";
 import { ShareButton } from "@/components/share-button";
 import { Card, Eyebrow, FiguresTable, StatusBadge, TrustMeter, type Status } from "@/components/ui";
@@ -132,12 +133,12 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
                 <div className="min-w-0">
                   <h2 className={`font-display text-2xl leading-tight font-extrabold ${hero.tone}`}>{hero.title}</h2>
                   <p className="mt-1.5 text-sm text-muted">{hero.text}</p>
-                  <div className="mt-3"><ListenButton lang={lang} text={spoken} labels={{ listen: t(lang, "ui.listen"), stop: t(lang, "ui.stop"), noVoice: t(lang, "ui.novoice") }} /></div>
+                  {unit?.best && <div className="mt-3"><ListenButton lang={lang} text={spoken} labels={{ listen: t(lang, "ui.listen"), stop: t(lang, "ui.stop"), noVoice: t(lang, "ui.novoice") }} /></div>}
                 </div>
               </div>
               {unit?.best && (
                 <div className="mt-5 grid gap-6 sm:grid-cols-2">
-                  <FiguresTable totals={unit.best.figures} labels={figLabels} />
+                  <ResultBars totals={unit.best.figures} labels={figLabels} />
                   <div className="space-y-4">
                     <div>
                       <Eyebrow>{t(lang, "ui.signedBy")}</Eyebrow>
