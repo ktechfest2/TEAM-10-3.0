@@ -42,6 +42,11 @@ Official roles (officer, agent, observer, collation officer) sign up with an inv
 
 **Deploy:** link the repo to Vercel, add a Postgres database (Neon) from the Vercel Marketplace, and deploy. The build migrates and seeds automatically. AI runs through Vercel AI Gateway: the default model (`google/gemini-2.5-flash-lite`) runs on the Gateway's free tier on Vercel; set `AI_GATEWAY_API_KEY` elsewhere, and `TALLY_MODEL` to change the model. Without it the app still works: the officer enters figures by hand, and rumours are read by fixed rules, and the screens say so.
 
+## SMS alerts
+Voters can follow a polling unit by phone number and get a text when it moves, when voting starts, and when its figures are changed at collation. Texts go through Africa's Talking. Until a key is set, alerts are saved and the page says text messages are not switched on yet.
+
+To switch them on, set `AT_USERNAME` and `AT_API_KEY` (and optionally an approved `AT_SENDER_ID`) in Vercel, then redeploy. Use the username `sandbox` for the free simulator, or your live username to text real phones (prepaid). Check the keys with `npx tsx --conditions=react-server scripts/sms-test.mts 0803xxxxxxx`.
+
 ## Credits
 - **Data:** 2023 presidential polling-unit figures and coordinates for the FCT (2,822 units), from [mundus01/irev-2023-results-map](https://github.com/mundus01/irev-2023-results-map) (sums of INEC IReV polling-unit sheets). Polling-unit structure follows INEC codes.
 - **Libraries:** Next.js, React, Tailwind CSS, Drizzle ORM, postgres.js, @noble/ed25519 and @noble/hashes, zod, idb, qrcode, jsQR, Vercel AI SDK, Vitest.
