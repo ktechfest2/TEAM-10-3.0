@@ -84,7 +84,7 @@ export function TallyApp({ lang = "en" }: { lang?: Lang }) {
             </span>
             <button
               onClick={async () => {
-                if (!confirm("Log out of this phone? To log back in you will need your recovery code. Anything not yet sent stays on the phone until you are online.")) return;
+                if (!confirm("Log out of this phone? To log back in you will need your username and password. Anything not yet sent stays on the phone until you are online.")) return;
                 await clearIdentity();
                 setIdentity(null);
               }}

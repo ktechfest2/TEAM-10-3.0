@@ -133,23 +133,33 @@ const mission = await (await fetch(`${BASE}/api/mission`)).json();
 assert(mission.alerts.some((a: { k: string }) => a.k === "VOTERS REPORT NO OFFICIALS"), "two voters saying officials have not arrived raises an alert");
 assert(mission.alerts.some((a: { k: string }) => a.k === "WALL SHEET READS DIFFERENTLY"), "a wall photo that reads differently raises a neutral alert");
 
-// Accounts: a recovery code logs a person in on a new phone; a lost phone can be signed out.
-const reg = async (keys: KeyPair, name: string) => (await fetch(`${BASE}/api/actors`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ role: "citizen", displayName: name, party: null, publicKey: keys.publicKeyHex, placeCode: null }) })).json();
+// Accounts: a username and password log a person in on a new phone; a lost phone can be signed out; guessing is locked out.
+const user = `check_${Date.now().toString(36)}`;
+const regAs = async (keys: KeyPair, username: string | undefined, password: string | undefined, name = "Account holder (check)") =>
+  fetch(`${BASE}/api/actors`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ role: "citizen", displayName: name, party: null, publicKey: keys.publicKeyHex, placeCode: null, username, password }) });
 const phoneA = generateKeyPair();
-const account = await reg(phoneA, "Account holder (check)");
-assert(/^[A-Z2-9]{4}(-[A-Z2-9]{4}){3}$/.test(account.recoveryCode), "sign-up returns a recovery code, shown once");
-assert((await reg(phoneA, "Account holder (check)")).recoveryCode === undefined, "registering the same phone again does not issue a second code");
-const login = (code: string, keys: KeyPair, signOutOthers = false) => fetch(`${BASE}/api/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ recoveryCode: code, publicKey: keys.publicKeyHex, signOutOthers }) });
-assert((await login("ABCD-EFGH-JKMN-PQRS", generateKeyPair())).status === 403, "a wrong recovery code is refused");
+assert((await regAs(phoneA, user, "123")).status === 400, "a password under six characters is refused");
+assert((await regAs(generateKeyPair(), "a b", "123456")).status === 400, "a username with spaces is refused");
+assert((await regAs(phoneA, user, "abc123")).status === 200, "sign-up with a username and a plain six-character password works");
+assert((await regAs(generateKeyPair(), user.toUpperCase(), "abc123", "Someone else")).status === 409, "a username that is taken is refused, in any case");
+const login = (username: string, password: string, keys: KeyPair, signOutOthers = false) =>
+  fetch(`${BASE}/api/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, password, publicKey: keys.publicKeyHex, signOutOthers }) });
+assert((await login(user, "wrong-pass", generateKeyPair())).status === 403, "a wrong password is refused");
+assert((await login("nobody_here", "abc123", generateKeyPair())).status === 403, "an unknown username gets the same refusal");
 const phoneB = generateKeyPair();
-const okLogin = await login(account.recoveryCode.toLowerCase().replaceAll("-", " "), phoneB);
-assert(okLogin.status === 200 && (await okLogin.json()).displayName === "Account holder (check)", "the recovery code logs in on a new phone, typed any way");
+const okLogin = await login(` ${user.toUpperCase()} `, "abc123", phoneB);
+assert(okLogin.status === 200 && (await okLogin.json()).displayName === "Account holder (check)", "the right password logs in on a new phone, whatever the case of the username");
 const sendQueue = async (keys: KeyPair) => (await sync(makeEvent(keys, "pu.queue", reportUnit, { level: "short" }))).status;
 assert((await sendQueue(phoneB)) === "accepted" && (await sendQueue(phoneA)) === "accepted", "both phones can sign for the same account");
 const phoneC = generateKeyPair();
-assert((await login(account.recoveryCode, phoneC, true)).status === 200, "logging in with 'my other phone is lost' succeeds");
+assert((await login(user, "abc123", phoneC, true)).status === 200, "logging in with 'my other phone is lost' succeeds");
 assert((await sendQueue(phoneA)) === "rejected" && (await sendQueue(phoneB)) === "rejected", "signed-out phones can no longer sign anything");
 assert((await sendQueue(phoneC)) === "accepted", "the phone just logged in still can");
+const statuses: number[] = [];
+for (let i = 0; i < 5; i++) statuses.push((await login(user, `guess-${i}`, generateKeyPair())).status);
+assert(statuses.every((s) => s === 403 || s === 429), `five wrong guesses are refused (got ${statuses.join(",")})`);
+const locked = await login(user, "abc123", generateKeyPair());
+assert(locked.status === 429, "after five wrong guesses the account is locked, even for the right password");
 
 const audit = await (await fetch(`${BASE}/api/verify`)).json();
 assert(audit.intact === true, `ledger intact (${audit.entries} entries)`);

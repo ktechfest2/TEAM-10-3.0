@@ -3,6 +3,7 @@ import { useState } from "react";
 import { generateKeyPair } from "@/lib/core/crypto";
 import { saveIdentity, type Identity } from "@/lib/client/store";
 import { Button, Card, Eyebrow } from "@/components/ui";
+import { passwordProblem, usernameProblem } from "@/lib/core/credentials";
 import { Login } from "./login";
 import { PlaceSearch, type PlaceHit } from "./place-search";
 import { ROLE_COLOR } from "@/lib/roles";
@@ -26,12 +27,14 @@ export function Onboarding({ onDone }: { onDone: (identity: Identity) => void })
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [showLogin, setShowLogin] = useState(false);
-  const [saved, setSaved] = useState<{ code: string; identity: Identity } | null>(null);
-  const [confirmed, setConfirmed] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const needsInvite = role && role.role !== "citizen";
-  const ready = role && name.trim().length >= 2 && (!role.place || place) && (role.role !== "party_agent" || party) && (!needsInvite || invite);
+  const loginProblem = username ? usernameProblem(username) : "x";
+  const ready =
+    role && name.trim().length >= 2 && !loginProblem && passwordProblem(password) === null && (!role.place || place) && (role.role !== "party_agent" || party) && (!needsInvite || invite);
 
   async function finish() {
     if (!role || !ready) return;
@@ -49,6 +52,8 @@ export function Onboarding({ onDone }: { onDone: (identity: Identity) => void })
           publicKey: keys.publicKeyHex,
           placeCode: place?.code ?? null,
           inviteCode: invite || undefined,
+          username,
+          password,
         }),
       });
       const data = await res.json();
@@ -64,9 +69,6 @@ export function Onboarding({ onDone }: { onDone: (identity: Identity) => void })
         actorId: data.id,
         createdAt: new Date().toISOString(),
       };
-      // The recovery code is shown once. The identity is kept on this phone only after the person says they have saved it,
-      // so closing the page here never leaves an account nobody can get back into.
-      if (data.recoveryCode) return setSaved({ code: data.recoveryCode, identity });
       await saveIdentity(identity);
       onDone(identity);
     } catch (e) {
@@ -74,25 +76,6 @@ export function Onboarding({ onDone }: { onDone: (identity: Identity) => void })
     } finally {
       setBusy(false);
     }
-  }
-
-  if (saved) {
-    return (
-      <div className="space-y-4">
-        <h1 className="font-display text-2xl font-extrabold">Keep your recovery code</h1>
-        <Card className="space-y-4">
-          <p className="text-sm text-muted">This is the only way to log back in if you lose this phone, clear your browser or use another phone. We cannot show it again.</p>
-          <p className="rounded-xl bg-raised p-4 text-center font-mono text-xl font-bold whitespace-nowrap select-all" aria-label="Recovery code">{saved.code}</p>
-          <Button variant="secondary" onClick={() => void navigator.clipboard.writeText(saved.code).then(() => setCopied(true)).catch(() => setCopied(false))} className="w-full">{copied ? "Copied" : "Copy the code"}</Button>
-          <p className="text-xs text-muted">Write it down or take a screenshot. Anyone with this code can log in as you, so do not share it.</p>
-          <label className="flex items-start gap-3 text-sm">
-            <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} className="mt-1 h-5 w-5" />
-            <span>I have saved my recovery code.</span>
-          </label>
-          <Button onClick={() => void saveIdentity(saved.identity).then(() => onDone(saved.identity))} disabled={!confirmed} className="w-full">Continue</Button>
-        </Card>
-      </div>
-    );
   }
 
   if (showLogin) return <Login onDone={onDone} onBack={() => setShowLogin(false)} />;
@@ -161,9 +144,24 @@ export function Onboarding({ onDone }: { onDone: (identity: Identity) => void })
             <span className="mt-1 block text-xs text-muted">Parties, observer groups and INEC issue codes to their own people.</span>
           </label>
         )}
+        <div className="space-y-3 border-t border-line pt-4">
+          <p className="text-xs text-muted">Choose how you will log back in on another phone or after logging out.</p>
+          <label className="block">
+            <Eyebrow>Username</Eyebrow>
+            <input value={username} onChange={(e) => setUsername(e.target.value)} autoCapitalize="none" autoComplete="username" spellCheck={false} placeholder="username" className="mt-1 min-h-12 w-full rounded-xl border border-line bg-paper px-4 outline-none focus:border-ink" />
+            {username && usernameProblem(username) && <span className="mt-1 block text-xs text-muted">{usernameProblem(username)}</span>}
+          </label>
+          <label className="block">
+            <Eyebrow>Password (6 or more characters)</Eyebrow>
+            <span className="mt-1 flex gap-2">
+              <input value={password} onChange={(e) => setPassword(e.target.value)} type={showPassword ? "text" : "password"} autoComplete="new-password" placeholder="password" className="min-h-12 w-full rounded-xl border border-line bg-paper px-4 outline-none focus:border-ink" />
+              <button type="button" onClick={() => setShowPassword((s) => !s)} className="shrink-0 rounded-xl border border-line px-3 text-sm font-bold">{showPassword ? "Hide" : "Show"}</button>
+            </span>
+          </label>
+        </div>
         {error && <p className="text-sm text-disputed">{error}</p>}
         <Button onClick={finish} disabled={!ready || busy} className="w-full">
-          {busy ? "Creating your signature…" : "Create my signature"}
+          {busy ? "Creating your account…" : "Create my account"}
         </Button>
       </Card>
     </div>
