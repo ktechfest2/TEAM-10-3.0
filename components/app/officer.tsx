@@ -132,7 +132,8 @@ function SealStep({ result, parties, onChange }: { result: HeldEvent; parties: s
     async (text: string) => {
       setScanning(false);
       const msg = decodeQr(text);
-      if (!msg || msg.k !== "cs") return setMessage("That is not an agent's Tally signature.");
+      if (!msg) return setMessage("That is not a code this version of Tally can read. Close and reopen Tally on both phones so they run the same version, then scan again.");
+      if (msg.k === "ev") return setMessage("That is a result code, not an agent's signature. Ask the agent to hold to sign first; their phone then shows a separate signature code.");
       if (msg.c.contentHash !== result.contentHash) return setMessage("That signature is for a different result.");
       if (!verifyCosignature(msg.c)) return setMessage("The signature check failed. Ask the agent to sign again.");
       rememberParty(msg.c.witnessKey, msg.p);

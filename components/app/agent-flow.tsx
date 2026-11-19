@@ -27,7 +27,7 @@ export function AgentHome({ identity, startWith }: { identity: Identity; startWi
   const onScan = useCallback((text: string) => {
     const msg = decodeQr(text);
     if (!msg || msg.k !== "ev") {
-      setError("That code is not a Tally record.");
+      setError(msg ? "That is a signature code. Scan the result code on the presiding officer's phone." : "That is not a code this version of Tally can read. Close and reopen Tally on both phones, then scan again.");
       return setView("home");
     }
     const check = verifySignedEvent(msg.e);
