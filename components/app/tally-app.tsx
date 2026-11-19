@@ -1,11 +1,9 @@
 "use client";
-import Link from "next/link";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { clearIdentity, listOutbox, loadIdentity, type Identity, type OutboxItem } from "@/lib/client/store";
 import { flushOutbox, startAutoSync } from "@/lib/client/sync";
 import type { Lang } from "@/lib/core/i18n";
 import { AgentHome } from "./agent-flow";
-import { Logo } from "@/components/logo";
 import { ROLE_COLOR } from "@/lib/roles";
 import { CitizenHome } from "./citizen";
 import { CollationHome } from "./collation";
@@ -56,8 +54,7 @@ export function TallyApp({ lang = "en" }: { lang?: Lang }) {
 
   return (
     <div className="mx-auto w-full max-w-xl flex-1 px-4 pb-16">
-      <header className="sticky top-0 z-10 -mx-4 mb-4 flex items-center justify-between border-b border-line bg-paper/95 px-4 py-3 backdrop-blur">
-        <Link href="/"><Logo size={22} /></Link>
+      <header className="flex items-center justify-end py-3">
         <div className="flex items-center gap-2 text-xs">
           <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-semibold ${online ? "bg-sealed-wash text-sealed" : "bg-witnessed-wash text-witnessed"}`}>
             <span className={`h-1.5 w-1.5 rounded-full ${online ? "bg-sealed" : "bg-witnessed"}`} />

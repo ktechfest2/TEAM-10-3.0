@@ -1,6 +1,4 @@
-import { Logo } from "@/components/logo";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Card, Eyebrow } from "@/components/ui";
 import { sqlClient as sql } from "@/lib/db/client";
 import { verifyLedger } from "@/lib/server/ledger";
@@ -22,10 +20,6 @@ export default async function VerifyPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl flex-1 px-4 pb-16">
-      <header className="flex items-center justify-between py-4">
-        <Link href="/"><Logo size={22} /></Link>
-        <Link href="/mission" className="text-sm font-bold text-blue">Mission control ›</Link>
-      </header>
       <h1 className="font-display text-3xl leading-tight font-extrabold sm:text-4xl">Check the records yourself</h1>
       <p className="mt-2 max-w-2xl text-lg text-muted">You do not have to take our word for it. Every result on Tally is a signed record, and this page re-checks all of them each time you open it.</p>
 

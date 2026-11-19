@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { HomeSearch } from "@/components/home-search";
-import { Logo } from "@/components/logo";
 import { Seal } from "@/components/seal";
 import { ReplayMap } from "@/components/replay-map";
 import { Card, Chip, Eyebrow } from "@/components/ui";
@@ -34,16 +33,6 @@ export default async function Home() {
     <div className="rainbow-line" />
     <div className="glow-hero pointer-events-none absolute inset-x-0 top-0 h-[760px]" aria-hidden="true" />
     <div className="relative mx-auto w-full max-w-6xl px-4 sm:px-6">
-      <header className="flex items-center justify-between py-5">
-        <Link href="/"><Logo size={30} /></Link>
-        <nav className="flex items-center gap-5 text-sm font-bold">
-          <Link href="/rig" className="hidden text-alarm sm:inline">Try to rig it</Link>
-          <Link href="/mission" className="hidden sm:inline">Mission control</Link>
-          <Link href="/check" className="hidden sm:inline">Check a message</Link>
-          <Link href="/verify" className="hidden sm:inline">Check records</Link>
-          <Link href="/app" className="rounded-full bg-fg px-4 py-2 text-bg">Sign in</Link>
-        </nav>
-      </header>
 
       <section className="grid items-center gap-10 py-10 lg:grid-cols-[1.05fr_1fr] lg:py-16">
         <div>

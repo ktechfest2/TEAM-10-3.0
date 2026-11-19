@@ -16,6 +16,10 @@ const PATHS = {
   alert: <><path d="M12 3l10 18H2z" /><path d="M12 10v5M12 18v.5" /></>,
   eye: <><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></>,
   lock: <><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 018 0v3" /></>,
+  home: <><path d="M3 11l9-7 9 7" /><path d="M5 10v10h14V10" /></>,
+  back: <path d="M15 6l-6 6 6 6" />,
+  phone: <><rect x="7" y="3" width="10" height="18" rx="2" /><path d="M11 18h2" /></>,
+  shield: <><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z" /><path d="M8.5 12l2.5 2.5 4.5-5" /></>,
   listen: <><path d="M4 10v4h3l5 4V6L7 10z" /><path d="M16 9c1.5 1.5 1.5 4.5 0 6M18.5 6.5c3 3 3 8 0 11" /></>,
 } as const;
 

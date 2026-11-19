@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Logo } from "@/components/logo";
 import { ReplayMap } from "@/components/replay-map";
 import { Card, Chip, Eyebrow } from "@/components/ui";
 import { RULES, type FlagKind } from "@/lib/core/anomaly";
@@ -23,13 +22,6 @@ export default async function ReplayPage(props: PageProps<"/replay">) {
 
   return (
     <div className="mx-auto w-full max-w-5xl flex-1 px-4 pb-16 sm:px-6">
-      <header className="flex items-center justify-between py-4">
-        <Link href="/"><Logo size={24} /></Link>
-        <nav className="flex gap-5 text-sm font-bold">
-          <Link href="/mission">Mission control</Link>
-          <Link href="/check" className="hidden sm:inline">Check a message</Link>
-        </nav>
-      </header>
 
       <Chip tone="amber">Historical data · 2023 presidential election · FCT</Chip>
       <h1 className="font-display mt-3 text-4xl leading-[1.02] font-extrabold sm:text-5xl">What 2023 looked like, <span className="text-rainbow">checked.</span></h1>

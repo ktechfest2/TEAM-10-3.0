@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Logo } from "@/components/logo";
 import { LanguagePicker } from "@/components/language-picker";
 import { RumourCheck } from "@/components/rumour-check";
 import { t } from "@/lib/core/i18n";
@@ -15,10 +13,6 @@ export default async function CheckPage(props: PageProps<"/check">) {
   const shared = [sp.title, sp.text].flatMap((v) => (typeof v === "string" ? [v] : [])).join("\n").slice(0, 1500);
   return (
     <div className="mx-auto w-full max-w-xl flex-1 px-4 pb-16">
-      <header className="flex items-center justify-between py-4">
-        <Link href="/"><Logo size={22} /></Link>
-        <Link href="/app" className="text-sm font-bold text-blue">Open app ›</Link>
-      </header>
       <h1 className="font-display mt-2 text-3xl leading-tight font-extrabold sm:text-4xl">{t(lang, "c.title")}</h1>
       <p className="mt-2 text-muted">{t(lang, "c.lead")}</p>
       <div className="mt-4"><LanguagePicker lang={lang} label={t(lang, "language")} draft={t(lang, "draft")} /></div>

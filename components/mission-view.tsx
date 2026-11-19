@@ -5,7 +5,6 @@ import type { Mission } from "@/lib/server/mission";
 import { Card, Chip, Eyebrow } from "@/components/ui";
 import { MarginCard } from "@/components/margin-card";
 import { COUNCIL_COLORS, TerritoryMap, type Geometry } from "@/components/territory-map";
-import { Logo } from "@/components/logo";
 import { Icon, type IconName } from "@/components/icons";
 
 const n = (v: number) => v.toLocaleString("en-US");
@@ -110,9 +109,7 @@ export function MissionView() {
     <div className="mx-auto w-full max-w-[1440px] flex-1 px-4 pb-16 sm:px-6">
       <header className="flex flex-wrap items-center justify-between gap-3 py-4">
         <div className="flex items-center gap-3">
-          <Link href="/"><Logo size={24} /></Link>
-          <span className="hidden h-5 w-px bg-line sm:block" />
-          <span className="text-sm font-semibold text-muted">Mission control · Federal Capital Territory</span>
+          <h1 className="font-display text-xl font-extrabold">Mission control <span className="text-sm font-semibold text-muted">· Federal Capital Territory</span></h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {simulated && <Chip tone="amber">Simulated data · signed by labelled test actors</Chip>}

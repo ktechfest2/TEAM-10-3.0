@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, IBM_Plex_Mono, Noto_Sans } from "next/font/google";
 import { ServiceWorker } from "@/components/service-worker";
+import { SiteNav } from "@/components/site-nav";
 import "./globals.css";
 
 // Noto Sans covers the Hausa, Yorùbá and Igbo letters (latin-ext); Bricolage is used for headlines and figures.
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${noto.variable} ${bricolage.variable} ${plex.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
+        <SiteNav />
         {children}
         <ServiceWorker />
       </body>

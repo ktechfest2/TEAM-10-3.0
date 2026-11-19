@@ -1,4 +1,3 @@
-import { Logo } from "@/components/logo";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -106,10 +105,6 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
 
   return (
     <div className="mx-auto w-full max-w-3xl flex-1 px-4 pb-16">
-      <header className="flex items-center justify-between py-4">
-        <Link href="/"><Logo size={22} /></Link>
-        <Link href="/app" className="text-sm font-bold text-blue">Open app ›</Link>
-      </header>
 
       <nav className="flex flex-wrap gap-x-1.5 text-xs text-muted" aria-label="Breadcrumb">
         {breadcrumb.map((b) => (
