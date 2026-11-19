@@ -133,3 +133,8 @@ p, li, label, td, th, small { font-weight: 500; }
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Printed pages (the problem brief, the poster) go on white paper. */
+@media print {
+  body { background: #fff; color: #000; }
+}

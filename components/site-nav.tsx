@@ -12,8 +12,8 @@ const TABS: { href: string; label: string; short: string; icon: IconName; tone?:
   { href: "/verify", label: "Records", short: "Records", icon: "shield" },
 ];
 
-/** Pages that are printed or are operator tools keep their own layout. */
-const HIDDEN = ["/poster", "/ops", "/design"];
+/** Pages that are printed, shared as documents, or are operator tools keep their own layout. */
+const HIDDEN = ["/poster", "/ops", "/design", "/brief"];
 
 const isActive = (path: string, href: string) => (href === "/" ? path === "/" : path === href || path.startsWith(`${href}/`));
 
