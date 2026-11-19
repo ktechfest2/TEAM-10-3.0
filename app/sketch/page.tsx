@@ -1,117 +1,147 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Icon, type IconName } from "@/components/icons";
 import { Logo } from "@/components/logo";
+import { Seal } from "@/components/seal";
 
 export const metadata: Metadata = {
   title: "System sketch",
-  description: "How Tally fits into the wider Nigerian election process, and how a result moves through it.",
+  description: "One picture of the election, and what Tally adds to it.",
   robots: { index: false, follow: false },
 };
 
-/** The election chain as INEC runs it, and what Tally adds at each step. `deep` marks the link Tally goes deep on. */
-const CHAIN = [
-  { n: 1, stage: "Inform voters", inec: "Notices, PVC collection", tally: "Text alert when a unit moves, with directions. Check a forwarded message." },
-  { n: 2, stage: "Open and accredit", inec: "BVAS", tally: "Officer signs that the unit opened. Voters report the queue and missing officials." },
-  { n: 3, stage: "Vote", inec: "Paper ballot", tally: "Nothing. The ballot stays secret, and Tally never records a vote.", none: true },
-  { n: 4, stage: "Count", inec: "EC8A sheet on the wall", tally: "Officer photographs the sheet, AI reads it, officer confirms. Rival agents co-sign on their phones, offline.", deep: true },
-  { n: 5, stage: "Upload", inec: "IReV portal", tally: "Each upload attempt is signed. Agents who saw a failure certify it.", deep: true },
-  { n: 6, stage: "Collate", inec: "EC8B → C → D → E", tally: "Every level is compared with the sealed units. A changed number is pinpointed.", deep: true },
-  { n: 7, stage: "Declare", inec: "Returning officer", tally: "Margin of lead on sealed results only. Never a winner.", deep: true },
-  { n: 8, stage: "Disputes", inec: "Tribunals", tally: "Public proof pages and records stamped on Bitcoin, ready as evidence." },
+/** The election as a road of eight stops. `deep` marks the stops Tally goes deep on. */
+const STOPS: { icon: IconName; name: string; add: string; addIcon: IconName; deep?: boolean; none?: boolean }[] = [
+  { icon: "megaphone", name: "Inform", add: "Text if your unit moves", addIcon: "chat" },
+  { icon: "door", name: "Open", add: "Officer signs: we are open", addIcon: "check" },
+  { icon: "ballot", name: "Vote", add: "Stays secret. Not touched.", addIcon: "lock", none: true },
+  { icon: "sheet", name: "Count", add: "Rival agents co-sign", addIcon: "check", deep: true },
+  { icon: "upload", name: "Upload", add: "Failures certified", addIcon: "check", deep: true },
+  { icon: "sum", name: "Collate", add: "Every level re-checked", addIcon: "search", deep: true },
+  { icon: "podium", name: "Declare", add: "Margin of lead, no winner", addIcon: "check", deep: true },
+  { icon: "scale", name: "Dispute", add: "Proof on Bitcoin", addIcon: "shield" },
 ];
 
-const FLOW = [
-  { title: "People on the day", tone: "border-t-orange", items: ["Presiding officer", "Party agents of rival parties", "Observers and voters"], foot: "Their own phones. No new hardware." },
-  { title: "Signed on the phone", tone: "border-t-blue", items: ["Every record signed with the person's own key", "Agents co-sign by scanning a QR code", "Queued offline, sent when there is a network"], foot: "Works with no network at the unit." },
-  { title: "Tally ledger", tone: "border-t-thumb", items: ["Roles checked: only an officer records a result", "Records chained; any edit breaks the chain", "Stamped on Bitcoin (OpenTimestamps)"], foot: "Re-sending is safe; nothing is counted twice." },
-  { title: "Checks", tone: "border-t-pink", items: ["Sealed: two rival parties signed the same figures", "Collation checked against sealed units", "Statistical flags for review, never accusations"], foot: "AI only reads sheets and messages. Rules decide." },
-  { title: "Anyone can check", tone: "border-t-sealed", items: ["Polling-unit pages and mission control", "SMS alerts to any phone", "Message check, in five languages, read aloud"], foot: "No account needed to check." },
+const PHONES = [
+  { who: "Officer", sub: "Presiding officer", vote: "50", tone: "bg-orange" },
+  { who: "APC", sub: "Party agent", vote: "50", tone: "bg-blue" },
+  { who: "PDP", sub: "Party agent", vote: "50", tone: "bg-blue" },
 ];
 
-const ACCESS = [
-  { who: "Basic phone", how: "SMS alerts when a unit moves, opens or its figures are changed at collation." },
-  { who: "Does not read English", how: "Pidgin, Hausa, Yorùbá and Igbo, and a Listen button that reads results aloud." },
-  { who: "Poor network", how: "Officers and agents sign offline; pages stay readable offline once opened." },
-  { who: "Already on duty", how: "Officers, agents and observers do what the law already asks: sign the result. Tally makes that signature checkable." },
-];
+function Phone({ who, sub, vote, tone }: { who: string; sub: string; vote: string; tone: string }) {
+  return (
+    <div className="flex w-[104px] shrink-0 flex-col items-center">
+      <div className="w-full rounded-2xl border-2 border-line bg-surface p-2 print:bg-white">
+        <div className={`mx-auto h-1 w-8 rounded-full ${tone}`} />
+        <p className="mt-2 text-center text-[10px] font-semibold text-muted">APC votes</p>
+        <p className="font-display text-center text-3xl leading-none font-extrabold tabular-nums">{vote}</p>
+        <div className="mt-2 flex items-center justify-center gap-1 rounded-lg bg-sealed-wash py-1 text-[10px] font-extrabold text-sealed"><Icon name="check" size={11} />SIGNED</div>
+      </div>
+      <p className="mt-1.5 text-sm font-extrabold">{who}</p>
+      <p className="text-[10px] text-muted">{sub}</p>
+    </div>
+  );
+}
 
 export default function SketchPage() {
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-5 py-10 print:px-0 print:py-0 print:text-black">
       <header className="flex items-center justify-between gap-4 border-b border-line pb-5 print:border-black/20">
         <Logo size={28} />
-        <p className="text-right text-xs leading-snug text-muted print:text-black/60">System sketch · TEAM-10<br />KTech Fest 3.0 · Every Vote, Every Voice</p>
+        <p className="text-right text-xs leading-snug text-muted print:text-black/60">System sketch · TEAM-10<br />KTech Fest 3.0</p>
       </header>
 
-      <h1 className="font-display mt-8 max-w-3xl text-4xl leading-[1.05] font-extrabold tracking-tight text-balance sm:text-5xl">Where Tally fits in the election.</h1>
-      <p className="mt-3 max-w-2xl text-lg text-muted print:text-black/70">INEC runs the process. Tally sits alongside it and makes each step from the count to the declaration signed, witnessed and checkable by anyone.</p>
+      <h1 className="font-display mt-8 text-4xl leading-[1.05] font-extrabold tracking-tight text-balance sm:text-5xl">An election, and the layer Tally adds.</h1>
 
-      {/* 1. The bigger picture */}
-      <section className="mt-10" aria-labelledby="chain">
-        <h2 id="chain" className="text-xs font-bold tracking-[0.14em] text-muted uppercase print:text-black/60">1 · The election chain, and what Tally adds</h2>
-        <div className="mt-4 hidden lg:grid lg:grid-cols-8 lg:gap-2" aria-hidden>
-          <div className="col-span-3" />
-          <div className="col-span-4 rounded-t-xl border-x-2 border-t-2 border-sealed px-3 pt-1.5 pb-1 text-center text-[11px] font-extrabold tracking-widest text-sealed uppercase">The link Tally goes deep on: wall to announcement</div>
-          <div />
+      {/* 1. The road */}
+      <section className="mt-8" aria-label="The election and what Tally adds">
+        <div className="mb-3 flex flex-wrap items-center gap-x-6 gap-y-1 text-xs font-bold">
+          <span className="flex items-center gap-2 text-muted"><i className="h-3 w-6 rounded-full bg-raised ring-1 ring-line" />How the election runs</span>
+          <span className="flex items-center gap-2 text-sealed"><i className="h-3 w-6 rounded-full bg-sealed" />What Tally adds</span>
+          <span className="flex items-center gap-2 text-sealed"><i className="h-3 w-6 rounded-sm border-2 border-sealed" />The part Tally goes deep on</span>
         </div>
-        <ol className="grid gap-2 sm:grid-cols-2 lg:grid-cols-8">
-          {CHAIN.map((c) => (
-            <li key={c.n} className={`relative flex flex-col rounded-2xl border p-3 print:bg-white ${c.deep ? "border-sealed bg-sealed-wash print:border-black" : "border-line bg-surface print:border-black/20"}`}>
-              <span className={`grid h-7 w-7 place-items-center rounded-full text-xs font-extrabold ${c.deep ? "bg-sealed text-black" : "bg-raised text-muted"}`}>{c.n}</span>
-              <p className="font-display mt-2 text-base leading-tight font-extrabold">{c.stage}</p>
-              <p className="mt-1 text-[11px] font-semibold tracking-wide text-muted uppercase print:text-black/60">INEC: {c.inec}</p>
-              <p className={`mt-2 border-t pt-2 text-xs leading-snug ${c.deep ? "border-sealed/40" : "border-line"} ${c.none ? "text-muted italic" : ""}`}>
-                {!c.none && <b className="text-sealed print:text-black">Tally: </b>}
-                {c.tally}
-              </p>
-            </li>
-          ))}
-        </ol>
-        <p className="mt-2 text-xs text-muted lg:hidden print:text-black/60">Green: the link Tally goes deep on, from the wall to the announcement.</p>
-      </section>
 
-      {/* 2. Deep on one piece */}
-      <section className="mt-12" aria-labelledby="flow">
-        <h2 id="flow" className="text-xs font-bold tracking-[0.14em] text-muted uppercase print:text-black/60">2 · How one result moves through Tally</h2>
-        <ol className="mt-4 grid gap-3 lg:grid-cols-5">
-          {FLOW.map((f, i) => (
-            <li key={f.title} className="relative">
-              <div className={`h-full rounded-2xl border border-line border-t-4 bg-surface p-4 print:border-black/20 print:bg-white ${f.tone}`}>
-                <p className="font-display text-lg leading-tight font-extrabold">{f.title}</p>
-                <ul className="mt-2 space-y-1.5 text-sm">
-                  {f.items.map((it) => <li key={it} className="flex gap-2"><span aria-hidden className="mt-2 h-1 w-1 shrink-0 rounded-full bg-muted" />{it}</li>)}
-                </ul>
-                <p className="mt-3 border-t border-line pt-2 text-xs text-muted print:text-black/60">{f.foot}</p>
+        <ol className="grid gap-x-1 gap-y-2 lg:grid-cols-8">
+          {STOPS.map((s, i) => (
+            <li key={s.name} className={`relative flex items-center gap-3 rounded-2xl p-3 lg:flex-col lg:gap-0 lg:px-2 lg:py-4 lg:text-center ${s.deep ? "border-2 border-sealed bg-sealed-wash/60 print:bg-white" : "border border-line bg-surface print:bg-white"}`}>
+              <span className={`grid h-14 w-14 shrink-0 place-items-center rounded-2xl lg:h-16 lg:w-16 ${s.deep ? "bg-sealed text-black" : "bg-raised text-fg"}`}>
+                <Icon name={s.icon} size={30} />
+              </span>
+              <div className="min-w-0 flex-1 lg:mt-3 lg:flex-none">
+                <p className="font-display text-lg leading-tight font-extrabold lg:text-base">{i + 1}. {s.name}</p>
+                <p className={`mt-1.5 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold lg:mt-3 lg:flex lg:justify-center lg:rounded-xl lg:py-1.5 lg:leading-tight ${s.none ? "bg-raised text-muted" : "bg-sealed-wash text-sealed"}`}>
+                  <Icon name={s.addIcon} size={13} className="shrink-0" />
+                  <span>{s.add}</span>
+                </p>
               </div>
-              {i < FLOW.length - 1 && (
-                <span aria-hidden className="absolute z-10 grid h-7 w-7 place-items-center rounded-full border border-line bg-bg text-muted max-lg:-bottom-5 max-lg:left-1/2 max-lg:-translate-x-1/2 max-lg:rotate-90 lg:top-1/2 lg:-right-5 lg:-translate-y-1/2 print:hidden">→</span>
-              )}
+              {i < STOPS.length - 1 && <span aria-hidden className="absolute -right-2.5 top-1/2 z-10 hidden h-5 w-5 -translate-y-1/2 place-items-center rounded-full bg-bg text-xs text-muted lg:grid">›</span>}
             </li>
           ))}
         </ol>
-        <div className="mt-5 rounded-2xl border border-alarm/50 bg-alarm-wash p-4 text-sm print:border-black/30 print:bg-white">
-          <b className="text-alarm print:text-black">Example:</b> agents of APC, PDP and NNPP sign 50 APC votes at a unit. At ward collation 150 is announced. Tally shows the ward as <b>tampering suspected</b>, names the unit and both figures, and texts everyone following that unit.
+        <p className="mt-3 text-sm text-muted print:text-black/70">Phones, texts and a public page. No new hardware. Works offline at the polling unit.</p>
+      </section>
+
+      {/* 2. One result, one picture */}
+      <section className="mt-12" aria-label="How a changed number is caught">
+        <h2 className="font-display text-2xl font-extrabold tracking-tight">One result. One changed number.</h2>
+        <div className="mt-5 grid grid-cols-1 items-stretch gap-4 lg:grid-cols-[1.6fr_auto_1fr_auto_1fr] [&>*]:min-w-0">
+          {/* at the unit */}
+          <div className="rounded-3xl border border-line bg-surface p-5 print:bg-white">
+            <p className="mb-4 flex items-center gap-2 text-xs font-extrabold tracking-widest text-muted uppercase"><span className="grid h-6 w-6 place-items-center rounded-full bg-raised text-fg">1</span>At the polling unit</p>
+            <div className="flex justify-center gap-2 overflow-x-auto pb-1">
+              {PHONES.map((p) => <Phone key={p.who} {...p} />)}
+            </div>
+            <p className="mt-4 text-center text-xs text-muted">Three phones sign the same number, even offline.</p>
+          </div>
+          <Arrow />
+          {/* sealed */}
+          <div className="flex flex-col items-center justify-center rounded-3xl border-2 border-sealed bg-sealed-wash/50 p-5 text-center print:bg-white">
+            <p className="mb-2 flex items-center gap-2 text-xs font-extrabold tracking-widest text-sealed uppercase"><span className="grid h-6 w-6 place-items-center rounded-full bg-sealed text-black">2</span>Sealed</p>
+            <Seal signed={["APC", "PDP"]} state="sealed" labels={false} className="w-32" />
+            <p className="font-display mt-2 text-xl font-extrabold">APC 50</p>
+            <p className="text-xs text-muted">Locked in order. Stamped on Bitcoin.</p>
+          </div>
+          <Arrow />
+          {/* collation */}
+          <div className="flex flex-col justify-center rounded-3xl border-2 border-alarm bg-alarm-wash p-5 text-center print:bg-white">
+            <p className="mb-3 flex items-center justify-center gap-2 text-xs font-extrabold tracking-widest text-alarm uppercase"><span className="grid h-6 w-6 place-items-center rounded-full bg-alarm text-black">3</span>At the ward</p>
+            <p className="text-xs text-muted">Announced</p>
+            <p className="font-display text-5xl leading-none font-extrabold text-alarm tabular-nums">150</p>
+            <p className="my-2 text-sm font-bold">≠ 50 signed</p>
+            <p className="mx-auto inline-flex items-center gap-1.5 rounded-full bg-alarm px-3 py-1 text-xs font-extrabold text-black"><Icon name="alert" size={13} />Caught at this unit</p>
+            <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-muted"><Icon name="chat" size={14} />Followers get a text</p>
+          </div>
         </div>
       </section>
 
-      {/* 3. Real people, real conditions */}
-      <section className="mt-12" aria-labelledby="access">
-        <h2 id="access" className="text-xs font-bold tracking-[0.14em] text-muted uppercase print:text-black/60">3 · Real people, real conditions</h2>
-        <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {ACCESS.map((a) => (
-            <li key={a.who} className="rounded-2xl border border-line bg-surface p-4 print:border-black/20 print:bg-white">
-              <p className="font-bold">{a.who}</p>
-              <p className="mt-1 text-sm text-muted print:text-black/70">{a.how}</p>
+      {/* 3. Who sees it */}
+      <section className="mt-12" aria-label="Who can check">
+        <h2 className="font-display text-2xl font-extrabold tracking-tight">Anyone can check.</h2>
+        <ul className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {([
+            ["search", "Any voter", "Find a unit, see who signed"],
+            ["chat", "Any phone", "SMS, no data needed"],
+            ["globe", "Any language", "English, Pidgin, Hausa, Yorùbá, Igbo"],
+            ["listen", "Any reader", "Results read aloud"],
+          ] as [IconName, string, string][]).map(([icon, t, d]) => (
+            <li key={t} className="rounded-2xl border border-line bg-surface p-4 print:bg-white">
+              <span className="grid h-10 w-10 place-items-center rounded-full bg-blue-wash text-blue"><Icon name={icon} size={20} /></span>
+              <p className="mt-2 font-bold">{t}</p>
+              <p className="text-sm text-muted print:text-black/70">{d}</p>
             </li>
           ))}
         </ul>
       </section>
 
       <section className="mt-10 flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-surface p-5 print:border-black/20 print:bg-white">
-        <p className="mr-auto text-sm"><b>Live:</b> <span className="text-muted print:text-black/70">tally-election.vercel.app</span> · <span className="text-muted print:text-black/70">Problem brief: /brief</span></p>
+        <p className="mr-auto text-sm"><b>Live:</b> <span className="text-muted print:text-black/70">tally-election.vercel.app</span></p>
         <Link href="/brief" className="rounded-full border border-line px-4 py-2 text-sm font-bold print:hidden">Problem brief ›</Link>
         <Link href="/rig" className="rounded-full border-2 border-alarm px-4 py-2 text-sm font-bold text-alarm print:hidden">Try to rig it ›</Link>
       </section>
     </main>
   );
+}
+
+function Arrow() {
+  return <div aria-hidden className="grid place-items-center text-3xl text-muted max-lg:rotate-90 max-lg:py-1">→</div>;
 }

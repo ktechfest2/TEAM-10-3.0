@@ -20,6 +20,14 @@ const PATHS = {
   back: <path d="M15 6l-6 6 6 6" />,
   phone: <><rect x="7" y="3" width="10" height="18" rx="2" /><path d="M11 18h2" /></>,
   shield: <><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z" /><path d="M8.5 12l2.5 2.5 4.5-5" /></>,
+  megaphone: <><path d="M3 10v4h4l8 5V5L7 10z" /><path d="M18 9c1.3 1.5 1.3 4.5 0 6" /></>,
+  door: <><path d="M6 21V4h12v17" /><path d="M3 21h18" /><circle cx="15" cy="12.5" r="0.8" /></>,
+  ballot: <><rect x="4" y="9" width="16" height="11" rx="1.5" /><path d="M9 9V6h6v3M9 13h6" /></>,
+  sheet: <><path d="M6 3h9l4 4v14H6z" /><path d="M9 11h7M9 14.5h7M9 18h4" /></>,
+  upload: <><path d="M7 17a4 4 0 010-8 5.5 5.5 0 0110.5 1.5A3.3 3.3 0 0117 17" /><path d="M12 20v-7M9 15.5l3-3 3 3" /></>,
+  sum: <><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M8 9h8M8 13h5M8 16.5h2M15 14v4M13 16h4" /></>,
+  podium: <><path d="M3 21h18M5 21v-7h5v7M10 21V9h4v12M14 21v-5h5v5" /></>,
+  scale: <><path d="M12 4v16M6 20h12M4 8h16" /><path d="M4 8l-2 6h6zM20 8l-2 6h6z" /></>,
   listen: <><path d="M4 10v4h3l5 4V6L7 10z" /><path d="M16 9c1.5 1.5 1.5 4.5 0 6M18.5 6.5c3 3 3 8 0 11" /></>,
 } as const;
 
