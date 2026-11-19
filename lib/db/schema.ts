@@ -51,8 +51,14 @@ export const actors = pgTable("actors", {
   isDemo: integer("is_demo").notNull().default(0),
   /** One person can hold several keys (one per phone). All of a person's keys share the account id of the first. */
   accountId: uuid("account_id"),
-  /** Set only on the first key of an account: SHA-256 of the recovery code, which logs the person in on a new phone. */
+  /** Retired: recovery codes were replaced by passwords. Kept so the migration is additive. */
   recoveryHash: text("recovery_hash"),
+  /** Login name, set on the first key of an account (unique). */
+  username: text("username").unique(),
+  /** scrypt hash of the password, on the same first key. */
+  passwordHash: text("password_hash"),
+  failedLogins: integer("failed_logins").notNull().default(0),
+  lockedUntil: timestamp("locked_until", { withTimezone: true }),
   /** A signed-out key can no longer author or witness anything new. Its earlier records stay valid. */
   revokedAt: timestamp("revoked_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

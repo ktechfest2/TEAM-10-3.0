@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { sqlClient as sql } from "@/lib/db/client";
+import { normaliseUsername, passwordProblem, usernameProblem } from "@/lib/core/credentials";
 import { ROLES } from "@/lib/core/events";
-import { newRecoveryCode, normaliseRecoveryCode } from "@/lib/core/recovery";
-import { hashRecovery } from "@/lib/server/accounts";
+import { hashPassword } from "@/lib/server/accounts";
 import { badRequest, inviteCodeValid, parseJson } from "@/lib/server/http";
 import { rateLimited } from "@/lib/server/ratelimit";
 
@@ -13,6 +13,8 @@ const schema = z.object({
   publicKey: z.string().regex(/^[0-9a-f]{64}$/),
   placeCode: z.string().max(32).nullable().optional(),
   inviteCode: z.string().max(64).optional(),
+  username: z.string().max(60).optional(),
+  password: z.string().max(100).optional(),
 });
 
 export async function POST(request: Request) {
@@ -22,6 +24,14 @@ export async function POST(request: Request) {
   if ("error" in parsed) return parsed.error;
   const body = parsed.data;
 
+  // The simulation and the test scripts register without a login; a person signing up always sends a username and a password.
+  const username = body.username === undefined ? null : normaliseUsername(body.username);
+  if (username !== null) {
+    const problem = usernameProblem(username) ?? passwordProblem(body.password ?? "");
+    if (problem) return badRequest(problem);
+    const [taken] = await sql`select 1 from actors where username = ${username}`;
+    if (taken) return badRequest("That username is taken. Try another.", 409);
+  }
   if (body.role !== "citizen" && !inviteCodeValid(body.inviteCode)) {
     return badRequest("This role needs a valid invite code from your organisation.", 403);
   }
@@ -37,10 +47,10 @@ export async function POST(request: Request) {
             ${body.placeCode ?? null}, ${process.env.NODE_ENV === "production" ? 0 : 1})
     on conflict (public_key) do update set display_name = excluded.display_name
     returning id`;
-  // A new account gets a recovery code, shown to the person once. A key registered again (same phone) keeps its account.
-  const code = newRecoveryCode();
-  const [fresh] = await sql<{ id: string }[]>`
-    update actors set account_id = id, recovery_hash = ${hashRecovery(normaliseRecoveryCode(code)!)}
-    where id = ${actor.id} and account_id is null returning id`;
-  return Response.json({ id: actor.id, ...(fresh ? { recoveryCode: code } : {}) });
+  // The first key of an account carries the login. A key registered again (same phone) keeps the account it had.
+  if (username !== null) {
+    await sql`update actors set account_id = id, username = ${username}, password_hash = ${await hashPassword(body.password ?? "")}
+      where id = ${actor.id} and account_id is null`;
+  }
+  return Response.json({ id: actor.id });
 }
