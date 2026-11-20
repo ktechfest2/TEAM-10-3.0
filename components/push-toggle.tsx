@@ -129,7 +129,7 @@ export function PushToggle({ topic = "mission", compact = false }: { topic?: str
       : state === "busy"
         ? "Turning on…"
         : state === "blocked"
-          ? "Alerts blocked"
+          ? "Allow alerts"
           : state === "unsupported"
             ? "No alerts here"
             : state === "unconfigured"
@@ -138,7 +138,7 @@ export function PushToggle({ topic = "mission", compact = false }: { topic?: str
                 ? "Try alerts again"
                 : "Get alerts";
 
-  const disabled = state === "checking" || state === "busy" || state === "unsupported" || state === "unconfigured" || state === "blocked";
+  const disabled = state === "checking" || state === "busy" || state === "unsupported" || state === "unconfigured";
   const tone = state === "on" ? "bg-sealed-wash text-sealed" : state === "error" || state === "blocked" ? "bg-amber-wash text-amber" : "bg-raised text-fg";
 
   return (
@@ -155,7 +155,7 @@ export function PushToggle({ topic = "mission", compact = false }: { topic?: str
         {label}
       </button>
       {hint && <span className="max-w-64 text-xs text-amber">{hint}</span>}
-      {state === "blocked" && <span className="max-w-64 text-xs text-muted">Allow notifications for Tally in your browser settings.</span>}
+      {state === "blocked" && <span className="max-w-64 text-xs text-muted">Allow notifications for Tally in your browser settings, then press “Allow alerts” again.</span>}
       {state === "unconfigured" && <span className="max-w-64 text-xs text-muted">The deployment has no push keys. SMS alerts still work.</span>}
     </span>
   );
