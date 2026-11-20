@@ -3,6 +3,7 @@ import { tamperSms } from "@/lib/core/relocation";
 import type { Totals } from "@/lib/core/results";
 import { sqlClient as sql } from "@/lib/db/client";
 import { siteUrl } from "./alerts";
+import { pushToTopic } from "./push";
 import { signDemoCollation } from "./simulate";
 import { sendSms } from "./sms";
 import { getCollationCheck, getPlace, getUnitResults, type UnitResult } from "./views";
@@ -77,6 +78,22 @@ export async function rigAttempt(wardCode: string, edit: { unit: string; party: 
     const u = ward.units.find((x) => x.code === r.code)!;
     return { code: r.code, name: r.name, field: d.field, announced: d.announced, sealed: d.computed, signers: u.signers, signedAt: u.signedAt };
   });
+
+  // The demo is more convincing when the tamper arrives as a notification, not only as a page refresh.
+  const first = mismatches[0];
+  if (first) {
+    const payload = {
+      title: `Simulated · Tampering suspected: ${ward.name}`,
+      body: `${first.name}: ${first.field} announced ${first.announced.toLocaleString("en-US")}, sealed by rival agents ${first.sealed.toLocaleString("en-US")}.`,
+      url: `/p/${wardCode}`,
+      kind: "red" as const,
+      tag: event.contentHash,
+    };
+    await Promise.all([
+      pushToTopic("mission", payload, event.contentHash).catch((e) => console.error("Push alert failed:", e)),
+      pushToTopic(`place:${first.code}`, payload, event.contentHash).catch((e) => console.error("Push alert failed:", e)),
+    ]);
+  }
 
   let texted = 0;
   let smsOff = false;

@@ -14,8 +14,9 @@ export const metadata: Metadata = {
 /** The election as a road of eight stops. `deep` marks the stops Tally goes deep on. */
 const STOPS: { icon: IconName; name: string; add: string; addIcon: IconName; deep?: boolean; none?: boolean }[] = [
   { icon: "megaphone", name: "Inform", add: "Text if your unit moves", addIcon: "chat" },
-  { icon: "door", name: "Open", add: "Officer signs: we are open", addIcon: "check" },
-  { icon: "ballot", name: "Vote", add: "Stays secret. Not touched.", addIcon: "lock", none: true },
+  { icon: "box", name: "Materials", add: "Sent, received, counted", addIcon: "check" },
+  { icon: "door", name: "Open", add: "Officer signs it open", addIcon: "check" },
+  { icon: "ballot", name: "Vote", add: "Priority help. Ballot untouched", addIcon: "people" },
   { icon: "sheet", name: "Count", add: "Rival agents co-sign", addIcon: "check", deep: true },
   { icon: "upload", name: "Upload", add: "Failures certified", addIcon: "check", deep: true },
   { icon: "sum", name: "Collate", add: "Every level re-checked", addIcon: "search", deep: true },
@@ -49,7 +50,7 @@ export default function SketchPage() {
             <span className="flex items-center gap-2 text-sealed"><i className="h-3 w-6 rounded-full bg-sealed" />What Tally adds</span>
             <span className="flex items-center gap-2 text-sealed"><i className="h-3 w-6 rounded-sm border-2 border-sealed" />Where Tally goes deep</span>
           </div>
-          <ol className="grid gap-x-1 gap-y-2 lg:grid-cols-8">
+          <ol className="grid gap-x-1 gap-y-2 lg:grid-cols-9">
             {STOPS.map((s, i) => (
               <li key={s.name} className="relative">
                 <Reveal delay={i * 110} className="h-full">

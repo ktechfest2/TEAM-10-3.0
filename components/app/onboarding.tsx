@@ -16,9 +16,10 @@ const ROLES: { role: Identity["role"]; title: string; who: string; detail: strin
   { role: "party_agent", title: "Party agent", who: "Watches for a party", detail: "You compare the result with the paper sheet and sign if it is right.", place: ["pu"] },
   { role: "observer", title: "Observer", who: "Independent watcher", detail: "You watch the count, check results and report problems.", place: ["pu", "ward"] },
   { role: "collation_officer", title: "Collation officer", who: "Ward and council count", detail: "You enter the totals read out there. Tally checks them against what the polling units signed.", place: ["ward", "lga"] },
+  { role: "logistics", title: "Materials officer", who: "Sends ballots and sheets", detail: "You sign what leaves the store for each polling unit. The officer at the unit signs for what arrives.", place: ["ward", "lga"] },
 ];
 
-const TOP: Partial<Record<Identity["role"], string>> = { presiding_officer: "border-t-orange", party_agent: "border-t-blue", observer: "border-t-cyan", collation_officer: "border-t-thumb" };
+const TOP: Partial<Record<Identity["role"], string>> = { presiding_officer: "border-t-orange", party_agent: "border-t-blue", observer: "border-t-cyan", collation_officer: "border-t-thumb", logistics: "border-t-cyan" };
 
 const PARTIES = ["APC", "LP", "PDP", "NNPP", "ADC", "APGA", "SDP", "YPP"];
 
@@ -101,7 +102,7 @@ export function Onboarding({ onDone }: { onDone: (identity: Identity) => void })
           </p>
           <div className="grid grid-cols-2 gap-3">
             {jobs.map((r) => (
-              <button key={r.role} onClick={() => setRole(r)} className={`rounded-2xl border border-line border-t-4 bg-card p-4 text-left hover:brightness-125 ${TOP[r.role] ?? ""}`}>
+              <button key={r.role} onClick={() => setRole(r)} className={`rounded-2xl border border-line border-t-4 bg-card p-4 text-left hover:brightness-125 ${TOP[r.role] ?? ""} ${jobs.length % 2 === 1 && r === jobs[jobs.length - 1] ? "col-span-2" : ""}`}>
                 <span className={`block text-base font-extrabold ${ROLE_COLOR[r.role].text}`}>{r.title}</span>
                 <span className="mt-1 block text-[13px] leading-snug text-muted">{r.who}</span>
               </button>

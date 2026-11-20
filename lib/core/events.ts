@@ -31,13 +31,14 @@ export const EVENT_TYPES = [
   "incident.reported",
   "claim.reported",
   "pu.relocated",
+  "help.responded",
 ] as const;
 export type EventType = (typeof EVENT_TYPES)[number];
 
 /** Which roles may author which event types. Enforced server-side. */
 export const AUTHOR_ROLES: Record<EventType, readonly Role[]> = {
-  "material.dispatched": ["logistics", "presiding_officer"],
-  "material.received": ["logistics", "presiding_officer"],
+  "material.dispatched": ["logistics"],
+  "material.received": ["presiding_officer"],
   "staff.checked_in": ["presiding_officer", "logistics"],
   "pu.opened": ["presiding_officer"],
   "pu.queue": ["presiding_officer", "citizen", "observer", "party_agent", "community_leader"],
@@ -49,6 +50,7 @@ export const AUTHOR_ROLES: Record<EventType, readonly Role[]> = {
   "incident.reported": ["citizen", "observer", "party_agent", "community_leader", "presiding_officer"],
   "claim.reported": ["citizen", "observer", "party_agent", "community_leader", "system"],
   "pu.relocated": ["collation_officer"],
+  "help.responded": ["presiding_officer", "observer"],
 };
 
 export const resultFiguresSchema = z.object({
@@ -100,9 +102,24 @@ export const relocationPayload = z.object({
   estimated: z.boolean().optional(),
 });
 
+export const MATERIAL_KINDS = ["ballot_papers", "ballot_boxes", "result_sheets", "bvas"] as const;
+export type MaterialKind = (typeof MATERIAL_KINDS)[number];
+
+/** What was sent to, or received at, a polling unit: a count per kind of material, with serial numbers where there are any. */
+export const materialsPayload = z.object({
+  items: z
+    .array(z.object({ kind: z.enum(MATERIAL_KINDS), qty: z.number().int().min(0).max(100_000), serialFrom: z.string().max(24).optional(), serialTo: z.string().max(24).optional() }))
+    .min(1)
+    .max(MATERIAL_KINDS.length),
+  text: z.string().max(280).optional(),
+});
+
+/** An officer or observer answers a voter's priority-help request (the request itself is a public form, not a signed record). */
+export const helpRespondedPayload = z.object({ requestId: z.string().uuid(), text: z.string().max(280).optional() });
+
 export const PAYLOAD_SCHEMAS: Record<EventType, z.ZodType> = {
-  "material.dispatched": freeTextPayload,
-  "material.received": freeTextPayload,
+  "material.dispatched": materialsPayload,
+  "material.received": materialsPayload,
   "staff.checked_in": freeTextPayload,
   "pu.opened": freeTextPayload,
   "pu.queue": z.object({ level: z.enum(["none", "short", "medium", "long", "not_opened"]) }),
@@ -114,6 +131,7 @@ export const PAYLOAD_SCHEMAS: Record<EventType, z.ZodType> = {
   "incident.reported": freeTextPayload,
   "claim.reported": freeTextPayload,
   "pu.relocated": relocationPayload,
+  "help.responded": helpRespondedPayload,
 };
 
 /** The signed, portable form of an event. Created offline, verifiable anywhere. */

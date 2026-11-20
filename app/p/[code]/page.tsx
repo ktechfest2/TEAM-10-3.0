@@ -9,10 +9,15 @@ import { ResultBars } from "@/components/result-bars";
 import { Seal, type SealState } from "@/components/seal";
 import { ShareButton } from "@/components/share-button";
 import { SmsAlerts } from "@/components/sms-alerts";
+import { HelpPanel } from "@/components/help-panel";
+import { MaterialsCard } from "@/components/materials-card";
+import { listHelp } from "@/lib/server/help";
+import { getUnitMaterials } from "@/lib/server/materials";
 import { Icon } from "@/components/icons";
 import { directionsUrl } from "@/lib/core/relocation";
 import { getRelocation } from "@/lib/server/alerts";
 import { Card, Chip, Eyebrow, FiguresTable, StatusBadge, TrustMeter, type Status } from "@/components/ui";
+import { PushToggle } from "@/components/push-toggle";
 import { ROLE_COLOR, type RoleKey } from "@/lib/roles";
 import { t, type Lang, type MessageKey } from "@/lib/core/i18n";
 import { joinList } from "@/lib/core/journey";
@@ -55,6 +60,7 @@ const EVENT: Record<string, string> = {
   "incident.reported": "Incident reported",
   "cancellation.recorded": "Cancellation recorded",
   "pu.relocated": "Polling unit moved",
+  "help.responded": "Priority help answered",
 };
 
 const ROLE_KEYS: Record<string, MessageKey | undefined> = { presiding_officer: "role.presiding_officer", party_agent: "role.party_agent", observer: "role.observer", citizen: "role.citizen", community_leader: "role.community_leader" };
@@ -108,6 +114,8 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
   const reports = place.level === "pu" ? await getVoterReports(place) : null;
   const wall = place.level === "pu" ? await getWallPhotos(place, results) : null;
   const moved = place.level === "pu" ? await getRelocation(code) : null;
+  const materials = place.level === "pu" ? await getUnitMaterials(code) : null;
+  const help = place.level === "pu" ? await listHelp(code) : [];
   const figLabels = { totalValid: t(lang, "fig.totalValid"), rejected: t(lang, "fig.rejected"), accredited: t(lang, "fig.accredited") };
   // Statistical flags compare this unit with the other reported units in its ward.
   const ward = breadcrumb.find((b) => b.level === "ward");
@@ -198,7 +206,16 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
               <Journey steps={journey} />
             </Card>
 
+            {materials && <MaterialsCard m={materials} />}
+
+            <HelpPanel code={place.code} initial={help} labels={{ title: t(lang, "help.title"), hint: t(lang, "help.hint"), sent: t(lang, "help.sent"), kinds: { elderly: t(lang, "help.elderly"), disabled: t(lang, "help.disabled"), pregnant: t(lang, "help.pregnant"), child: t(lang, "help.child") } }} />
+
             <SmsAlerts code={place.code} labels={{ title: t(lang, "sms.title"), hint: t(lang, "sms.hint"), phone: t(lang, "sms.phone"), go: t(lang, "sms.go"), ok: t(lang, "sms.ok"), off: t(lang, "sms.off"), fail: t(lang, "sms.fail") }} />
+
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface px-4 py-3">
+              <span className="text-sm font-bold">Alerts on this phone</span>
+              <PushToggle topic={`place:${place.code}`} compact />
+            </div>
 
             {reports && reports.total > 0 && (
               <Card className={reports.counts.not_opened ? "border-amber/40" : ""}>

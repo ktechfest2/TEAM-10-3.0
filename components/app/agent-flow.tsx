@@ -9,6 +9,8 @@ import { HoldToSign } from "@/components/hold-to-sign";
 import { QrCodeView, QrScanner } from "@/components/qr";
 import { Seal } from "@/components/seal";
 import { Button, Card, Chip, Eyebrow, FigureTile } from "@/components/ui";
+import { KIND_LABEL, type MaterialItem } from "@/lib/core/materials";
+import { HelpInbox } from "./help-inbox";
 
 type View = "home" | "scan" | "review" | "signed";
 
@@ -81,6 +83,27 @@ export function AgentHome({ identity, startWith }: { identity: Identity; startWi
     );
   }
 
+  if (view === "review" && pending && pending.type === "material.received") {
+    const items = (pending.payload as { items: MaterialItem[] }).items;
+    return (
+      <div className="space-y-3">
+        <Chip tone="sealed">✓ Officer&apos;s signature checked on this phone</Chip>
+        <div>
+          <p className="text-sm text-muted">Unit {pending.placeCode}</p>
+          <h2 className="font-display mt-1 text-3xl leading-tight font-extrabold tracking-tight">Did you see these arrive?</h2>
+        </div>
+        <ul className="divide-y divide-line rounded-2xl border border-line bg-surface px-4">
+          {items.map((i) => (
+            <li key={i.kind} className="flex items-center justify-between py-3"><span>{KIND_LABEL[i.kind]}{i.serialFrom && <span className="hash block text-muted">{i.serialFrom} to {i.serialTo}</span>}</span><b className="text-xl tabular-nums">{i.qty}</b></li>
+          ))}
+        </ul>
+        <p className="text-sm text-muted">Your signature says: <i>&quot;These are the materials I saw arrive.&quot;</i></p>
+        <HoldToSign ariaLabel={`Press and hold to sign as ${role}`} onComplete={() => void sign()} />
+        <Button variant="danger" onClick={() => { setPending(null); setView("home"); }} className="w-full">That is not what I saw. Do not sign.</Button>
+      </div>
+    );
+  }
+
   if (view === "review" && pending && pending.type === "result.declared") {
     const figures = (pending.payload as { figures: ResultFigures }).figures;
     const issues = checkResultArithmetic(figures);
@@ -136,11 +159,12 @@ export function AgentHome({ identity, startWith }: { identity: Identity; startWi
 
   return (
     <div className="space-y-4">
+      {identity.placeCode && <HelpInbox identity={identity} />}
       <Card className="space-y-3">
         <Eyebrow>{role}</Eyebrow>
         <h2 className="font-display text-2xl leading-tight font-extrabold tracking-tight">{identity.placeName}</h2>
-        <p className="text-sm text-muted">Scan the officer&apos;s code, compare with the wall sheet, hold to sign.</p>
-        <Button onClick={() => setView("scan")} className="min-h-14 w-full text-base">Scan result to sign</Button>
+        <p className="text-sm text-muted">Scan the officer&apos;s code, compare with what you see, hold to sign. Works for the result and for materials.</p>
+        <Button onClick={() => setView("scan")} className="min-h-14 w-full text-base">Scan to sign</Button>
         {error && <p className="text-sm text-alarm" role="alert">{error}</p>}
       </Card>
       <Card>

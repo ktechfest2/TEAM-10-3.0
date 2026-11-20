@@ -5,6 +5,8 @@ import { cosign, signEvent, type Role } from "@/lib/core/events";
 import { sumTotals, type Totals } from "@/lib/core/results";
 import { figuresFromReference, planOutcome, planVoterReports, SIM_PARTIES } from "@/lib/core/simulation";
 import { sqlClient as sql } from "@/lib/db/client";
+import { HELP_KINDS } from "@/lib/core/help";
+import { estimatedKit, plannedReceipt, shortenedKit } from "@/lib/core/materials";
 import { planRelocations } from "@/lib/core/relocation";
 import { notifyFor } from "./alerts";
 import { ingest } from "./ledger";
@@ -15,7 +17,7 @@ export const demoEnabled = () => process.env.DEMO_ENABLED !== "0";
 const SEED = process.env.DEMO_SEED ?? "tally-demo-actors";
 
 type DemoActor = { id: string; keys: KeyPair };
-type Actors = { officer: DemoActor; collation: DemoActor; agents: Record<string, DemoActor>; voters: DemoActor[] };
+type Actors = { officer: DemoActor; collation: DemoActor; logistics: DemoActor; agents: Record<string, DemoActor>; voters: DemoActor[] };
 let cache: Actors | null = null;
 
 async function upsert(name: string, role: Exclude<Role, "system">, party: string | null): Promise<DemoActor> {
@@ -34,7 +36,7 @@ async function actors(): Promise<Actors> {
   const agents: Record<string, DemoActor> = {};
   for (const p of SIM_PARTIES) agents[p] = await upsert(`DEMO ${p} agent`, "party_agent", p);
   const voters = [await upsert("DEMO Voter 1", "citizen", null), await upsert("DEMO Voter 2", "citizen", null), await upsert("DEMO Voter 3", "citizen", null)];
-  cache = { officer: await upsert("DEMO Presiding officer", "presiding_officer", null), collation: await upsert("DEMO Collation officer", "collation_officer", null), agents, voters };
+  cache = { officer: await upsert("DEMO Presiding officer", "presiding_officer", null), collation: await upsert("DEMO Collation officer", "collation_officer", null), logistics: await upsert("DEMO Materials officer", "logistics", null), agents, voters };
   return cache;
 }
 
@@ -97,6 +99,7 @@ export async function stepSimulation(count: number) {
       continue;
     }
     await signVoterReports(a, row.pu_code);
+    await signMaterialsAndHelp(a, row.pu_code, row.registered);
     if (plan.failedUpload) {
       const t = signEvent({ id: randomUUID(), type: "transmission.attempted", placeCode: row.pu_code, payload: { outcome: "failed", detail: "BVAS upload failed (simulated)" }, occurredAt: now, authorKey: a.officer.keys.publicKeyHex }, a.officer.keys.secretKeyHex);
       const seen = plan.failureWitnesses.map((p) => cosign(t.contentHash, a.agents[p].keys.secretKeyHex, a.agents[p].keys.publicKeyHex, now));
@@ -139,7 +142,7 @@ export async function collateWard(mode: "honest" | "tamper") {
 
 /** Wipes the ledger so the demo can start again. Only meant for demo deployments. */
 export async function resetDemo() {
-  await sql`truncate table events, witnesses, anchors, media, alert_deliveries restart identity`;
+  await sql`truncate table events, witnesses, anchors, media, alert_deliveries, help_requests restart identity`;
   return { ok: true };
 }
 
@@ -171,4 +174,46 @@ export async function signDemoCollation(wardCode: string, rows: { code: string; 
   const res = await ingest({ event }, "simulation");
   if (res.status === "rejected") throw new Error(res.reason ?? "Collation rejected");
   return event;
+}
+
+const hash01 = (code: string, salt: string) => parseInt(sha256Hex(`${salt}:${code}`).slice(0, 8), 16) / 0xffffffff;
+
+/**
+ * Estimated materials and priority-help traffic for one simulated unit, signed by the labelled DEMO actors through the real
+ * ledger. Most units receive everything, some are short of ballot papers, a few never sign for receipt. About one unit in
+ * twelve has a priority-help request: half are answered by the DEMO officer, the rest have waited long enough to escalate.
+ */
+async function signMaterialsAndHelp(a: Actors, code: string, registered: number | null) {
+  const kit = estimatedKit(code, registered);
+  const at = new Date(Date.now() - 3 * 3_600_000).toISOString();
+  const sent = signEvent({ id: randomUUID(), type: "material.dispatched", placeCode: code, payload: { items: kit, text: "Dispatched from the ward store (estimated test data)" }, occurredAt: at, authorKey: a.logistics.keys.publicKeyHex }, a.logistics.keys.secretKeyHex);
+  if ((await ingest({ event: sent }, "simulation")).status === "rejected") return;
+  const outcome = plannedReceipt(code);
+  if (outcome !== "none") {
+    const got = outcome === "short" ? shortenedKit(code, kit) : kit;
+    const rec = signEvent({ id: randomUUID(), type: "material.received", placeCode: code, payload: { items: got }, occurredAt: new Date(Date.now() - 2 * 3_600_000).toISOString(), authorKey: a.officer.keys.publicKeyHex }, a.officer.keys.secretKeyHex);
+    const agents = SIM_PARTIES.filter((p) => hash01(code, `witness:${p}`) < 0.6).slice(0, 3);
+    const cosigs = agents.map((p) => cosign(rec.contentHash, a.agents[p].keys.secretKeyHex, a.agents[p].keys.publicKeyHex, rec.occurredAt));
+    await ingest({ event: rec, cosignatures: cosigs }, "simulation");
+  }
+  if (hash01(code, "help") < 0.085) {
+    const kind = HELP_KINDS[Math.floor(hash01(code, "helpkind") * HELP_KINDS.length)]!;
+    const minutes = 2 + Math.floor(hash01(code, "helpage") * 43);
+    const [h] = await sql<{ id: string }[]>`insert into help_requests (place_code, kind, created_at) values (${code}, ${kind}, now() - make_interval(mins => ${minutes})) returning id`;
+    if (h && hash01(code, "helpans") < 0.5) {
+      const ans = signEvent({ id: randomUUID(), type: "help.responded", placeCode: code, payload: { requestId: h.id, text: "On my way (estimated test data)" }, occurredAt: new Date().toISOString(), authorKey: a.officer.keys.publicKeyHex }, a.officer.keys.secretKeyHex);
+      await ingest({ event: ans }, "simulation");
+    }
+  }
+}
+
+/** Adds materials and priority-help traffic to units that already have a simulated result but none of this yet. */
+export async function simulateMaterialsAndHelp() {
+  const a = await actors();
+  const units = await sql<{ code: string; registered: number | null }[]>`
+    select distinct e.place_code as code, p.registered from events e join actors x on x.id = e.author_id join places p on p.code = e.place_code
+    where e.type = 'result.declared' and x.display_name like 'DEMO %'
+      and not exists (select 1 from events m where m.type = 'material.dispatched' and m.place_code = e.place_code)`;
+  for (const u of units) await signMaterialsAndHelp(a, u.code, u.registered);
+  return { units: units.length };
 }

@@ -8,6 +8,8 @@ import { nameOf, partyOf, rememberName, rememberParty } from "@/lib/client/parti
 import { QrCodeView, QrScanner } from "@/components/qr";
 import { Seal, type SealState } from "@/components/seal";
 import { Button, Card, Chip, Eyebrow } from "@/components/ui";
+import { HelpInbox } from "./help-inbox";
+import { MaterialsStep } from "./materials-step";
 import { ResultWizard, type ReadResult } from "./result-wizard";
 
 const STEPS = ["Open", "Result", "Seal", "Upload"];
@@ -24,6 +26,7 @@ export function PoHome({ identity, demo }: { identity: Identity; demo?: { photoU
   const byType = (t: EventType) => held.filter((h) => h.event.type === t);
   const opened = byType("pu.opened")[0] ?? (demo ? ({} as HeldEvent) : undefined);
   const result = byType("result.declared")[0];
+  const materialsReceived = byType("material.received")[0];
   const attempts = byType("transmission.attempted");
   const [certifying, setCertifying] = useState<string | null>(null);
 
@@ -56,6 +59,10 @@ export function PoHome({ identity, demo }: { identity: Identity; demo?: { photoU
         <h2 className="font-display mt-1 text-2xl leading-tight font-extrabold tracking-tight">{identity.placeName}</h2>
         <p className="hash mt-1 text-muted">{place}</p>
       </div>
+
+      <HelpInbox identity={identity} />
+
+      {(!opened || materialsReceived) && <MaterialsStep identity={identity} received={materialsReceived} onChange={reload} />}
 
       {!opened && (
         <Card className="space-y-4">

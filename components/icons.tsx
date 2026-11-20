@@ -28,7 +28,11 @@ const PATHS = {
   sum: <><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M8 9h8M8 13h5M8 16.5h2M15 14v4M13 16h4" /></>,
   podium: <><path d="M3 21h18M5 21v-7h5v7M10 21V9h4v12M14 21v-5h5v5" /></>,
   scale: <><path d="M12 4v16M6 20h12M4 8h16" /><path d="M4 8l-2 6h6zM20 8l-2 6h6z" /></>,
+  box: <><path d="M3 8l9-4 9 4v10l-9 4-9-4z" /><path d="M3 8l9 4 9-4M12 12v10" /></>,
   listen: <><path d="M4 10v4h3l5 4V6L7 10z" /><path d="M16 9c1.5 1.5 1.5 4.5 0 6M18.5 6.5c3 3 3 8 0 11" /></>,
+  bell: <><path d="M18 16H6l1.5-2.5V10a4.5 4.5 0 019 0v3.5z" /><path d="M10 19a2 2 0 004 0" /></>,
+  download: <><path d="M12 4v11M7.5 11.5L12 16l4.5-4.5" /><path d="M5 19h14" /></>,
+  expand: <><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5" /></>,
 } as const;
 
 export type IconName = keyof typeof PATHS;

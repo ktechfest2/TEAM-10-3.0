@@ -184,6 +184,54 @@ const placeApi = await (await fetch(`${BASE}/api/places/${moveUnit}`)).json();
 assert(placeApi.relocation?.toName === "Check Relocation Site", "the app's place summary carries the move");
 await sql`delete from alert_subscriptions where phone = ${e164}`;
 
+// Materials: dispatched by a materials officer, signed for by the unit's officer, seen by agents; shortfalls show on the unit page.
+const store = await register("logistics", "Materials officer (check)");
+const matUnit = units[2]!.pu_code;
+const kit = [{ kind: "ballot_papers", qty: 500, serialFrom: "700001", serialTo: "700500" }, { kind: "ballot_boxes", qty: 1 }, { kind: "result_sheets", qty: 8 }];
+assert((await sync(makeEvent(po, "material.dispatched", matUnit, { items: kit }))).status === "rejected", "a presiding officer cannot record a dispatch");
+assert((await sync(makeEvent(store, "material.received", matUnit, { items: kit }))).status === "rejected", "a materials officer cannot sign for receipt");
+assert((await sync(makeEvent(store, "material.dispatched", matUnit, { items: [] }))).status === "rejected", "a dispatch with no items is refused");
+const dispatched = makeEvent(store, "material.dispatched", matUnit, { items: kit });
+assert((await sync(dispatched)).status === "accepted", "a materials officer's dispatch is accepted");
+let mats = await (await fetch(`${BASE}/api/materials/${matUnit}`)).json();
+assert(mats.state === "dispatched" && mats.lines.length === 3, "before receipt the unit shows materials as sent, not received");
+const short = kit.map((i) => (i.kind === "ballot_papers" ? { ...i, qty: 480, serialTo: "700480" } : i));
+const receipt = makeEvent(po, "material.received", matUnit, { items: short });
+assert((await sync(receipt)).status === "accepted", "the unit's officer signs for what arrived");
+const seen = cosign(receipt.contentHash, apc.secretKeyHex, apc.publicKeyHex, new Date().toISOString());
+const seenRes = await post("/api/sync", { items: [{ cosignatures: [seen] }] });
+assert(seenRes.results[0].cosignatures[0].status === "accepted", "an agent co-signs the receipt");
+mats = await (await fetch(`${BASE}/api/materials/${matUnit}`)).json();
+const papers = mats.lines.find((l: { kind: string }) => l.kind === "ballot_papers");
+assert(mats.state === "differs" && papers.diff === -20 && papers.state === "short", "a shortfall of 20 ballot papers is pinpointed");
+assert(mats.received.witnesses.some((w: { party: string | null }) => w.party === "APC"), "the receipt shows which party saw it");
+const matPage = await (await fetch(`${BASE}/p/${matUnit}`)).text();
+assert(matPage.includes("Election materials") && matPage.includes("Received with a different count") && /20(<!-- -->)? short/.test(matPage), "the unit page shows the shortfall");
+
+// Priority help: anyone can ask without a name; one request per kind per unit until answered; only an officer or observer can answer; unanswered ones escalate.
+const ask = (placeCode: string, kind: string) => fetch(`${BASE}/api/help`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ placeCode, kind }) });
+assert((await ask("37-01-01", "elderly")).status === 404, "help can only be requested at a polling unit");
+assert((await ask(matUnit, "nonsense")).status === 400, "an unknown kind of help is refused");
+const asked = await (await ask(matUnit, "elderly")).json();
+const askedAgain = await (await ask(matUnit, "elderly")).json();
+assert(asked.id && asked.id === askedAgain.id, "asking twice is one request, so a double tap raises no second alarm");
+let help = (await (await fetch(`${BASE}/api/help?place=${matUnit}`)).json()).items;
+assert(help.length === 1 && help[0].state === "open" && help[0].kind === "elderly" && !("phone" in help[0]) && !("note" in help[0]), "the request is open and carries no name or number");
+const observer = await register("observer", "Observer (check)", undefined, matUnit);
+const answerOf = (keys: KeyPair) => makeEvent(keys, "help.responded", matUnit, { requestId: asked.id, text: "On my way" });
+assert((await sync(answerOf(phoneC))).status === "rejected", "a voter cannot answer a help request");
+assert((await sync(answerOf(apc))).status === "rejected", "a party agent cannot answer a help request");
+assert((await sync(answerOf(observer))).status === "accepted", "an observer's signed answer is accepted");
+help = (await (await fetch(`${BASE}/api/help?place=${matUnit}`)).json()).items;
+assert(help[0].state === "answered" && help[0].answeredBy === "Observer (check)", "the request shows as answered, and by whom");
+const lateUnit = units[0]!.pu_code;
+await sql`insert into help_requests (place_code, kind, created_at) values (${lateUnit}, 'disabled', now() - make_interval(mins => 40))`;
+await new Promise((r) => setTimeout(r, 1700));
+const mission2 = await (await fetch(`${BASE}/api/mission`)).json();
+assert(mission2.help.escalated >= 1 && mission2.alerts.some((a: { k: string }) => a.k.startsWith("PRIORITY HELP") && a.k.includes("NOT ANSWERED")), "a request unanswered for 40 minutes escalates to mission control");
+assert(mission2.materials.differs >= 1 && mission2.alerts.some((a: { k: string }) => a.k.includes("MATERIALS")), "mission control shows the units that received different materials");
+await sql`delete from help_requests where place_code = ${lateUnit}`;
+
 const audit = await (await fetch(`${BASE}/api/verify`)).json();
 assert(audit.intact === true, `ledger intact (${audit.entries} entries)`);
 

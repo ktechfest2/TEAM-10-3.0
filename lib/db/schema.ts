@@ -154,3 +154,46 @@ export const alertDeliveries = pgTable(
   },
   (t) => [uniqueIndex("alert_delivery_once").on(t.subscriptionId, t.contentHash)],
 );
+
+/** One browser that opted into Web Push. `topic` is "mission" for the live board or "place:<code>" for one place. */
+export const pushSubscriptions = pgTable(
+  "push_subscriptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    endpoint: text("endpoint").notNull(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    topic: text("topic").notNull().default("mission"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("push_sub_endpoint_topic").on(t.endpoint, t.topic), index("push_sub_topic_idx").on(t.topic)],
+);
+
+/** A push already sent to one subscription for one event, so a re-sync never buzzes twice. */
+export const pushDeliveries = pgTable(
+  "push_deliveries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    subscriptionId: uuid("subscription_id").notNull().references(() => pushSubscriptions.id, { onDelete: "cascade" }),
+    eventKey: text("event_key").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("push_delivery_once").on(t.subscriptionId, t.eventKey)],
+);
+
+/**
+ * A voter's request for priority help (elderly, disabled, pregnant or with a small child) at a polling unit. It is a public
+ * form, so it is not a signed record. The answer is: an officer or observer signs a help.responded event that names the request.
+ * Holds no name or phone number.
+ */
+export const helpRequests = pgTable(
+  "help_requests",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    placeCode: text("place_code").notNull(),
+    kind: text("kind").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("help_place_idx").on(t.placeCode), index("help_created_idx").on(t.createdAt)],
+);

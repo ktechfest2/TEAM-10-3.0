@@ -1,5 +1,8 @@
 import "server-only";
 import raw from "@/lib/data/fct-map.json";
+import { HELP_LABEL, waited } from "@/lib/core/help";
+import { getHelpOverview, type HelpOverview } from "./help";
+import { getMaterialsOverview, type MaterialsOverview } from "./materials";
 import { sqlClient as sql } from "@/lib/db/client";
 import type { Margin } from "@/lib/core/margin";
 import type { ResultFigures } from "@/lib/core/events";
@@ -50,6 +53,8 @@ export type Mission = {
   alerts: MissionAlert[];
   margin: Margin;
   uploads: { total: number; certified: number; witnessed: number; claimed: number };
+  materials: MaterialsOverview;
+  help: HelpOverview;
   focus: { cell: number; label: string; status: CellStatus } | null;
   simulation: { simulated: number; remaining: number };
 };
@@ -182,6 +187,16 @@ export async function missionSnapshot(): Promise<Mission> {
     const mp = await getPlace(m.place_code);
     if (mp) alerts.push({ kind: "amber", k: m.n === 1 ? "POLLING UNIT MOVED" : `${m.n} POLLING UNITS MOVED`, title: `Unit ${mp.name}`, body: `Now votes at ${m.to_name}.${m.estimated ? " Estimated move for testing." : ""}`, at: iso(m.at), href: `/p/${mp.code}` });
   }
+  // Materials: units whose receipt differs from the dispatch, and units still waiting for an officer to sign for their materials.
+  const materials = await getMaterialsOverview();
+  const matDiff = materials.problems.find((p) => p.kind === "differs");
+  if (matDiff) alerts.push({ kind: "amber", k: materials.differs === 1 ? "MATERIALS SHORT" : `${materials.differs} UNITS RECEIVED DIFFERENT MATERIALS`, title: `Unit ${matDiff.name}`, body: `${matDiff.line}.`, at: matDiff.at, href: `/p/${matDiff.code}` });
+  const matWait = materials.problems.find((p) => p.kind === "awaiting");
+  if (matWait && materials.awaiting > 0) alerts.push({ kind: "amber", k: materials.awaiting === 1 ? "MATERIALS NOT RECEIVED" : `${materials.awaiting} UNITS HAVE NOT SIGNED FOR MATERIALS`, title: `Unit ${matWait.name}`, body: matWait.line + ".", at: matWait.at, href: `/p/${matWait.code}` });
+  // Priority help that nobody answered in time.
+  const help = await getHelpOverview();
+  const worstHelp = help.worst[0];
+  if (worstHelp) alerts.push({ kind: "red", k: help.escalated === 1 ? "PRIORITY HELP NOT ANSWERED" : `${help.escalated} PRIORITY-HELP REQUESTS NOT ANSWERED`, title: `Unit ${worstHelp.name}`, body: `${HELP_LABEL[worstHelp.kind]} has waited ${waited(worstHelp.createdAt)}. The officer and observers have not responded.`, at: worstHelp.createdAt, href: `/p/${worstHelp.code}` });
   const [anchor] = await sql<{ merkle_root: string; from_seq: number; to_seq: number; status: string; created_at: Date }[]>`select merkle_root, from_seq, to_seq, status, created_at from anchors order by created_at desc limit 1`;
   if (anchor) alerts.push({ kind: "grey", k: anchor.status === "confirmed" ? "ANCHORED ON BITCOIN" : "SUBMITTED TO BITCOIN", title: `Entries ${anchor.from_seq.toLocaleString("en-US")} to ${anchor.to_seq.toLocaleString("en-US")}`, body: `root ${anchor.merkle_root.slice(0, 10)}…${anchor.merkle_root.slice(-6)}`, at: iso(anchor.created_at) });
   // Problems must survive the 10-alert cap; a newer "sealed" item must never push a tamper alert out of sight.
@@ -200,6 +215,8 @@ export async function missionSnapshot(): Promise<Mission> {
     alerts: alerts.slice(0, 10),
     margin: await getMargin(national, results),
     uploads: { total: uploadFailures.total, certified: uploadFailures.certified, witnessed: uploadFailures.witnessed, claimed: uploadFailures.claimed },
+    materials,
+    help,
     focus: focusCell !== undefined && focusPlace ? { cell: focusCell, label: focusPlace.name, status: cells[focusCell] } : null,
     simulation: await simulationState(),
   };

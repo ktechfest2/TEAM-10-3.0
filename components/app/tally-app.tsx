@@ -8,6 +8,7 @@ import { ROLE_COLOR } from "@/lib/roles";
 import { CitizenHome } from "./citizen";
 import { CollationHome } from "./collation";
 import { Onboarding } from "./onboarding";
+import { LogisticsHome } from "./logistics";
 import { PoHome } from "./officer";
 
 const ROLE_LABEL: Record<Identity["role"], string> = {
@@ -17,7 +18,7 @@ const ROLE_LABEL: Record<Identity["role"], string> = {
   observer: "Observer",
   community_leader: "Community leader",
   collation_officer: "Collation officer",
-  logistics: "Logistics",
+  logistics: "Materials officer",
 };
 
 export function TallyApp({ lang = "en" }: { lang?: Lang }) {
@@ -99,7 +100,8 @@ export function TallyApp({ lang = "en" }: { lang?: Lang }) {
           {identity.role === "party_agent" && <AgentHome identity={identity} />}
           {identity.role === "observer" && <AgentHome identity={identity} />}
           {identity.role === "collation_officer" && <CollationHome identity={identity} />}
-          {(identity.role === "citizen" || identity.role === "community_leader" || identity.role === "logistics") && <CitizenHome identity={identity} lang={lang} />}
+          {identity.role === "logistics" && <LogisticsHome identity={identity} />}
+          {(identity.role === "citizen" || identity.role === "community_leader") && <CitizenHome identity={identity} lang={lang} />}
         </>
       )}
     </div>
