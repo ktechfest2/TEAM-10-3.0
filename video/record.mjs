@@ -15,6 +15,9 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const PAD = 1.2; // seconds of picture after the voice ends
 
 const offsets = {};
+const cuts = {};
+const markTimes = {};
+const markedAt = (id) => markTimes[id];
 
 async function scene(browser, id, run) {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 }, recordVideo: { dir: `${OUT}/raw-${id}`, size: { width: 1280, height: 720 } } });
@@ -22,7 +25,7 @@ async function scene(browser, id, run) {
   const started = Date.now();
   let marked = started;
   // run() calls mark() once the first page has loaded; the picture before that moment (a blank page) is cut from the video.
-  await run(page, () => { marked = Date.now(); offsets[id] = (marked - started) / 1000; });
+  await run(page, () => { marked = Date.now(); markTimes[id] = marked; offsets[id] = (marked - started) / 1000; });
   const left = (lengths[id] + PAD) * 1000 - (Date.now() - marked);
   if (left > 0) await wait(left);
   const video = page.video();
@@ -106,9 +109,14 @@ await scene(browser, "s6", async (page, mark) => {
   mark();
   await page.locator("textarea").click();
   await page.locator("textarea").pressSequentially("Apc cheated ??", { delay: 90 });
+  const t0 = Date.now();
   await page.getByRole("button", { name: /Check this message/ }).click();
-  await page.getByText(/No verdict on who cheated/).waitFor({ timeout: 20000 });
+  const clicked = (Date.now() - t0) / 1000;
+  await page.getByText(/No verdict on who cheated/).waitFor({ timeout: 60000 });
+  // The answer can take many seconds; the video speeds up the wait. These two moments say where it starts and ends.
+  cuts.s6 = { from: clicked + 0.8, to: (Date.now() - t0) / 1000 - 0.4, offsetFromMark: (t0 - markedAt("s6")) / 1000 };
   await page.evaluate(() => scrollTo({ top: 200, behavior: "smooth" }));
+  await wait(3500);
 });
 
 // 7. Close
@@ -121,3 +129,4 @@ await scene(browser, "s7", async (page, mark) => {
 await browser.close();
 import { writeFileSync } from "node:fs";
 writeFileSync(`${OUT}/offsets.json`, JSON.stringify(offsets));
+writeFileSync(`${OUT}/cuts.json`, JSON.stringify(cuts));
