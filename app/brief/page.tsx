@@ -11,8 +11,9 @@ export const metadata: Metadata = {
 };
 
 const DAY: { when: string; icon: IconName; problem: string; tally: string }[] = [
+  { when: "Before", icon: "box", problem: "Ballot papers arrive short, or never. Nobody can prove what was sent.", tally: "The store signs what leaves. The unit's officer signs what arrives. Agents co-sign. A shortfall shows by the number." },
   { when: "Morning", icon: "pin", problem: "Her polling unit moved. She finds out at the old site.", tally: "A text with directions to the new site." },
-  { when: "Arrival", icon: "door", problem: "Officials are late. Nobody knows if the unit opened.", tally: "Officer signs it open. Voters report the queue." },
+  { when: "Arrival", icon: "people", problem: "Officials are late. The queue is long. Elderly and disabled voters have no way to ask for help.", tally: "Officer signs it open. One tap asks for priority help. Unanswered after 15 minutes, mission control is told." },
   { when: "Evening", icon: "sheet", problem: "The result is on the wall. Only paper and photos prove it.", tally: "Rival agents co-sign on their phones. A QR poster links to it." },
   { when: "Days later", icon: "sum", problem: "Is the number I saw the number that was counted?", tally: "Every level is re-checked. A change is pinpointed to the unit." },
   { when: "All day", icon: "chat", problem: "Forwarded messages claim results were changed.", tally: "Paste it. The signed records answer." },
@@ -20,6 +21,7 @@ const DAY: { when: string; icon: IconName; problem: string; tally: string }[] = 
 
 const GAPS = [
   ["IReV and trackers", "One source that failed in 2023. Images only, no witnesses."],
+  ["Materials on paper", "Waybills nobody outside can check. A shortage is found on the day."],
   ["Photo and tally apps", "No cross-party proof. No check at ward, council or state."],
   ["Parallel vote count", "A sample, not every unit. Not public."],
   ["Fact-checking desks", "Articles after the fact, not a live check."],
@@ -65,7 +67,7 @@ export default function BriefPage() {
         {/* Amaka's day */}
         <section className="mt-14" aria-label="Who it hurts">
           <p className="text-xs font-extrabold tracking-[0.16em] text-muted uppercase">Who it hurts</p>
-          <h2 className="font-display mt-1 text-3xl font-extrabold tracking-tight">Amaka votes in Abuja. Here is her day.</h2>
+          <h2 className="font-display mt-1 text-3xl font-extrabold tracking-tight">Amaka votes in Abuja. Here is her election day.</h2>
           <ol className="relative mt-6 space-y-3 before:absolute before:top-6 before:bottom-6 before:left-[27px] before:w-0.5 before:bg-line max-sm:before:hidden">
             {DAY.map((d, i) => (
               <li key={d.when}>
@@ -85,7 +87,7 @@ export default function BriefPage() {
               </li>
             ))}
           </ol>
-          <p className="mt-4 text-sm text-muted">It also hurts presiding officers (form errors lead to cancellations), party agents (they cannot prove a change), observers and lawyers.</p>
+          <p className="mt-4 text-sm text-muted">It also hurts presiding officers (form errors lead to cancellations), party agents (they cannot prove a change), elderly and disabled voters, observers and lawyers.</p>
         </section>
 
         {/* Gap + what */}
@@ -106,7 +108,7 @@ export default function BriefPage() {
               <p className="text-xs font-extrabold tracking-[0.16em] text-bg/60 uppercase">What we are building</p>
               <p className="font-display mt-2 text-3xl leading-tight font-extrabold">Tally turns the signatures the law already asks for into proof anyone can check.</p>
               <ul className="mt-4 space-y-2 text-[15px]">
-                {["Officer and rival agents sign on their own phones, even offline", "Two rival parties seal a result", "Every level is checked against the sealed units", "Records are chained and stamped on Bitcoin", "Any phone, five languages, read aloud"].map((x) => (
+                {["Materials, opening and results signed on their own phones, even offline", "Two rival parties seal a result", "Every level is checked against the sealed units", "Priority help for those who need it, with escalation", "Records chained and stamped on Bitcoin; texts to any phone, five languages"].map((x) => (
                   <li key={x} className="flex gap-2"><Icon name="check" size={18} className="mt-0.5 shrink-0 text-sealed" />{x}</li>
                 ))}
               </ul>
