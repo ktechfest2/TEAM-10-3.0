@@ -203,3 +203,11 @@ p, li, label, td, th, small { font-weight: 500; }
   background: var(--bg);
   color: var(--fg);
 }
+
+/* The hero glow on paper: the same three colours, a little stronger so they read on a light page. */
+.paper .glow-hero {
+  background:
+    radial-gradient(60% 50% at 12% 8%, rgb(27 110 230 / 0.18), transparent 70%),
+    radial-gradient(50% 45% at 88% 22%, rgb(211 33 108 / 0.14), transparent 70%),
+    radial-gradient(45% 40% at 55% 0%, rgb(106 76 224 / 0.14), transparent 70%);
+}
