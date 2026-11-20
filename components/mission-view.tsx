@@ -104,19 +104,40 @@ export function MissionView() {
   const t = data?.totals;
   const pct = (v: number) => (t && t.units ? (v / t.units) * 100 : 0);
   const simulated = (data?.simulation.simulated ?? 0) > 0;
+  // The first thing a phone shows: the worst alert, then the map.
+  const topAlert = data ? [...data.alerts].sort((a, b) => (RANK[a.kind] ?? 9) - (RANK[b.kind] ?? 9))[0] : undefined;
 
   return (
     <div className="mx-auto w-full max-w-[1440px] flex-1 px-4 pb-16 sm:px-6">
       <header className="flex flex-wrap items-center justify-between gap-3 py-4">
-        <div className="flex items-center gap-3">
-          <h1 className="font-display text-xl font-extrabold">Mission control <span className="text-sm font-semibold text-muted">· Federal Capital Territory</span></h1>
-        </div>
+        <h1 className="font-display text-xl font-extrabold">Mission control <span className="hidden text-sm font-semibold text-muted sm:inline">· Federal Capital Territory</span></h1>
         <div className="flex flex-wrap items-center gap-2">
-          {simulated && <Chip tone="amber">Simulated data · signed by labelled test actors</Chip>}
+          {simulated && <Chip tone="amber">Simulated data</Chip>}
           <span className="inline-flex h-7 items-center gap-2 rounded-full bg-alarm-wash px-3 text-xs font-bold tracking-wider text-alarm"><i className={`h-2 w-2 rounded-full bg-alarm ${failed ? "" : "animate-pulse"}`} />{failed ? "OFFLINE" : "LIVE"}</span>
-          <Link href="/verify" className="text-sm font-bold text-thumb">Check the records ›</Link>
+          <Link href="/verify" className="hidden text-sm font-bold text-thumb sm:inline">Check the records ›</Link>
         </div>
       </header>
+
+      {data && (
+        <div className="mb-4 space-y-3 lg:hidden">
+          <div className="grid grid-cols-3 gap-2">
+            <Kpi value={t ? n(t.sealed) : "–"} label={t ? `Sealed · ${Math.round(pct(t.sealed))}%` : "Sealed"} tone="text-sealed" />
+            <Kpi value={t ? n(t.witnessed) : "–"} label="Witnessed" tone="text-amber" />
+            <Kpi value={t ? String(t.tamper) : "–"} label="Tampering" tone="text-alarm" alarm={Boolean(t?.tamper)} />
+          </div>
+          {topAlert && (
+            <Link href={topAlert.href ?? "/mission"} className={`flex items-center gap-3 rounded-2xl border p-3 ${topAlert.kind === "red" ? "border-alarm bg-alarm-wash" : "border-line bg-surface"}`}>
+              <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${KIND_BG[topAlert.kind]}`}><Icon name={KIND_ICON[topAlert.kind] ?? "check"} size={18} /></span>
+              <span className="min-w-0 flex-1">
+                <span className={`block text-[11px] font-extrabold tracking-widest uppercase ${KIND_TEXT[topAlert.kind]}`}>{topAlert.k}</span>
+                <span className="block truncate font-bold">{topAlert.title}</span>
+                <span className="line-clamp-2 block text-sm text-muted">{topAlert.body}</span>
+              </span>
+              <Icon name="chevron" size={18} className="shrink-0 text-muted" />
+            </Link>
+          )}
+        </div>
+      )}
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
         <div className="space-y-3">
@@ -139,23 +160,27 @@ export function MissionView() {
         </div>
 
         <div className="space-y-4">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="hidden grid-cols-3 gap-3 lg:grid">
             <Kpi value={t ? n(t.sealed) : "–"} label={t ? `Units sealed · ${Math.round(pct(t.sealed))}%` : "Units sealed"} tone="text-sealed" />
             <Kpi value={t ? n(t.witnessed) : "–"} label="Witnessed, not sealed" tone="text-amber" />
             <Kpi value={t ? String(t.tamper) : "–"} label="Tampering alerts" tone="text-alarm" alarm={Boolean(t?.tamper)} />
           </div>
-          <div className="flex h-2.5 gap-0.5 overflow-hidden rounded-full bg-raised" role="img" aria-label="Share of units sealed, witnessed, or without a result">
+          <div className="hidden h-2.5 gap-0.5 overflow-hidden rounded-full bg-raised lg:flex" role="img" aria-label="Share of units sealed, witnessed, or without a result">
             <div className="bg-sealed transition-[width] duration-700" style={{ width: `${pct(t?.sealed ?? 0)}%` }} />
             <div className="bg-amber transition-[width] duration-700" style={{ width: `${pct(t?.witnessed ?? 0)}%` }} />
           </div>
-          <p className="text-xs text-muted">{t ? `${n(t.reported)} of ${n(t.units)} polling units have a recorded result.` : "Loading…"}</p>
+          <p className="hidden text-xs text-muted lg:block">{t ? `${n(t.reported)} of ${n(t.units)} polling units have a recorded result.` : "Loading…"}</p>
 
           {data && <MarginCard margin={data.margin} uploads={data.uploads} />}
 
           {data && <Alerts alerts={data.alerts} />}
         </div>
       </div>
-      <p className="mt-8 max-w-prose text-xs text-muted">Map data: polling-site locations on the FCT boundary, GRID3 via geoBoundaries (CC BY 4.0). Results appear here only once they are signed. {failed && "The connection to the server was lost; the numbers shown may be out of date."}</p>
+      <p className="mt-8 max-w-prose text-xs text-muted">
+        Map data: polling-site locations on the FCT boundary, GRID3 via geoBoundaries (CC BY 4.0). Results appear here only once they are signed.
+        {simulated && " Results are simulated: signed by labelled test actors from the published 2023 figures."}
+        {failed && " The connection to the server was lost; the numbers shown may be out of date."}
+      </p>
     </div>
   );
 }

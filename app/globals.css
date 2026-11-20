@@ -182,3 +182,24 @@ p, li, label, td, th, small { font-weight: 500; }
   .rv { opacity: 1; transform: none; transition: none; }
   .pop, .shake, .flash { animation: none; }
 }
+
+/* Ink: a dark island inside a paper page (the live map). Same values as the product's dark tokens. */
+.ink {
+  color-scheme: dark;
+  --bg: #000000;
+  --surface: #0e0f11;
+  --raised: #17191c;
+  --line: #26292e;
+  --fg: #e9eaec;
+  --muted: #9a9ea6;
+  --sealed: #3ddc97;
+  --amber: #ffb93b;
+  --alarm: #ff6b6b;
+  --thumb: #a394ff;
+  --blue: #6aa9ff;
+  --sealed-wash: rgb(61 220 151 / 0.14);
+  --amber-wash: rgb(255 185 59 / 0.14);
+  --alarm-wash: rgb(255 107 107 / 0.14);
+  background: var(--bg);
+  color: var(--fg);
+}

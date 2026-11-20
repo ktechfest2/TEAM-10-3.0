@@ -8,8 +8,8 @@ const TABS: { href: string; label: string; short: string; icon: IconName; tone?:
   { href: "/", label: "Home", short: "Home", icon: "home" },
   { href: "/check", label: "Check a message", short: "Check", icon: "chat" },
   { href: "/rig", label: "Try to rig it", short: "Rig it", icon: "alert", tone: "text-alarm" },
-  { href: "/mission", label: "Mission control", short: "Live", icon: "map" },
-  { href: "/verify", label: "Records", short: "Records", icon: "shield" },
+  { href: "/mission", label: "Mission control", short: "Map", icon: "map" },
+  { href: "/verify", label: "Verify the records", short: "Verify", icon: "shield" },
 ];
 
 /** Pages that are printed, shared as documents, or are operator tools keep their own layout. */
@@ -22,6 +22,8 @@ export function SiteNav() {
   const path = usePathname();
   const router = useRouter();
   if (HIDDEN.some((h) => path.startsWith(h))) return null;
+  // The home page is light, so its navigation is too.
+  const light = path === "/" ? "paper" : "";
 
   function back() {
     // Opened from a shared link there is nothing to go back to, so go home instead.
@@ -31,7 +33,7 @@ export function SiteNav() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 border-b border-line bg-bg/90 backdrop-blur">
+      <header className={`${light} sticky top-0 z-30 border-b border-line bg-bg/90 backdrop-blur`}>
         <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-2 px-3 sm:px-6">
           {path !== "/" && (
             <button type="button" onClick={back} aria-label="Go back" className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted hover:bg-raised hover:text-fg">
@@ -52,7 +54,7 @@ export function SiteNav() {
         </div>
       </header>
 
-      <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+      <nav aria-label="Main" className={`${light} fixed inset-x-0 bottom-0 z-30 border-t border-line bg-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden`}>
         <ul className="mx-auto grid max-w-xl grid-cols-5">
           {TABS.map((t) => {
             const active = isActive(path, t.href);

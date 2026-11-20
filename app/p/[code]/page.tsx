@@ -12,7 +12,7 @@ import { SmsAlerts } from "@/components/sms-alerts";
 import { Icon } from "@/components/icons";
 import { directionsUrl } from "@/lib/core/relocation";
 import { getRelocation } from "@/lib/server/alerts";
-import { Card, Eyebrow, FiguresTable, StatusBadge, TrustMeter, type Status } from "@/components/ui";
+import { Card, Chip, Eyebrow, FiguresTable, StatusBadge, TrustMeter, type Status } from "@/components/ui";
 import { ROLE_COLOR, type RoleKey } from "@/lib/roles";
 import { t, type Lang, type MessageKey } from "@/lib/core/i18n";
 import { joinList } from "@/lib/core/journey";
@@ -89,9 +89,17 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
 
   const [breadcrumb, children, results, timeline] = await Promise.all([getBreadcrumb(place), getChildren(code), getUnitResults(place), getTimeline(place)]);
   const [coverage, collation] = await Promise.all([getCoverage(place, results), getCollationCheck(place, results)]);
+  const tamper = Boolean(collation?.tamperSuspected);
   const unit = place.level === "pu" ? results.get(code) : undefined;
   const journey = place.level === "pu" ? await getUnitJourney(place, breadcrumb, unit, lang) : [];
-  const hero = place.level === "pu" ? headline(unit?.best, lang) : null;
+  // A sealed unit whose ward announced different figures answers the voter's real question.
+  // It leads the page instead of sitting below the fold in the journey.
+  const collationBad = journey.find((s) => (s.key === "ward" || s.key === "lga" || s.key === "state") && s.state === "bad");
+  const baseHero = place.level === "pu" ? headline(unit?.best, lang) : null;
+  const hero =
+    baseHero && collationBad && unit?.best
+      ? { state: baseHero.state, title: t(lang, "hero.changed.title"), text: t(lang, "hero.changed.text", { where: collationBad.title }), tone: "text-alarm" }
+      : baseHero;
   const [margin, uploads] = place.level === "pu" ? [null, null] : await Promise.all([getMargin(place, results), getUploadFailures(place)]);
   const simulated = place.level === "pu" ? isSimulated(unit?.best) : [...results.values()].some((r) => isSimulated(r.best));
   const spoken = hero ? [hero.title, hero.text, ...(unit?.best ? Object.entries(unit.best.figures.votes).sort((a, b) => b[1] - a[1]).map(([party, v]) => `${party}: ${v}`) : [])].map((part) => part.replace(/\.+$/, "")).join(". ") : "";
@@ -118,12 +126,9 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
         {LEVEL[place.level]} · <span className="hash">{place.code}</span>
         {place.registered ? ` · ${place.registered.toLocaleString("en-US")} registered voters` : ""}
       </p>
+      {simulated && <div className="mt-2"><Chip tone="amber">{t(lang, "sim.label")}</Chip></div>}
 
       {place.level === "pu" && <div className="mt-4"><LanguagePicker lang={lang} label={t(lang, "language")} draft={t(lang, "draft")} /></div>}
-
-      {simulated && (
-        <p role="note" className="mt-4 rounded-xl border border-amber/40 bg-amber-wash px-4 py-3 text-sm text-amber">{t(lang, "sim.note")}</p>
-      )}
 
       <div className="mt-6 space-y-4">
         {place.level === "pu" && hero ? (
@@ -148,7 +153,7 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
                 </div>
               </section>
             )}
-            <Card className={unit?.best?.trust.status === "disputed" ? "border-alarm/60" : unit?.best?.trust.status === "sealed" ? "border-sealed/50" : ""}>
+            <Card className={collationBad || unit?.best?.trust.status === "disputed" ? "border-alarm/60" : unit?.best?.trust.status === "sealed" ? "border-sealed/50" : ""}>
               <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
                 <Seal signed={unit?.best ? [...new Set(unit.best.witnesses.filter((w) => w.party).map((w) => w.party as string))] : []} state={hero.state} className="w-40 shrink-0 sm:w-44" />
                 <div className="min-w-0">
@@ -185,6 +190,12 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
               )}
             </Card>
 
+            <Card>
+              <Eyebrow>{t(lang, "j.title")}</Eyebrow>
+              <p className="mt-1 text-sm text-muted">{t(lang, "j.sub")}</p>
+              <Journey steps={journey} />
+            </Card>
+
             <SmsAlerts code={place.code} labels={{ title: t(lang, "sms.title"), hint: t(lang, "sms.hint"), phone: t(lang, "sms.phone"), go: t(lang, "sms.go"), ok: t(lang, "sms.ok"), off: t(lang, "sms.off"), fail: t(lang, "sms.fail") }} />
 
             {reports && reports.total > 0 && (
@@ -218,12 +229,6 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
                 {wall.simulated && <p className="mt-2 text-xs text-muted">{t(lang, "sim.label")}</p>}
               </Card>
             )}
-
-            <Card>
-              <Eyebrow>{t(lang, "j.title")}</Eyebrow>
-              <p className="mt-1 text-sm text-muted">{t(lang, "j.sub")}</p>
-              <Journey steps={journey} />
-            </Card>
 
             {unitFlags.length > 0 && (
               <Card className="border-amber/40">
@@ -292,6 +297,7 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
           </>
         ) : (
           <>
+            {tamper && collation && <CollationPanel check={collation} />}
             <Card>
               <Eyebrow>Polling units</Eyebrow>
               <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -322,7 +328,7 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
                 </ul>
               </Card>
             )}
-            {collation && <CollationPanel check={collation} />}
+            {!tamper && collation && <CollationPanel check={collation} />}
             <Card>
               <Eyebrow>{children[0] ? `${LEVEL[children[0].level]}s` : "Inside"}</Eyebrow>
               <ul className="mt-2 divide-y divide-line">
@@ -371,6 +377,7 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
         {place.level === "pu" && (
           <p className="text-center text-sm"><Link href={`/poster/${place.code}`} className="font-bold text-blue">Print the poster for the wall ›</Link></p>
         )}
+        {simulated && <p role="note" className="mx-auto max-w-prose text-center text-xs text-amber">{t(lang, "sim.note")}</p>}
         <p className="text-center text-xs text-muted">
           Every record is signed and locked in order. <Link href="/verify" className="underline">Check the records yourself</Link>
         </p>
