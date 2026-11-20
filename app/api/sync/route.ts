@@ -5,7 +5,7 @@ import { signedEventSchema } from "@/lib/core/events";
 import { parseJson } from "@/lib/server/http";
 import { notifyFor } from "@/lib/server/alerts";
 import { ingest } from "@/lib/server/ledger";
-import { notifyEvent } from "@/lib/server/push-events";
+import { notifyEvent, notifySeal } from "@/lib/server/push-events";
 
 const cosignature = z.object({
   contentHash: z.string().regex(/^[0-9a-f]{64}$/),
@@ -32,6 +32,7 @@ export async function POST(request: Request) {
   const results = [];
   const alerts: NonNullable<(typeof parsed.data.items)[number]["event"]>[] = [];
   const pushable: NonNullable<(typeof parsed.data.items)[number]["event"]>[] = [];
+  const sealedTargets = new Set<string>();
   for (const item of parsed.data.items) {
     const r = await ingest(item, request.headers.get("x-tally-channel") ?? "app");
     results.push(r);
@@ -39,11 +40,15 @@ export async function POST(request: Request) {
       pushable.push(item.event);
       if (item.event.type === "pu.relocated" || item.event.type === "pu.opened") alerts.push(item.event);
     }
+    for (const c of item.cosignatures ?? []) {
+      if (r.cosignatures.some((x) => x.witnessKey === c.witnessKey && x.status === "accepted")) sealedTargets.add(c.contentHash);
+    }
   }
   // Text and notify the people following these units, after responding so a slow provider never delays the phone.
   after(async () => {
     for (const e of alerts) await notifyFor(e).catch((err) => console.error("SMS alert failed:", err));
     for (const e of pushable) await notifyEvent(e).catch((err) => console.error("Push alert failed:", err));
+    for (const hash of sealedTargets) await notifySeal(hash).catch((err) => console.error("Seal push failed:", err));
   });
   // Anchor new entries to Bitcoin (via OpenTimestamps) at most every 10 minutes, after responding.
   after(() => anchorPending().catch((e) => console.error("Anchoring failed:", e)));

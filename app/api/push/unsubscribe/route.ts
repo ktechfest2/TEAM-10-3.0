@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { sqlClient as sql } from "@/lib/db/client";
-import { badRequest, parseJson } from "@/lib/server/http";
+import { parseJson } from "@/lib/server/http";
 
 const schema = z.object({
   endpoint: z.string().url().max(2000),

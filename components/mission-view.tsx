@@ -115,10 +115,14 @@ export function MissionView() {
   }, []);
 
   useEffect(() => {
-    setCanFull(Boolean(document.documentElement.requestFullscreen));
+    // Deferred so the server-rendered header does not change shape during hydration.
+    const t = setTimeout(() => setCanFull(Boolean(document.documentElement.requestFullscreen)), 0);
     const onChange = () => setFull(Boolean(document.fullscreenElement));
     document.addEventListener("fullscreenchange", onChange);
-    return () => document.removeEventListener("fullscreenchange", onChange);
+    return () => {
+      clearTimeout(t);
+      document.removeEventListener("fullscreenchange", onChange);
+    };
   }, []);
 
   // Toast the worst new alert after the first load's baseline.
@@ -155,7 +159,7 @@ export function MissionView() {
   const updated = data ? Math.max(0, Math.round((now - new Date(data.at).getTime()) / 1000)) : null;
 
   return (
-    <div className="mx-auto w-full max-w-[1440px] flex-1 px-4 pb-16 sm:px-6">
+    <div className="mx-auto w-full max-w-[1440px] flex-1 overflow-x-clip px-4 pb-16 sm:px-6">
       <header className="flex flex-wrap items-center justify-between gap-3 py-4">
         <h1 className="font-display text-xl font-extrabold">Mission control <span className="hidden text-sm font-semibold text-muted sm:inline">· Federal Capital Territory</span></h1>
         <div className="flex flex-wrap items-center gap-2">
@@ -174,7 +178,7 @@ export function MissionView() {
       <WatchBar />
 
       {fresh && (
-        <Link href={fresh.href ?? "/mission"} onClick={() => setFresh(null)} role="status" className={`pop fixed inset-x-3 top-16 z-40 mx-auto flex max-w-md items-start gap-3 rounded-2xl border-2 bg-surface p-3 shadow-2xl ${fresh.kind === "red" ? "border-alarm" : "border-line"}`}>
+        <Link href={fresh.href ?? "/mission"} onClick={() => setFresh(null)} role="status" className={`pop fixed inset-x-3 bottom-24 z-40 mx-auto flex max-w-md items-start gap-3 rounded-2xl border-2 bg-surface p-3 shadow-2xl md:inset-x-auto md:right-6 md:bottom-6 md:mx-0 ${fresh.kind === "red" ? "border-alarm" : "border-line"}`}>
           <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${KIND_BG[fresh.kind]}`}><Icon name={KIND_ICON[fresh.kind] ?? "check"} size={18} /></span>
           <span className="min-w-0 flex-1">
             <span className={`block text-[11px] font-extrabold tracking-widest uppercase ${KIND_TEXT[fresh.kind]}`}>{fresh.k}</span>
@@ -237,10 +241,9 @@ export function MissionView() {
           </div>
           <p className="hidden text-xs text-muted lg:block">{t ? `${n(t.reported)} of ${n(t.units)} polling units have a recorded result.` : "Loading…"}</p>
 
+          {data && <Alerts alerts={data.alerts} />}
           {data && <MarginCard margin={data.margin} uploads={data.uploads} />}
           {data && <ReadinessCards materials={data.materials} help={data.help} />}
-
-          {data && <Alerts alerts={data.alerts} />}
         </div>
       </div>
       <p className="mt-8 max-w-prose text-xs text-muted">

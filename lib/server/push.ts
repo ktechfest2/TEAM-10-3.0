@@ -1,5 +1,5 @@
 import "server-only";
-import webpush from "web-push";
+import { sendNotification, setVapidDetails } from "web-push";
 import { sqlClient as sql } from "@/lib/db/client";
 
 const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
@@ -8,7 +8,7 @@ const subject = process.env.VAPID_SUBJECT ?? "mailto:team@tally.local";
 
 /** False until the VAPID keys are set. The app then says push is not configured instead of pretending. */
 export const pushConfigured = Boolean(publicKey && privateKey);
-if (pushConfigured) webpush.setVapidDetails(subject, publicKey!, privateKey!);
+if (pushConfigured) setVapidDetails(subject, publicKey!, privateKey!);
 
 export type PushPayload = {
   title: string;
@@ -30,7 +30,7 @@ async function sendTo(sub: SubRow, payload: PushPayload, eventKey: string): Prom
     returning id`;
   if (!claimed) return false;
   try {
-    await webpush.sendNotification(
+    await sendNotification(
       { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
       JSON.stringify(payload),
       { TTL: 3600, urgency: payload.kind === "red" ? "high" : "normal" },

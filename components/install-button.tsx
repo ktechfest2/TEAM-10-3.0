@@ -18,8 +18,11 @@ export function InstallButton({ compact = false }: { compact?: boolean }) {
     const standalone =
       window.matchMedia("(display-mode: standalone)").matches ||
       Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
-    setInstalled(standalone);
-    setIos(/iphone|ipad|ipod/i.test(navigator.userAgent) && !standalone);
+    // Deferred so the first paint matches the server and hydration stays clean.
+    const t = setTimeout(() => {
+      setInstalled(standalone);
+      setIos(/iphone|ipad|ipod/i.test(navigator.userAgent) && !standalone);
+    }, 0);
     const onPrompt = (event: Event) => {
       event.preventDefault();
       setPrompt(event as InstallPrompt);
@@ -31,6 +34,7 @@ export function InstallButton({ compact = false }: { compact?: boolean }) {
     window.addEventListener("beforeinstallprompt", onPrompt);
     window.addEventListener("appinstalled", onInstalled);
     return () => {
+      clearTimeout(t);
       window.removeEventListener("beforeinstallprompt", onPrompt);
       window.removeEventListener("appinstalled", onInstalled);
     };
@@ -59,7 +63,24 @@ export function InstallButton({ compact = false }: { compact?: boolean }) {
     );
   }
 
-  if (!prompt) return null;
+  if (!prompt) {
+    return (
+      <span className="inline-flex flex-col items-start gap-1">
+        <button
+          type="button"
+          onClick={() => setShowHint((v) => !v)}
+          className={`inline-flex min-h-9 items-center gap-1.5 rounded-full bg-raised px-3 text-xs font-bold ${compact ? "" : "min-h-10"}`}
+        >
+          <Icon name="download" size={14} />Install
+        </button>
+        {showHint && (
+          <span className="max-w-64 text-xs text-muted">
+            In Chrome, open the browser menu and choose “Install app”. On iPhone, use Share → “Add to Home Screen”.
+          </span>
+        )}
+      </span>
+    );
+  }
 
   return (
     <button

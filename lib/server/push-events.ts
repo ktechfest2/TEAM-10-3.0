@@ -1,5 +1,6 @@
 import "server-only";
 import type { SignedEvent } from "@/lib/core/events";
+import { sqlClient as sql } from "@/lib/db/client";
 import { getCollationCheck, getPlace, getUnitResults, isSimulated } from "./views";
 import { pushToTopic, type PushPayload } from "./push";
 
@@ -47,16 +48,17 @@ export async function notifyEvent(event: SignedEvent): Promise<void> {
     case "result.declared": {
       const best = (await getUnitResults(place)).get(event.placeCode)?.best;
       if (!best) break;
-      const signers = [...new Set(best.witnesses.filter((w) => w.party).map((w) => w.party as string))];
+      // A sealed result is announced by notifySeal when the rival co-signature reaches the ledger.
+      if (best.trust.status === "sealed") break;
       const sim = isSimulated(best) ? "Simulated · " : "";
-      const sealed = best.trust.status === "sealed";
+      const disputed = best.trust.status === "disputed";
       await pushToTopic(
         `place:${event.placeCode}`,
         {
-          title: `${sim}${label}: ${sealed ? "result sealed" : "result signed"}`,
-          body: sealed ? `${joinParties(signers)} agents signed the same figures.` : "A rival party's signature still seals it.",
+          title: `${sim}${label}: ${disputed ? "disputed" : "result signed"}`,
+          body: disputed ? "Witnesses signed different figures. Every version is kept." : "A rival party's signature still seals it.",
           url: `/p/${event.placeCode}`,
-          kind: sealed ? "green" : "amber",
+          kind: disputed ? "red" : "amber",
           tag: event.contentHash,
         },
         event.contentHash,
@@ -64,8 +66,8 @@ export async function notifyEvent(event: SignedEvent): Promise<void> {
       if (best.trust.status === "disputed") {
         await pushToTopic(
           "mission",
-          { title: `Disputed result: ${label}`, body: "Witnesses signed different figures. Every version is kept.", url: `/p/${event.placeCode}`, kind: "red", tag: event.contentHash },
-          event.contentHash,
+          { title: `Disputed result: ${label}`, body: "Witnesses signed different figures. Every version is kept.", url: `/p/${event.placeCode}`, kind: "red", tag: `${event.contentHash}:disputed` },
+          `${event.contentHash}:disputed`,
         );
       }
       break;
@@ -146,4 +148,27 @@ export async function notifyEvent(event: SignedEvent): Promise<void> {
       break;
     }
   }
+}
+
+/** Called when a co-signature is accepted: announce a result that has just crossed from signed to sealed. */
+export async function notifySeal(contentHash: string): Promise<void> {
+  const [row] = await sql<{ place_code: string }[]>`select place_code from events where content_hash = ${contentHash} and type = 'result.declared' limit 1`;
+  if (!row) return;
+  const place = await getPlace(row.place_code);
+  if (!place) return;
+  const best = (await getUnitResults(place)).get(place.code)?.best;
+  if (!best || best.trust.status !== "sealed") return;
+  const signers = [...new Set(best.witnesses.filter((w) => w.party).map((w) => w.party as string))];
+  const sim = isSimulated(best) ? "Simulated · " : "";
+  await pushToTopic(
+    `place:${place.code}`,
+    {
+      title: `${sim}${place.name}: result sealed`,
+      body: `${joinParties(signers)} agents signed the same figures.`,
+      url: `/p/${place.code}`,
+      kind: "green",
+      tag: `${contentHash}:sealed`,
+    },
+    `${contentHash}:sealed`,
+  );
 }

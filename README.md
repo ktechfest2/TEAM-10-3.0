@@ -42,6 +42,11 @@ Official roles (officer, agent, observer, collation officer) sign up with an inv
 
 **Deploy:** link the repo to Vercel, add a Postgres database (Neon) from the Vercel Marketplace, and deploy. The build migrates and seeds automatically. AI runs through Vercel AI Gateway: the default model (`google/gemini-2.5-flash-lite`) runs on the Gateway's free tier on Vercel; set `AI_GATEWAY_API_KEY` elsewhere, and `TALLY_MODEL` to change the model. Without it the app still works: the officer enters figures by hand, and rumours are read by fixed rules, and the screens say so.
 
+## Push alerts and install
+Tally is an installable PWA. On **mission control**, “Get alerts” turns on Web Push for this browser: tampering, collation checks, moves, openings and unit results arrive as notifications, and tapping one opens the exact page. The same button on a polling-unit page watches that unit only. The **Watch the count** strip also offers “Install app”; the installed app opens on the live board, with a **Sign and witness** shortcut back into the role app.
+
+Set `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` (generate with `npx web-push generate-vapid-keys`). Without keys, the button says alerts are not set up; the live board, SMS and everything else still work. On iPhone, add Tally to the Home Screen first (iOS 16.4+). The operator page (`/ops`) has a **Send a test alert** button once `OPS_CODE` is set.
+
 ## SMS alerts
 Voters can follow a polling unit by phone number and get a text when it moves, when voting starts, and when its figures are changed at collation. Texts go through Africa's Talking. Until a key is set, alerts are saved and the page says text messages are not switched on yet.
 
@@ -49,8 +54,8 @@ To switch them on, set `AT_USERNAME` and `AT_API_KEY` (and optionally an approve
 
 ## Credits
 - **Data:** 2023 presidential polling-unit figures and coordinates for the FCT (2,822 units), from [mundus01/irev-2023-results-map](https://github.com/mundus01/irev-2023-results-map) (sums of INEC IReV polling-unit sheets). Polling-unit structure follows INEC codes.
-- **Libraries:** Next.js, React, Tailwind CSS, Drizzle ORM, postgres.js, @noble/ed25519 and @noble/hashes, zod, idb, qrcode, jsQR, Vercel AI SDK, Vitest.
-- **Services:** OpenTimestamps calendars (Bitcoin anchoring), Vercel AI Gateway (Google Gemini 2.5 Flash-Lite for EC8A transcription and for reading forwarded messages).
+- **Libraries:** Next.js, React, Tailwind CSS, Drizzle ORM, postgres.js, @noble/ed25519 and @noble/hashes, zod, idb, qrcode, jsQR, Vercel AI SDK, web-push, Vitest.
+- **Services:** OpenTimestamps calendars (Bitcoin anchoring), Vercel AI Gateway (Google Gemini 2.5 Flash-Lite for EC8A transcription and for reading forwarded messages), Web Push (VAPID, no paid provider).
 - **Approach:** the trust-engine ideas (independent evidence chains, firsthand vs. hearsay weighting, source reliability) carry over from the team's own KTech screening project and were rewritten from scratch for this challenge.
 - **AI coding assistant (declared per rule 1.4):** Claude Code (Anthropic) was used throughout design and development.
 

@@ -101,6 +101,16 @@ export function OpsView() {
     }
   }
 
+  async function testPush() {
+    setMessage("Sending a test alert…");
+    try {
+      const r = (await post("/api/push/test", { title: "Tally test alert", body: "Push is working on this device." })) as { sent: number };
+      setMessage(r.sent > 0 ? `Test alert sent to ${r.sent} device${r.sent === 1 ? "" : "s"}.` : "No device is watching yet. Open mission control on a phone, turn alerts on, then try again.");
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : "Push is not configured.");
+    }
+  }
+
   return (
     <main className="mx-auto w-full max-w-md flex-1 space-y-4 px-4 py-10">
       <Link href="/"><Logo size={24} /></Link>
@@ -122,6 +132,7 @@ export function OpsView() {
             <Button variant="secondary" onClick={() => void collate("honest")}>Collate a ward</Button>
             <Button variant="danger" onClick={() => void collate("tamper")} className="col-span-2">Collate a ward with an altered number</Button>
             <Button variant="secondary" onClick={() => void relocate()} className="col-span-2">Move some polling units (estimated)</Button>
+            <Button variant="secondary" onClick={() => void testPush()} className="col-span-2">Send a test alert</Button>
           </div>
           {confirmReset ? (
             <div className="flex items-center gap-2 text-sm"><span className="flex-1 text-muted">Clear every signed result?</span><Button variant="danger" onClick={() => void reset()} className="min-h-10">Clear</Button><Button variant="secondary" onClick={() => setConfirmReset(false)} className="min-h-10">Cancel</Button></div>
