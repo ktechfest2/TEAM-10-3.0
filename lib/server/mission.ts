@@ -184,7 +184,9 @@ export async function missionSnapshot(): Promise<Mission> {
   }
   const [anchor] = await sql<{ merkle_root: string; from_seq: number; to_seq: number; status: string; created_at: Date }[]>`select merkle_root, from_seq, to_seq, status, created_at from anchors order by created_at desc limit 1`;
   if (anchor) alerts.push({ kind: "grey", k: anchor.status === "confirmed" ? "ANCHORED ON BITCOIN" : "SUBMITTED TO BITCOIN", title: `Entries ${anchor.from_seq.toLocaleString("en-US")} to ${anchor.to_seq.toLocaleString("en-US")}`, body: `root ${anchor.merkle_root.slice(0, 10)}…${anchor.merkle_root.slice(-6)}`, at: iso(anchor.created_at) });
-  alerts.sort((a, b) => b.at.localeCompare(a.at));
+  // Problems must survive the 10-alert cap; a newer "sealed" item must never push a tamper alert out of sight.
+  const rank = { red: 0, amber: 1, green: 2, grey: 3 } as const;
+  alerts.sort((a, b) => rank[a.kind] - rank[b.kind] || b.at.localeCompare(a.at));
 
   const focusCode = newestTamper && (!recent[0] || newestTamper.at > iso(recent[0].occurred_at)) ? newestTamper.code : recent[0]?.place_code;
   const focusCell = focusCode !== undefined ? cellOfCode.get(focusCode) : undefined;
