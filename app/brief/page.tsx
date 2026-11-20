@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Icon, type IconName } from "@/components/icons";
 import { Logo } from "@/components/logo";
 import { CountUp, Reveal } from "@/components/paper-motion";
+import { youtubeId } from "@/lib/core/video";
 
 export const metadata: Metadata = {
   title: "Problem brief",
@@ -29,13 +30,19 @@ const GAPS = [
 
 /** One-page problem brief for the submission. Reachable by link only; not in the navigation. */
 export default function BriefPage() {
+  // Set NEXT_PUBLIC_DEMO_VIDEO_URL in Vercel to a YouTube link and redeploy. Until then no video section is shown.
+  const videoUrl = process.env.NEXT_PUBLIC_DEMO_VIDEO_URL;
+  const video = youtubeId(videoUrl);
   return (
     <div className="paper flex-1">
       <div className="h-1.5 w-full bg-[linear-gradient(90deg,var(--blue),var(--cyan),var(--sealed),var(--amber),var(--orange),var(--pink),var(--thumb))]" />
       <main className="mx-auto w-full max-w-5xl px-5 py-8 print:py-0">
         <header className="flex items-center justify-between gap-4">
           <Logo size={28} />
-          <p className="text-right text-xs leading-snug text-muted">Problem brief · TEAM-10<br />KTech Fest 3.0 · Every Vote, Every Voice</p>
+          <div className="flex items-center gap-4">
+            {video && <a href="#video" className="rounded-full bg-alarm px-4 py-2 text-sm font-bold text-white print:hidden">▶ Watch the demo</a>}
+            <p className="text-right text-xs leading-snug text-muted">Problem brief · TEAM-10<br />KTech Fest 3.0 · Every Vote, Every Voice</p>
+          </div>
         </header>
 
         <Reveal>
@@ -46,6 +53,27 @@ export default function BriefPage() {
             A result is written on a sheet, pasted on a wall, then read out and added up again at four more levels. Agents sign the paper, but no one else can check those signatures, and a number changed on the way up is hard to prove.
           </p>
         </Reveal>
+
+        {video && (
+          <section id="video" className="mt-10" aria-label="Demo video">
+            <Reveal>
+              <p className="text-xs font-extrabold tracking-[0.16em] text-muted uppercase">Watch</p>
+              <h2 className="font-display mt-1 text-3xl font-extrabold tracking-tight">Tally in action.</h2>
+              <div className="mt-4 overflow-hidden rounded-3xl border border-line bg-black shadow-[0_24px_60px_-24px_rgb(0_0_0/0.45)]">
+                <iframe
+                  src={`https://www.youtube-nocookie.com/embed/${video}?rel=0`}
+                  title="Tally demo video"
+                  className="aspect-video w-full"
+                  allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                />
+              </div>
+              <p className="mt-2 text-sm text-muted">Not loading? <a href={`https://www.youtube.com/watch?v=${video}`} target="_blank" rel="noopener noreferrer" className="font-bold text-blue underline">Watch on YouTube</a>.</p>
+            </Reveal>
+          </section>
+        )}
 
         {/* Four numbers */}
         <section className="mt-10 grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="The problem in numbers">
