@@ -3,7 +3,7 @@ import { HomeSearch } from "@/components/home-search";
 import { Seal } from "@/components/seal";
 import { ReplayMap } from "@/components/replay-map";
 import { Card, Chip, Eyebrow } from "@/components/ui";
-import { Reveal } from "@/components/paper-motion";
+import { CountUp, Reveal } from "@/components/paper-motion";
 import { verifyLedger } from "@/lib/server/ledger";
 import { missionSnapshot } from "@/lib/server/mission";
 
@@ -60,6 +60,22 @@ export default async function Home() {
             <span className="text-sm font-bold text-thumb group-hover:underline">Open mission control ›</span>
           </div>
         </Link>
+      </section>
+
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="The election right now">
+        {[
+          { tone: "bg-sealed text-white", v: t?.sealed ?? 0, l: "Units sealed by rival parties" },
+          { tone: "bg-amber text-white", v: t?.witnessed ?? 0, l: "Signed by one party so far" },
+          { tone: "bg-alarm text-white", v: t?.tamper ?? 0, l: "Tampering caught" },
+          { tone: "bg-fg text-bg", v: ledger?.entries ?? 0, l: "Signed records, all verified" },
+        ].map((c, i) => (
+          <Reveal key={c.l} delay={i * 90} className="h-full">
+            <div className={`h-full rounded-3xl p-5 ${c.tone}`}>
+              <p className="font-display text-5xl leading-none font-extrabold"><CountUp to={c.v} /></p>
+              <p className="mt-2 text-sm font-semibold opacity-90">{c.l}</p>
+            </div>
+          </Reveal>
+        ))}
       </section>
 
       <section className="grid gap-4 py-6 md:grid-cols-3" aria-label="Who Tally is for">

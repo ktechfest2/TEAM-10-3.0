@@ -95,10 +95,12 @@ export default async function PlacePage(props: PageProps<"/p/[code]">) {
   // A sealed unit whose ward announced different figures answers the voter's real question.
   // It leads the page instead of sitting below the fold in the journey.
   const collationBad = journey.find((s) => (s.key === "ward" || s.key === "lga" || s.key === "state") && s.state === "bad");
+  // "Ward collation · Abaji Central" reads badly inside "The collation for …"; keep only the place name.
+  const whereChanged = collationBad ? (collationBad.title.includes("·") ? collationBad.title.split("·").pop()!.trim() : collationBad.title) : "";
   const baseHero = place.level === "pu" ? headline(unit?.best, lang) : null;
   const hero =
     baseHero && collationBad && unit?.best
-      ? { state: baseHero.state, title: t(lang, "hero.changed.title"), text: t(lang, "hero.changed.text", { where: collationBad.title }), tone: "text-alarm" }
+      ? { state: baseHero.state, title: t(lang, "hero.changed.title"), text: t(lang, "hero.changed.text", { where: whereChanged }), tone: "text-alarm" }
       : baseHero;
   const [margin, uploads] = place.level === "pu" ? [null, null] : await Promise.all([getMargin(place, results), getUploadFailures(place)]);
   const simulated = place.level === "pu" ? isSimulated(unit?.best) : [...results.values()].some((r) => isSimulated(r.best));
