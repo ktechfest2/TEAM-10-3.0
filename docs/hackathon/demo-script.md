@@ -1,58 +1,48 @@
-# Demo Script (3-minute video)
+# Demo video script (3 minutes)
 
-> Status: **DRAFT 1.** Every step below uses a feature that has been run against the real app. Data on the live site is **simulated and labelled**; say so once, early.
-> Live site: https://tally-election.vercel.app · Brief: /brief · Sketch: /sketch
+> Live site: https://tally-election.vercel.app · Data on the site is **simulated and labelled**. Say so once, early.
+> Spoken text is written to be said out loud, about 130 words a minute. Read it, don't recite it.
 
-## Before recording (10 minutes)
-- [ ] Record on a **phone-width browser window** (about 390 px) for the app screens, and a normal window for mission control. Screen-record at 1080p.
-- [ ] Open these tabs in order: `/` · `/sketch` · a unit with short materials (Mission control → Materials card → first row) · `/p/37-01-04-007` (moved unit) · `/rig` · `/mission` · `/check`.
-- [ ] Do **one dry run** of `/rig`. Each rig attempt adds a collation to the live ledger. That is fine, but the second run in a ward looks the same as the first.
-- [ ] Do not claim texts are sent unless `AT_USERNAME` and `AT_API_KEY` are set. Without them the page says "Text messages are not switched on yet". Either show that line honestly, or set the Africa's Talking sandbox keys and show the simulator.
-- [ ] Do **not** show camera or QR scanning between two phones unless you have tested it on real phones. It has not been tested.
-- [ ] Mic check, notifications off, browser zoom 100%.
+## The story
+Amaka votes in Abuja. The result is stuck on a wall. After that, nobody can prove the number didn't change. Tally makes that impossible to do quietly.
 
-## The story in one line
-Everything on election day except the ballot box is now signed, witnessed and checkable. **Try to rig it.**
+## Shots and words
 
-## Script
+**0:00–0:20 · The problem** (home page, then the map)
+> "Election day in Abuja. Amaka votes. The result is written on a sheet and stuck on the wall. Then it's read out, added up, and read out again at four more levels. At any step, can anyone prove the number is still the same? No. In 2023 the first sheet reached the portal at 8:55 at night, and the courts spent months arguing over paper. So we built Tally."
 
-| Time | On screen | Say |
-|---|---|---|
-| **0:00–0:15** Hook | `/` home, hero and the map. | "In 2023 the first result sheet reached the portal at 8:55 at night. After that, nobody could prove what was written on the wall was what got counted. This is Tally." |
-| **0:15–0:40** The idea | `/sketch`. Scroll to "One result. One changed number." and let the animation play: three phones sign 50, the seal draws, the ward announces 150, the card turns red. | "The officer and agents of rival parties sign the same number on their own phones, even offline. Two rivals agreeing seals it. When the ward announces a different number, Tally catches it at the exact unit. All the data you will see is simulated, and it is labelled that way." |
-| **0:40–1:05** Before polls | Mission control → **Materials** card → open the first unit with a shortfall. Show "Received with a different count: 48 short". | "Before polls open, the store signs what it sends. The officer signs what arrives. Agents co-sign. Here a unit received 48 fewer ballot papers than were sent. That used to be found at 8 in the morning, in a queue." |
-| **1:05–1:25** The voter | `/p/37-01-04-007`. Show the amber "This polling unit has moved" card, then tap **Get directions**. Scroll to the phone box and **priority help** buttons. | "A voter finds her unit. It has moved, so the page leads with the new site and directions, and she can ask for a text. An elderly or disabled voter can tap once for priority help, with no name or number. If nobody answers in fifteen minutes, mission control is told." |
-| **1:25–1:45** Any voter, any language | A sealed unit page. Switch language to **Hausa**, tap **Listen**. | "Results are in five languages and can be read aloud. The verdict comes from signed records, not opinion." |
-| **1:45–2:30** **The moment** | `/rig`. Pick a ward. Tap one APC number, type a bigger one. Tap **Announce the changed total**. Hold on the red card: "Caught in 24 ms". Then cut to **Mission control**: the map spotlight on that unit, the red alert at the top. | "Now you are the corrupt collation officer. I change one number and announce it. Tally compares it with what rival agents signed at the unit. Caught. It names the unit, the figure announced, and the figure signed, and mission control lights up red. Anyone following that unit gets a text with the proof." |
-| **2:30–2:50** Rumours | `/check`. Paste: `Apc cheated ??`. Show the result. | "Someone forwards 'APC cheated'. Tally does not take sides. It shows the signed facts for that party: where a collation differed, and how many results its agents co-signed." |
-| **2:50–3:00** Close | `/` or `/brief`. | "Tally. Everything except the ballot box, signed, witnessed and checkable. You cannot rig it. Try." |
+**0:20–0:55 · At the polling unit** (two phones side by side)
+Officer's phone: photograph the sheet, confirm the figures, sign. Agent's phone: scan the officer's QR code, compare with the wall, hold to sign. Show the seal close.
+> "This is the polling unit. The presiding officer photographs the sheet. Tally reads the figures, she confirms them, and signs with her own phone. Now an agent from a rival party scans her code, checks it against the wall, and signs the same number. Two rivals agree, so the result is sealed. No network needed."
 
-## If you have 5 minutes
-Add after 1:45: the **officer's phone** (materials count, sign result), then the **agent's phone** scanning and signing. Only if you have tested the camera and QR code on real phones first.
+**0:55–1:10 · Anyone can check** (unit page, switch to Hausa, tap Listen)
+> "Anyone can see who signed. Amaka looks up her unit and hears the result in Hausa."
 
-## Talking points for judges
-- **Why only two parties to seal:** rivals agreeing is the proof; requiring all parties would give any one of them a veto. Every extra signature is shown. A disagreeing agent makes the unit "disputed", with both versions kept.
-- **What is real:** signing, the ledger, Bitcoin stamping, the collation check, the rumour verdict, materials, priority help, the moved-unit alerts. **What is simulated:** the election data (labelled "Simulated data"), and the polling-unit moves (labelled "estimated").
-- **What we do not do:** record who anyone voted for, declare a winner, or replace paper results.
-- **AI:** reads the result sheet photo and the forwarded message. It never decides. Rules and the signed ledger do.
+**1:10–2:05 · The moment** (`/rig`, then mission control)
+Pick a ward. Change one APC number. Tap announce. Hold on the red card. Cut to mission control: the red spotlight on that unit.
+> "Now the part that matters. This is the ward, where numbers get read out and added up. I'm the corrupt officer. I change one number… and announce it. Caught. In twenty-four milliseconds. Tally names the unit: announced a hundred and fifty, but agents of three parties signed fifty. Mission control goes red, and everyone following that unit gets the proof."
 
-## Honest limitations (say them if asked)
-- Never run with the camera and QR codes on two real phones, or fully offline on a phone.
-- Real handwriting not yet tested with the sheet reader.
-- Hausa, Yorùbá, Igbo and Pidgin text is not yet checked by native speakers.
-- One shared invite code for official roles; no per-unit assignment or admin page yet.
-- SMS and push alerts need provider keys to switch on.
+**2:05–2:30 · Before the vote** (mission control → Materials card; a unit page → priority help)
+> "And it starts before the polls open. The store signs what it sends, the officer signs what arrives. Here, a unit is forty-eight ballot papers short. Found now, not in a queue. An elderly voter taps once for priority help. If nobody answers in fifteen minutes, mission control is told."
 
-## Likely judge questions
-| Question | Answer |
-|---|---|
-| Can't the officer just enter a false number? | Yes, and two rival agents must sign it for it to seal. A false number nobody signs stays unsealed, and a number changed later is caught at collation. |
-| What if agents collude? | Then the paper is no worse. Citizens' wall photos and observers can still disagree, and every version is public and stamped. |
-| Why not full e-voting? | Secrecy plus verifiability is unsolved at this scale. INEC already runs registration and BVAS. We make what happens around them checkable. |
-| Does it work offline? | Signing does: records queue on the phone and send when there is a network. |
-| Who pays for SMS? | The deployer, per message, through Africa's Talking. It is off until keys are set. |
+**2:30–2:45 · Rumours** (`/check`, paste "Apc cheated ??")
+> "Someone forwards 'APC cheated'. Tally doesn't take a side. It shows what was signed."
 
-## Fallback plan
-- Site down: run `pnpm build && pnpm start` locally with the seeded database and record from `localhost:3100`.
-- `/rig` fails: open a ward's unit page that already shows "Tampering suspected" and use mission control's red alert.
-- No network: this video is the fallback.
+**2:45–3:00 · Close** (home page, `/rig` in the address bar)
+> "Everything except the ballot box, signed, witnessed and checkable. You can't rig it. Try."
+
+## Before recording
+- Phone-width window for app screens; normal window for mission control. 1080p, notifications off.
+- Do one dry run of `/rig` (each attempt adds a collation to the live ledger).
+- The text-message line is only true if `AT_USERNAME` and `AT_API_KEY` are set. If they aren't, cut "gets the proof" to "is told".
+- Rehearse the two-phone signing once end to end with good light on the paper.
+
+## Honest answers for judges
+- **Why two parties, not all?** Rivals agreeing is the proof. Requiring all would give any one party a veto. Every extra signature is shown; a disagreeing agent makes the unit "disputed", with both versions kept.
+- **What if the officer lies?** A number no rival signs never seals. A number changed later is caught at collation.
+- **Why not e-voting?** Ballot secrecy plus verifiability isn't solved at this scale. INEC already runs registration and BVAS; we make what happens around them checkable.
+- **Real vs simulated:** signing, the ledger, Bitcoin stamping, collation checks, materials, priority help and the rumour verdict are real. Election data and unit moves are simulated and labelled.
+- **Not done:** native-speaker review of Hausa, Yorùbá, Igbo and Pidgin; real-handwriting testing; per-unit assignment and an admin page; SMS and push need provider keys.
+
+## Fallback
+Site down: `pnpm build && pnpm start` and record from `localhost:3100`. `/rig` fails: use a unit that already shows "Tampering suspected" and the red alert in mission control.
